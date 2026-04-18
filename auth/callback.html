@@ -13,9 +13,14 @@
 <body>
 <div class="loading"><div class="spinner"></div><p>🔐 Авторизация LSCSD...</p></div>
 <script>
+  // Проверяем, есть ли токен в URL
   if (window.location.hash && window.location.hash.includes('access_token')) {
-    window.location.href = window.location.origin + '/lscsd/index.html' + window.location.hash;
+    // Сохраняем весь хэш с токеном
+    var hash = window.location.hash;
+    // Перенаправляем на index.html с токеном
+    window.location.href = '/lscsd/index.html' + hash;
   } else {
+    // Если токена нет - просто на главную
     window.location.href = '/lscsd/';
   }
 </script>
