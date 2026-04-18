@@ -292,7 +292,7 @@
       line-height: 1.4;
     }
 
-    /* MODAL (ПО ЦЕНТРУ) */
+    /* MODAL */
     .modal {
       display: none;
       position: fixed;
@@ -737,6 +737,30 @@
       } catch(e) { return false; }
     }
     
+    // ОБРАБОТКА ТОКЕНА (прямо в index.html)
+    function handleAuthToken() {
+      if (window.location.hash && window.location.hash.includes('access_token')) {
+        const hash = window.location.hash.substring(1);
+        const params = new URLSearchParams(hash);
+        const token = params.get('access_token');
+        if (token) {
+          fetch('https://discord.com/api/users/@me', {
+            headers: { Authorization: `Bearer ${token}` }
+          })
+          .then(r => r.json())
+          .then(user => {
+            localStorage.setItem('lscsd_user', JSON.stringify({
+              id: user.id,
+              username: user.username,
+              avatar: user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png` : ''
+            }));
+            window.location.href = '/lscsd/';
+          })
+          .catch(() => alert('Ошибка авторизации'));
+        }
+      }
+    }
+    
     function checkAuth() {
       const user = localStorage.getItem('lscsd_user');
       if (user) {
@@ -758,6 +782,7 @@
         document.getElementById('authContainer').style.display = 'flex';
         document.getElementById('mainContainer').style.display = 'none';
         document.getElementById('navUser').style.display = 'none';
+        handleAuthToken();
       }
     }
     
@@ -767,37 +792,11 @@
       location.reload();
     });
     
-// Обработчик кнопки "Войти через Discord"
-document.getElementById('authBtn')?.addEventListener('click', () => {
-    const clientId = '1494686473520287774';
-    // Используем ТОТ ЖЕ redirect_uri, что и в настройках Discord
-    const redirectUri = encodeURIComponent('https://style42124.github.io/lscsd/auth/callback.html');
-    // Используем НЕЯВНЫЙ ПОТОК (response_type=token)
-    window.location.href = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=token&scope=identify%20guilds`;
-});
-    
-if (window.location.hash && window.location.hash.includes('access_token')) {
-  const hash = window.location.hash.substring(1);
-  const params = new URLSearchParams(hash);
-  const token = params.get('access_token');
-  
-  if (token) {
-    fetch('https://discord.com/api/users/@me', {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    .then(r => r.json())
-    .then(user => {
-      localStorage.setItem('lscsd_user', JSON.stringify({
-        id: user.id,
-        username: user.username,
-        avatar: user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png` : ''
-      }));
-      // Убираем токен из URL и перезагружаем страницу
-      window.location.href = '/lscsd/';
-    })
-    .catch(() => alert('Ошибка авторизации'));
-  }
-}
+    document.getElementById('authBtn')?.addEventListener('click', () => {
+      const clientId = '1494686473520287774';
+      const redirectUri = encodeURIComponent('https://style42124.github.io/lscsd/index.html');
+      window.location.href = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=token&scope=identify%20guilds`;
+    });
     
     // АДМИН-ПАНЕЛЬ F7
     const adminPasswordHash = "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8";
@@ -881,7 +880,7 @@ if (window.location.hash && window.location.hash.includes('access_token')) {
       }
     }
     
-    // ФОРМА ЗАЯВКА В ОТДЕЛ
+    // ========== ФОРМА ЗАЯВКА В ОТДЕЛ ==========
     function renderDepartmentForm(container) {
       container.innerHTML = `
         <form id="formEl">
@@ -922,28 +921,31 @@ if (window.location.hash && window.location.hash.includes('access_token')) {
           return;
         }
         const roleId = ROLE_IDS[data.department];
+        // ПИНГ РОЛИ СНАРУЖИ (отдельное сообщение)
+        const pingRole = roleId ? `<@&${roleId}>` : '';
+        // ВНУТРИ EMBED в конце пинг инициатора
         const embed = {
           title: '📝 ЗАЯВКА В ОТДЕЛ',
           color: 0xd4af37,
-          description: `${roleId ? `<@&${roleId}>` : ''}\n<@${currentUser.id}>`,
           fields: [
             { name: '👤 Имя Фамилия', value: `${data.firstName} ${data.lastName}`, inline: true },
             { name: '📌 Статик', value: data.staticc, inline: true },
             { name: '⭐ Ранг', value: data.rank, inline: true },
             { name: '🏢 Отдел', value: data.department, inline: true },
-            { name: '📄 Причина', value: data.reason, inline: false }
+            { name: '📄 Причина', value: data.reason, inline: false },
+            { name: '👤 Инициатор', value: `<@${currentUser.id}>`, inline: false }
           ],
           footer: { text: 'LSCSD • by stylenow' },
           timestamp: new Date().toISOString()
         };
-        await sendToWebhook(WEBHOOK_MAIN, null, embed);
+        await sendToWebhook(WEBHOOK_MAIN, pingRole, embed);
         await sendLog('Заявка в отдел', currentUser, `${data.firstName} ${data.lastName} → ${data.department}`);
         alert('✅ Заявка отправлена!');
         document.getElementById('modal').style.display = 'none';
       };
     }
     
-    // ФОРМА ОБЖАЛОВАНИЕ ВЫГОВОРА
+    // ========== ФОРМА ОБЖАЛОВАНИЕ ВЫГОВОРА ==========
     function renderAppealForm(container) {
       container.innerHTML = `
         <form id="formEl" enctype="multipart/form-data">
@@ -977,10 +979,10 @@ if (window.location.hash && window.location.hash.includes('access_token')) {
           showError(container, 'Заполните все поля и прикрепите скриншот');
           return;
         }
+        const pingRole = `<@&${ROLE_IDS.IAD}>`;
         const embed = {
           title: '⚖ ОБЖАЛОВАНИЕ ВЫГОВОРА',
           color: 0xd4af37,
-          description: `<@&${ROLE_IDS.IAD}>\n<@${currentUser.id}>`,
           fields: [
             { name: '👤 Имя Фамилия', value: `${data.firstName} ${data.lastName}`, inline: true },
             { name: '📌 Статик', value: data.staticc, inline: true },
@@ -988,19 +990,20 @@ if (window.location.hash && window.location.hash.includes('access_token')) {
             { name: '👮 Кем выдано', value: data.issuedBy, inline: true },
             { name: '📅 Когда выдано', value: data.issuedDate, inline: true },
             { name: '📄 Причина из выговора', value: data.reasonGiven, inline: false },
-            { name: '📝 Описание ситуации', value: data.description, inline: false }
+            { name: '📝 Описание ситуации', value: data.description, inline: false },
+            { name: '👤 Инициатор', value: `<@${currentUser.id}>`, inline: false }
           ],
           footer: { text: 'LSCSD • by stylenow' },
           timestamp: new Date().toISOString()
         };
-        await sendToWebhook(WEBHOOK_MAIN, null, embed, proofFile);
+        await sendToWebhook(WEBHOOK_MAIN, pingRole, embed, proofFile);
         await sendLog('Обжалование выговора', currentUser, `${data.firstName} ${data.lastName}`);
         alert('✅ Заявка отправлена!');
         document.getElementById('modal').style.display = 'none';
       };
     }
     
-    // ФОРМА ОТРАБОТКА ВЫГОВОРА
+    // ========== ФОРМА ОТРАБОТКА ВЫГОВОРА ==========
     function renderWorkoffForm(container) {
       container.innerHTML = `
         <form id="formEl">
@@ -1041,29 +1044,30 @@ if (window.location.hash && window.location.hash.includes('access_token')) {
           showError(container, 'Заполните все поля');
           return;
         }
+        const pingRole = `<@&${ROLE_IDS.IAD}>`;
         const embed = {
           title: '🛠 ОТРАБОТКА ВЫГОВОРА',
           color: 0xd4af37,
-          description: `<@&${ROLE_IDS.IAD}>\n<@${currentUser.id}>`,
           fields: [
             { name: '👤 Имя Фамилия', value: `${data.firstName} ${data.lastName}`, inline: true },
             { name: '📌 Статик', value: data.staticc, inline: true },
             { name: '⭐ Ранг', value: data.rank, inline: true },
             { name: '📋 За что выговор', value: data.reason, inline: false },
             { name: '⚖ Тип наказания', value: data.punishmentType, inline: true },
-            { name: '📎 Док-ва', value: data.evidence, inline: false }
+            { name: '📎 Док-ва', value: data.evidence, inline: false },
+            { name: '👤 Инициатор', value: `<@${currentUser.id}>`, inline: false }
           ],
           footer: { text: 'LSCSD • by stylenow' },
           timestamp: new Date().toISOString()
         };
-        await sendToWebhook(WEBHOOK_MAIN, null, embed);
+        await sendToWebhook(WEBHOOK_MAIN, pingRole, embed);
         await sendLog('Отработка выговора', currentUser, `${data.firstName} ${data.lastName}`);
         alert('✅ Заявка отправлена!');
         document.getElementById('modal').style.display = 'none';
       };
     }
     
-    // ФОРМА ПОВЫШЕНИЕ
+    // ========== ФОРМА ПОВЫШЕНИЕ ==========
     function renderPromotionForm(container) {
       container.innerHTML = `
         <form id="formEl">
@@ -1108,29 +1112,30 @@ if (window.location.hash && window.location.hash.includes('access_token')) {
           return;
         }
         const roleId = ROLE_IDS[data.department];
+        const pingRole = roleId ? `<@&${roleId}>` : '';
         const embed = {
           title: `⭐ ЗАЯВКА НА ПОВЫШЕНИЕ (${data.department})`,
           color: 0xd4af37,
-          description: `${roleId ? `<@&${roleId}>` : ''}\n<@${currentUser.id}>`,
           fields: [
             { name: '👤 Имя Фамилия', value: `${data.firstName} ${data.lastName}`, inline: true },
             { name: '📌 Статик', value: data.staticc, inline: true },
             { name: '📈 Текущий ранг', value: data.currentRank, inline: true },
             { name: '🎯 Целевой ранг', value: data.targetRank, inline: true },
             { name: '💯 Кол-во баллов', value: data.points, inline: true },
-            { name: '📎 Док-ва баллов', value: data.proof, inline: false }
+            { name: '📎 Док-ва баллов', value: data.proof, inline: false },
+            { name: '👤 Инициатор', value: `<@${currentUser.id}>`, inline: false }
           ],
           footer: { text: 'LSCSD • by stylenow' },
           timestamp: new Date().toISOString()
         };
-        await sendToWebhook(WEBHOOK_MAIN, null, embed);
+        await sendToWebhook(WEBHOOK_MAIN, pingRole, embed);
         await sendLog('Заявка на повышение', currentUser, `${data.firstName} ${data.lastName} → ${data.department}`);
         alert('✅ Заявка отправлена!');
         document.getElementById('modal').style.display = 'none';
       };
     }
     
-    // ФОРМА ОТПУСК/ОТДЫХ
+    // ========== ФОРМА ОТПУСК/ОТДЫХ ==========
     function renderLeaveForm(container, type) {
       container.innerHTML = `
         <form id="formEl">
@@ -1170,27 +1175,28 @@ if (window.location.hash && window.location.hash.includes('access_token')) {
           return;
         }
         const roleId = ROLE_IDS[data.department];
+        const pingRole = roleId ? `<@&${roleId}>` : '';
         const embed = {
           title: type === 'отпуск' ? '🏖 ЗАЯВКА НА ОТПУСК' : '🌴 ЗАЯВКА НА ОТДЫХ',
           color: 0xd4af37,
-          description: `${roleId ? `<@&${roleId}>` : ''}\n<@${currentUser.id}>`,
           fields: [
             { name: '🏢 Отдел', value: data.department, inline: true },
             { name: '📋 Причина', value: data.reason, inline: true },
             { name: '📅 Период', value: `${data.fromDate} → ${data.toDate}`, inline: false },
-            { name: '📝 Примечание', value: data.note || '—', inline: false }
+            { name: '📝 Примечание', value: data.note || '—', inline: false },
+            { name: '👤 Инициатор', value: `<@${currentUser.id}>`, inline: false }
           ],
           footer: { text: 'LSCSD • by stylenow' },
           timestamp: new Date().toISOString()
         };
-        await sendToWebhook(WEBHOOK_MAIN, null, embed);
+        await sendToWebhook(WEBHOOK_MAIN, pingRole, embed);
         await sendLog(`Заявка на ${type}`, currentUser, `${data.department}`);
         alert('✅ Заявка отправлена!');
         document.getElementById('modal').style.display = 'none';
       };
     }
     
-    // ФОРМА ЗАЯВКА НА СПЕЦВООРУЖЕНИЕ
+    // ========== ФОРМА ЗАЯВКА НА СПЕЦВООРУЖЕНИЕ ==========
     function renderSpecRequestForm(container) {
       container.innerHTML = `
         <form id="formEl">
@@ -1231,28 +1237,29 @@ if (window.location.hash && window.location.hash.includes('access_token')) {
           return;
         }
         const roleId = ROLE_IDS[data.department];
+        const pingRole = roleId ? `<@&${roleId}>` : '';
         const embed = {
           title: '🔫 ЗАЯВКА НА СПЕЦ ВООРУЖЕНИЕ',
           color: 0xd4af37,
-          description: `${roleId ? `<@&${roleId}>` : ''}\n<@${currentUser.id}>`,
           fields: [
             { name: '👤 Имя Фамилия', value: `${data.firstName} ${data.lastName}`, inline: true },
             { name: '📌 Статик', value: data.staticc, inline: true },
             { name: '⭐ Ранг', value: data.rank, inline: true },
             { name: '🏢 Отдел', value: data.department, inline: true },
-            { name: '🔫 Спец вооружение', value: data.weapon, inline: false }
+            { name: '🔫 Спец вооружение', value: data.weapon, inline: false },
+            { name: '👤 Инициатор', value: `<@${currentUser.id}>`, inline: false }
           ],
           footer: { text: 'LSCSD • by stylenow' },
           timestamp: new Date().toISOString()
         };
-        await sendToWebhook(WEBHOOK_MAIN, null, embed);
+        await sendToWebhook(WEBHOOK_MAIN, pingRole, embed);
         await sendLog('Заявка на спецвооружение', currentUser, `${data.firstName} ${data.lastName} → ${data.weapon}`);
         alert('✅ Заявка отправлена!');
         document.getElementById('modal').style.display = 'none';
       };
     }
     
-    // ФОРМА ПОЛУЧЕНИЕ СПЕЦВООРУЖЕНИЯ
+    // ========== ФОРМА ПОЛУЧЕНИЕ СПЕЦВООРУЖЕНИЯ ==========
     function renderSpecReceiveForm(container) {
       container.innerHTML = `
         <form id="formEl" enctype="multipart/form-data">
@@ -1299,10 +1306,10 @@ if (window.location.hash && window.location.hash.includes('access_token')) {
           return;
         }
         const roleId = ROLE_IDS[data.department];
+        const pingRole = roleId ? `<@&${roleId}>` : '';
         const embed = {
           title: '📦 ПОЛУЧЕНИЕ СПЕЦ ВООРУЖЕНИЯ',
           color: 0xd4af37,
-          description: `${roleId ? `<@&${roleId}>` : ''}\n<@${currentUser.id}>`,
           fields: [
             { name: '👤 Имя Фамилия', value: `${data.firstName} ${data.lastName}`, inline: true },
             { name: '📌 Статик', value: data.staticc, inline: true },
@@ -1310,19 +1317,20 @@ if (window.location.hash && window.location.hash.includes('access_token')) {
             { name: '🏢 Отдел', value: data.department, inline: true },
             { name: '🔫 Спец вооружение', value: data.weapon, inline: true },
             { name: '🔢 Номер спецухи', value: data.weaponNumber, inline: true },
-            { name: '👮 Кто выдал', value: data.issuedBy, inline: true }
+            { name: '👮 Кто выдал', value: data.issuedBy, inline: true },
+            { name: '👤 Инициатор', value: `<@${currentUser.id}>`, inline: false }
           ],
           footer: { text: 'LSCSD • by stylenow' },
           timestamp: new Date().toISOString()
         };
-        await sendToWebhook(WEBHOOK_MAIN, null, embed, screenshot);
+        await sendToWebhook(WEBHOOK_MAIN, pingRole, embed, screenshot);
         await sendLog('Получение спецвооружения', currentUser, `${data.firstName} ${data.lastName} → ${data.weapon}`);
         alert('✅ Заявка отправлена!');
         document.getElementById('modal').style.display = 'none';
       };
     }
     
-    // ФОРМА УВОЛЬНЕНИЕ
+    // ========== ФОРМА УВОЛЬНЕНИЕ ==========
     function renderResignationForm(container) {
       container.innerHTML = `
         <form id="formEl">
@@ -1367,10 +1375,10 @@ if (window.location.hash && window.location.hash.includes('access_token')) {
           return;
         }
         const roleId = ROLE_IDS[data.department];
+        const pingRole = roleId ? `<@&${roleId}>` : '';
         const embed = {
           title: '📄 РАПОРТ НА УВОЛЬНЕНИЕ',
           color: 0xd4af37,
-          description: `${roleId ? `<@&${roleId}>` : ''}\n<@${currentUser.id}>`,
           fields: [
             { name: '👤 Имя Фамилия', value: `${data.firstName} ${data.lastName}`, inline: true },
             { name: '🔢 Static ID', value: data.staticId, inline: true },
@@ -1378,12 +1386,13 @@ if (window.location.hash && window.location.hash.includes('access_token')) {
             { name: '📱 Планшет', value: data.tablet, inline: true },
             { name: '🎒 Инвентарь', value: data.inventory, inline: true },
             { name: '📋 Причина', value: data.reason, inline: false },
-            { name: '🆔 Discord ID', value: data.discordId || currentUser?.id || '—', inline: true }
+            { name: '🆔 Discord ID', value: data.discordId || currentUser?.id || '—', inline: true },
+            { name: '👤 Инициатор', value: `<@${currentUser.id}>`, inline: false }
           ],
           footer: { text: 'LSCSD • by stylenow' },
           timestamp: new Date().toISOString()
         };
-        await sendToWebhook(WEBHOOK_MAIN, null, embed);
+        await sendToWebhook(WEBHOOK_MAIN, pingRole, embed);
         await sendLog('Рапорт на увольнение', currentUser, `${data.firstName} ${data.lastName} из ${data.department}`);
         alert('✅ Рапорт отправлен!');
         document.getElementById('modal').style.display = 'none';
