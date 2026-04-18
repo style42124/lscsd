@@ -1,0 +1,1390 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>LSCSD — Sheriff Department</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0a0c10;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* PRELOADER */
+    .preloader {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #0a0c10;
+      z-index: 10000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: opacity 0.5s;
+    }
+    .preloader-content {
+      text-align: center;
+    }
+    .preloader-ring {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 30px;
+      border: 3px solid rgba(212, 175, 55, 0.2);
+      border-top: 3px solid #d4af37;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .preloader-logo {
+      font-size: 2.5rem;
+      font-weight: 800;
+      font-family: 'Orbitron', monospace;
+      letter-spacing: 8px;
+      background: linear-gradient(135deg, #d4af37, #f5e7a3);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      margin-bottom: 20px;
+    }
+    .preloader-text {
+      color: #6b6f78;
+      font-size: 0.8rem;
+      letter-spacing: 2px;
+      margin-bottom: 15px;
+    }
+    .preloader-progress {
+      width: 250px;
+      height: 2px;
+      background: rgba(212, 175, 55, 0.2);
+      border-radius: 10px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+    .preloader-progress-bar {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #d4af37, #f5e7a3);
+      transition: width 0.1s linear;
+    }
+
+    /* APP */
+    .app {
+      min-height: 100vh;
+      width: 100%;
+      background: radial-gradient(ellipse at 30% 40%, #0d1117 0%, #06080a 100%);
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      transition: opacity 0.8s;
+    }
+
+    /* NAVBAR */
+    .navbar {
+      background: rgba(13, 17, 23, 0.95);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+      padding: 15px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    .nav-logo {
+      width: 45px;
+      height: 45px;
+      background: linear-gradient(145deg, #d4af37, #b8962a);
+      clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+    }
+    .nav-title-main {
+      font-size: 1.5rem;
+      font-weight: 800;
+      font-family: 'Orbitron', monospace;
+      background: linear-gradient(135deg, #d4af37, #f5e7a3);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .nav-title-sub {
+      font-size: 0.65rem;
+      color: #6b6f78;
+      display: block;
+    }
+    .nav-user {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      background: rgba(30, 35, 45, 0.9);
+      padding: 8px 20px;
+      border-radius: 50px;
+      border: 1px solid rgba(212, 175, 55, 0.3);
+    }
+    .nav-avatar {
+      width: 35px;
+      height: 35px;
+      border-radius: 50%;
+      border: 2px solid #d4af37;
+    }
+    .nav-user span {
+      color: #e8e8e8;
+      font-weight: 500;
+    }
+    .nav-logout {
+      background: none;
+      border: none;
+      color: #ff6b6b;
+      cursor: pointer;
+      font-size: 1.2rem;
+      transition: 0.2s;
+    }
+    .nav-logout:hover {
+      transform: scale(1.1);
+      color: #ff4444;
+    }
+
+    /* AUTH */
+    .auth-container {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 40px;
+    }
+    .auth-card {
+      background: rgba(20, 25, 35, 0.95);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      border-radius: 40px;
+      padding: 50px 45px;
+      text-align: center;
+      max-width: 480px;
+      width: 100%;
+      animation: fadeUp 0.6s ease;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .auth-icon {
+      font-size: 4rem;
+      color: #5865F2;
+      margin-bottom: 20px;
+    }
+    .auth-title {
+      font-size: 2rem;
+      font-family: 'Orbitron', monospace;
+      background: linear-gradient(135deg, #d4af37, #f5e7a3);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      margin-bottom: 15px;
+    }
+    .auth-desc {
+      color: #9ca3af;
+      margin-bottom: 30px;
+      line-height: 1.5;
+    }
+    .auth-btn {
+      background: linear-gradient(135deg, #5865F2, #4752c4);
+      border: none;
+      padding: 14px 35px;
+      border-radius: 50px;
+      font-size: 1rem;
+      font-weight: 600;
+      color: white;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.3s;
+    }
+    .auth-btn:hover {
+      transform: scale(1.03);
+      box-shadow: 0 10px 25px rgba(88, 101, 242, 0.4);
+    }
+    .auth-note {
+      margin-top: 25px;
+      font-size: 0.7rem;
+      color: #6b6f78;
+    }
+
+    /* DASHBOARD */
+    .main-container {
+      flex: 1;
+      padding: 40px;
+    }
+    .dashboard-header {
+      text-align: center;
+      margin-bottom: 50px;
+    }
+    .dashboard-title {
+      font-size: 2.2rem;
+      font-family: 'Orbitron', monospace;
+      color: #d4af37;
+      margin-bottom: 10px;
+    }
+    .dashboard-title i {
+      margin-right: 10px;
+    }
+    .dashboard-subtitle {
+      color: #9ca3af;
+      font-size: 1rem;
+    }
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 25px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    .card {
+      background: rgba(20, 25, 35, 0.7);
+      backdrop-filter: blur(15px);
+      border: 1px solid rgba(212, 175, 55, 0.2);
+      border-radius: 30px;
+      padding: 30px 25px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.4s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+    }
+    .card:hover {
+      transform: translateY(-10px);
+      border-color: rgba(212, 175, 55, 0.6);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), 0 0 20px rgba(212, 175, 55, 0.2);
+    }
+    .card-icon {
+      font-size: 3.5rem;
+      margin-bottom: 20px;
+      display: inline-block;
+    }
+    .card h3 {
+      color: #e8e8e8;
+      font-size: 1.3rem;
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+    .card p {
+      color: #9ca3af;
+      font-size: 0.85rem;
+      line-height: 1.4;
+    }
+
+    /* MODAL (ПО ЦЕНТРУ) */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 2000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.95);
+      backdrop-filter: blur(15px);
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      background: linear-gradient(145deg, #1a1f2a, #0f121a);
+      border-radius: 40px;
+      max-width: 650px;
+      width: 90%;
+      max-height: 85vh;
+      overflow-y: auto;
+      border: 1px solid rgba(212, 175, 55, 0.4);
+      animation: modalPop 0.3s ease;
+    }
+    @keyframes modalPop {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 25px;
+      border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+    }
+    .modal-header h2 {
+      color: #d4af37;
+      font-size: 1.4rem;
+      font-family: 'Orbitron', monospace;
+    }
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 28px;
+      cursor: pointer;
+      color: #9ca3af;
+      transition: 0.2s;
+    }
+    .modal-close:hover {
+      color: #ff6b6b;
+      transform: scale(1.1);
+    }
+    .modal-body {
+      padding: 25px;
+    }
+
+    /* FORM STYLES */
+    .form-group {
+      margin-bottom: 20px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: #d4af37;
+      font-size: 0.85rem;
+    }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 12px 16px;
+      background: #0f121a;
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      border-radius: 30px;
+      color: #e8e8e8;
+      font-size: 0.9rem;
+      transition: 0.2s;
+    }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: #d4af37;
+      box-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+    }
+    .role-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .role-btn {
+      background: #0f121a;
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      color: #e8e8e8;
+      padding: 8px 18px;
+      border-radius: 30px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .role-btn.selected {
+      background: #d4af37;
+      color: #0f121a;
+      border-color: #fff;
+    }
+    .role-btn:hover {
+      transform: scale(1.03);
+      background: #b8962a;
+    }
+    .notice {
+      background: rgba(212, 175, 55, 0.1);
+      border-left: 3px solid #d4af37;
+      padding: 10px 15px;
+      margin: 15px 0;
+      border-radius: 15px;
+      font-size: 0.8rem;
+      color: #f5e7a3;
+    }
+    .error-message {
+      color: #ff6b6b;
+      background: rgba(255, 107, 107, 0.1);
+      padding: 10px;
+      border-radius: 30px;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    .btn-submit {
+      background: linear-gradient(135deg, #d4af37, #b8962a);
+      border: none;
+      color: #0f121a;
+      padding: 12px 25px;
+      border-radius: 50px;
+      font-weight: 700;
+      cursor: pointer;
+      width: 100%;
+      font-size: 1rem;
+      margin-top: 15px;
+      transition: all 0.3s;
+    }
+    .btn-submit:hover {
+      transform: scale(1.02);
+      box-shadow: 0 5px 15px rgba(212, 175, 55, 0.4);
+    }
+
+    /* ADMIN PANEL */
+    .admin-panel {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 10001;
+      justify-content: center;
+      align-items: center;
+    }
+    .admin-card {
+      background: #1a1f2a;
+      border-radius: 30px;
+      padding: 30px;
+      max-width: 450px;
+      width: 90%;
+      border: 1px solid #d4af37;
+      position: relative;
+    }
+    .admin-close {
+      position: absolute;
+      right: 20px;
+      top: 15px;
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: #9ca3af;
+    }
+    .admin-card h2 {
+      color: #d4af37;
+      margin-bottom: 20px;
+      font-family: 'Orbitron', monospace;
+    }
+    .admin-section {
+      margin-bottom: 20px;
+    }
+    .admin-section h3 {
+      color: #e8e8e8;
+      margin-bottom: 10px;
+      font-size: 1rem;
+    }
+    .admin-section textarea {
+      width: 100%;
+      height: 150px;
+      background: #0f121a;
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      border-radius: 15px;
+      padding: 10px;
+      color: #e8e8e8;
+      margin-bottom: 10px;
+    }
+    .admin-save {
+      background: #d4af37;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 30px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .admin-save:hover {
+      background: #f5e7a3;
+    }
+
+    @media (max-width: 768px) {
+      .navbar { padding: 15px 20px; }
+      .main-container { padding: 20px; }
+      .cards-grid { grid-template-columns: 1fr; }
+      .auth-card { padding: 30px 25px; margin: 20px; }
+      .dashboard-title { font-size: 1.6rem; }
+      .modal-content { width: 95%; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="preloader" id="preloader">
+  <div class="preloader-content">
+    <div class="preloader-ring"></div>
+    <div class="preloader-logo">LSCSD</div>
+    <div class="preloader-text">Загрузка системы</div>
+    <div class="preloader-progress">
+      <div class="preloader-progress-bar" id="preloaderProgress"></div>
+    </div>
+  </div>
+</div>
+
+<div class="app" id="app" style="display: none;">
+  <nav class="navbar">
+    <div class="nav-brand">
+      <div class="nav-logo"></div>
+      <div class="nav-title">
+        <span class="nav-title-main">LSCSD</span>
+        <span class="nav-title-sub">LOS SANTOS COUNTY SHERIFF'S DEPARTMENT</span>
+      </div>
+    </div>
+    <div class="nav-user" id="navUser" style="display: none;">
+      <img id="navAvatar" class="nav-avatar" src="">
+      <span id="navName"></span>
+      <button id="navLogout" class="nav-logout"><i class="fas fa-sign-out-alt"></i></button>
+    </div>
+  </nav>
+
+  <div class="auth-container" id="authContainer">
+    <div class="auth-card">
+      <div class="auth-icon"><i class="fab fa-discord"></i></div>
+      <h1 class="auth-title">Добро пожаловать</h1>
+      <p class="auth-desc">Авторизуйтесь через Discord для доступа к системе заявок LSCSD</p>
+      <button class="auth-btn" id="authBtn"><i class="fab fa-discord"></i> Войти через Discord</button>
+      <div class="auth-note">Требуется членство на сервере департамента</div>
+    </div>
+  </div>
+
+  <div class="main-container" id="mainContainer" style="display: none;">
+    <div class="dashboard-header">
+      <h1 class="dashboard-title"><i class="fas fa-file-alt"></i> Электронные заявки</h1>
+      <p class="dashboard-subtitle">Выберите необходимый тип обращения</p>
+    </div>
+    <div class="cards-grid" id="cardsGrid"></div>
+  </div>
+</div>
+
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2 id="modalTitle"></h2>
+      <button class="modal-close" id="modalClose">&times;</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<div class="admin-panel" id="adminPanel">
+  <div class="admin-card">
+    <button class="admin-close" id="adminClose">&times;</button>
+    <h2><i class="fas fa-shield-alt"></i> Админ-панель</h2>
+    <div class="admin-section">
+      <h3>🚫 Чёрный список</h3>
+      <textarea id="blacklistInput" placeholder="Введите ID пользователей (по одному на строку)"></textarea>
+      <button id="saveBlacklistBtn" class="admin-save">Сохранить</button>
+      <span id="blacklistStatus"></span>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Защита от F12
+  (function() {
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('keydown', e => {
+      if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'C' || e.key === 'J')) || (e.ctrlKey && e.key === 'U')) {
+        e.preventDefault();
+      }
+    });
+    let devtools = false;
+    setInterval(() => {
+      const threshold = 160;
+      if (window.outerWidth - window.innerWidth > threshold || window.outerHeight - window.innerHeight > threshold) {
+        if (!devtools) {
+          devtools = true;
+          document.body.innerHTML = '<div style="background:#0a0c10;color:#d4af37;display:flex;justify-content:center;align-items:center;height:100vh;font-family:monospace;text-align:center;flex-direction:column;"><h1>🔒 ДОСТУП ЗАПРЕЩЁН</h1><p>Инструменты разработчика отключены</p></div>';
+        }
+      } else {
+        devtools = false;
+      }
+    }, 1000);
+  })();
+
+  // Прелоадер
+  let progress = 0;
+  const progressBar = document.getElementById('preloaderProgress');
+  const interval = setInterval(() => {
+    progress += Math.floor(Math.random() * 10) + 5;
+    if (progress > 100) progress = 100;
+    if (progressBar) progressBar.style.width = progress + '%';
+    if (progress >= 100) {
+      clearInterval(interval);
+      setTimeout(() => {
+        const preloader = document.getElementById('preloader');
+        const app = document.getElementById('app');
+        preloader.style.opacity = '0';
+        setTimeout(() => {
+          preloader.style.display = 'none';
+          app.style.display = 'flex';
+          setTimeout(() => app.style.opacity = '1', 50);
+        }, 500);
+      }, 300);
+    }
+  }, 80);
+
+  // ========== ОСНОВНОЙ КОД ==========
+  (function() {
+    const SUPABASE_URL = "https://qwrqpjipdcelctfhnczm.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_WQFj7HgYd53vPBdNloQ6Fg_xFTv8VeL";
+    
+    let WEBHOOK_LOGS = "";
+    let WEBHOOK_MAIN = "";
+    let ROLE_IDS = {};
+    let blacklist = [];
+    let currentUser = null;
+    
+    const DEPARTMENTS = ['SAI', 'GU', 'AF', 'IAD', 'SEB', 'K-9', 'DID', 'MED', 'SPD'];
+    const FORMS_LIST = [
+      { id: 'department', label: 'Заявка в отдел', icon: '📋', desc: 'Подача заявления на перевод' },
+      { id: 'appeal', label: 'Обжалование выговора', icon: '⚖️', desc: 'Обжалование дисциплинарного взыскания' },
+      { id: 'workoff', label: 'Отработка выговора', icon: '🛠️', desc: 'Отработка для снятия выговора' },
+      { id: 'promotion', label: 'Заявка на повышение', icon: '⭐', desc: 'Повышение в должности' },
+      { id: 'leave', label: 'Заявка на отпуск', icon: '🏖️', desc: 'Плановый отпуск' },
+      { id: 'rest', label: 'Заявка на отдых', icon: '🌴', desc: 'Краткосрочный отдых' },
+      { id: 'spec-request', label: 'Спец вооружение', icon: '🔫', desc: 'Заявка на выдачу' },
+      { id: 'spec-receive', label: 'Получение спецвооружения', icon: '📦', desc: 'Отчёт о получении' },
+      { id: 'resignation', label: 'Рапорт на увольнение', icon: '📄', desc: 'Заявление об увольнении' }
+    ];
+    
+    async function loadConfig() {
+      try {
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/lscsd_config?select=key,value`, {
+          headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
+        });
+        const data = await response.json();
+        const config = {};
+        data.forEach(item => { config[item.key] = item.value; });
+        
+        WEBHOOK_LOGS = config.webhook_logs;
+        WEBHOOK_MAIN = config.webhook_main;
+        ROLE_IDS = {
+          SAI: config.role_sai, GU: config.role_gu, AF: config.role_af,
+          IAD: config.role_iad, SEB: config.role_seb, "K-9": config.role_k9,
+          DID: config.role_did, MED: config.role_med, SPD: config.role_spd
+        };
+        blacklist = JSON.parse(config.blacklist || '[]');
+        return true;
+      } catch(e) { console.error(e); return false; }
+    }
+    
+    async function sendToWebhook(url, content, embed, file = null) {
+      try {
+        const payload = { content: content || null, embeds: embed ? [embed] : [] };
+        if (file) {
+          const fd = new FormData();
+          fd.append('payload_json', JSON.stringify(payload));
+          fd.append('file', file);
+          await fetch(url, { method: 'POST', body: fd });
+        } else {
+          await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        }
+      } catch(e) { console.error(e); }
+    }
+    
+    async function sendLog(action, user, details = '') {
+      if (!WEBHOOK_LOGS) return;
+      const embed = {
+        title: '📋 Лог действия',
+        color: 0xd4af37,
+        fields: [
+          { name: '⏱ Время', value: new Date().toLocaleString('ru-RU'), inline: true },
+          { name: '👤 Пользователь', value: user ? `<@${user.id}> (${user.username})` : 'Неизвестно', inline: true },
+          { name: '📌 Действие', value: action, inline: false },
+          { name: '📄 Подробности', value: details || '—', inline: false }
+        ],
+        footer: { text: 'LSCSD • by stylenow' },
+        timestamp: new Date().toISOString()
+      };
+      await sendToWebhook(WEBHOOK_LOGS, null, embed);
+    }
+    
+    function renderCards() {
+      const container = document.getElementById('cardsGrid');
+      if (!container) return;
+      container.innerHTML = '';
+      FORMS_LIST.forEach(form => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `<div class="card-icon">${form.icon}</div><h3>${form.label}</h3><p>${form.desc}</p>`;
+        card.onclick = () => openForm(form.id);
+        container.appendChild(card);
+      });
+    }
+    
+    function isBlacklisted(userId) { return blacklist.includes(userId); }
+    
+    async function saveBlacklistToSupabase(newBlacklist) {
+      try {
+        await fetch(`${SUPABASE_URL}/rest/v1/lscsd_config?key=eq.blacklist`, {
+          method: 'PATCH',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ value: JSON.stringify(newBlacklist) })
+        });
+        blacklist = newBlacklist;
+        return true;
+      } catch(e) { return false; }
+    }
+    
+    function checkAuth() {
+      const user = localStorage.getItem('lscsd_user');
+      if (user) {
+        currentUser = JSON.parse(user);
+        if (isBlacklisted(currentUser.id)) {
+          alert('❌ Ваш аккаунт в чёрном списке. Доступ запрещён.');
+          localStorage.removeItem('lscsd_user');
+          location.reload();
+          return;
+        }
+        document.getElementById('authContainer').style.display = 'none';
+        document.getElementById('mainContainer').style.display = 'block';
+        document.getElementById('navUser').style.display = 'flex';
+        document.getElementById('navName').innerText = currentUser.username;
+        if (currentUser.avatar) document.getElementById('navAvatar').src = currentUser.avatar;
+        renderCards();
+        sendLog('Вход в систему', currentUser, 'Успешная авторизация');
+      } else {
+        document.getElementById('authContainer').style.display = 'flex';
+        document.getElementById('mainContainer').style.display = 'none';
+        document.getElementById('navUser').style.display = 'none';
+      }
+    }
+    
+    document.getElementById('navLogout')?.addEventListener('click', () => {
+      sendLog('Выход из системы', currentUser, 'Пользователь вышел');
+      localStorage.removeItem('lscsd_user');
+      location.reload();
+    });
+    
+    document.getElementById('authBtn')?.addEventListener('click', () => {
+      const clientId = '1494686473520287774';
+      const redirectUri = encodeURIComponent(window.location.origin + '/auth/callback.html');
+      window.location.href = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=token&scope=identify%20guilds`;
+    });
+    
+    if (window.location.hash && window.location.hash.includes('access_token')) {
+      const hash = window.location.hash.substring(1);
+      const params = new URLSearchParams(hash);
+      const token = params.get('access_token');
+      if (token) {
+        fetch('https://discord.com/api/users/@me', { headers: { Authorization: `Bearer ${token}` } })
+          .then(r => r.json())
+          .then(user => {
+            localStorage.setItem('lscsd_user', JSON.stringify({
+              id: user.id,
+              username: user.username,
+              avatar: user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png` : ''
+            }));
+            window.location.href = '/';
+          })
+          .catch(() => alert('Ошибка авторизации'));
+      }
+    }
+    
+    // АДМИН-ПАНЕЛЬ F7
+    const adminPasswordHash = "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8";
+    async function hashPassword(pwd) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(pwd);
+      const hash = await crypto.subtle.digest('SHA-256', data);
+      return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+    
+    document.addEventListener('keydown', async (e) => {
+      if (e.key === 'F7') {
+        e.preventDefault();
+        const pwd = prompt('🔐 Введите пароль администратора:');
+        if (pwd && await hashPassword(pwd) === adminPasswordHash) {
+          document.getElementById('adminPanel').style.display = 'flex';
+          document.getElementById('blacklistInput').value = blacklist.join('\n');
+        } else {
+          alert('Неверный пароль!');
+        }
+      }
+    });
+    
+    document.getElementById('adminClose')?.addEventListener('click', () => {
+      document.getElementById('adminPanel').style.display = 'none';
+    });
+    
+    document.getElementById('saveBlacklistBtn')?.addEventListener('click', async () => {
+      const raw = document.getElementById('blacklistInput').value;
+      const ids = raw.split(/[,\n]/).map(s => s.trim()).filter(s => s);
+      await saveBlacklistToSupabase(ids);
+      document.getElementById('blacklistStatus').innerText = '✅ Сохранено!';
+      setTimeout(() => document.getElementById('blacklistStatus').innerText = '', 2000);
+      sendLog('Обновление чёрного списка', currentUser, `Новый список: ${ids.join(', ')}`);
+      if (currentUser && isBlacklisted(currentUser.id)) {
+        alert('Ваш ID в чёрном списке.');
+        localStorage.removeItem('lscsd_user');
+        location.reload();
+      }
+    });
+    
+    function openForm(type) {
+      const modal = document.getElementById('modal');
+      const modalBody = document.getElementById('modalBody');
+      const modalTitle = document.getElementById('modalTitle');
+      const form = FORMS_LIST.find(f => f.id === type);
+      modalTitle.innerText = form ? form.label : 'Форма заявки';
+      modalBody.innerHTML = '<div style="text-align:center;padding:40px;">Загрузка...</div>';
+      modal.style.display = 'flex';
+      
+      switch(type) {
+        case 'department': renderDepartmentForm(modalBody); break;
+        case 'appeal': renderAppealForm(modalBody); break;
+        case 'workoff': renderWorkoffForm(modalBody); break;
+        case 'promotion': renderPromotionForm(modalBody); break;
+        case 'leave': renderLeaveForm(modalBody, 'отпуск'); break;
+        case 'rest': renderLeaveForm(modalBody, 'отдых'); break;
+        case 'spec-request': renderSpecRequestForm(modalBody); break;
+        case 'spec-receive': renderSpecReceiveForm(modalBody); break;
+        case 'resignation': renderResignationForm(modalBody); break;
+        default: modalBody.innerHTML = '<p>Форма не найдена</p>';
+      }
+    }
+    
+    document.getElementById('modalClose')?.addEventListener('click', () => {
+      document.getElementById('modal').style.display = 'none';
+    });
+    window.addEventListener('click', (e) => {
+      const modal = document.getElementById('modal');
+      if (e.target === modal) modal.style.display = 'none';
+    });
+    
+    function showError(container, msg) {
+      const errDiv = container.querySelector('#formError');
+      if (errDiv) {
+        errDiv.textContent = msg;
+        errDiv.style.display = 'block';
+        setTimeout(() => errDiv.style.display = 'none', 4000);
+      } else {
+        alert(msg);
+      }
+    }
+    
+    // ФОРМА ЗАЯВКА В ОТДЕЛ
+    function renderDepartmentForm(container) {
+      container.innerHTML = `
+        <form id="formEl">
+          <div class="form-group"><label>Имя *</label><input id="firstName" required></div>
+          <div class="form-group"><label>Фамилия *</label><input id="lastName" required></div>
+          <div class="form-group"><label>Статик *</label><input id="staticc" required></div>
+          <div class="form-group"><label>Ваш ранг *</label><input id="rank" required></div>
+          <div class="form-group"><label>Отдел *</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department"></div>
+          <div class="form-group"><label>Почему хотите в отдел *</label><textarea id="reason" rows="3" required></textarea></div>
+          <div class="error-message" id="formError"></div>
+          <button type="submit" class="btn-submit">Отправить заявку</button>
+        </form>
+      `;
+      const btnsDiv = container.querySelector('#deptBtns');
+      DEPARTMENTS.forEach(dept => {
+        const btn = document.createElement('div');
+        btn.className = 'role-btn';
+        btn.textContent = dept;
+        btn.onclick = () => {
+          btnsDiv.querySelectorAll('.role-btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          document.getElementById('department').value = dept;
+        };
+        btnsDiv.appendChild(btn);
+      });
+      container.querySelector('#formEl').onsubmit = async (e) => {
+        e.preventDefault();
+        const data = {
+          firstName: document.getElementById('firstName').value,
+          lastName: document.getElementById('lastName').value,
+          staticc: document.getElementById('staticc').value,
+          rank: document.getElementById('rank').value,
+          department: document.getElementById('department').value,
+          reason: document.getElementById('reason').value
+        };
+        if (!data.firstName || !data.lastName || !data.staticc || !data.rank || !data.department || !data.reason) {
+          showError(container, 'Заполните все поля');
+          return;
+        }
+        const roleId = ROLE_IDS[data.department];
+        const embed = {
+          title: '📝 ЗАЯВКА В ОТДЕЛ',
+          color: 0xd4af37,
+          description: `${roleId ? `<@&${roleId}>` : ''}\n<@${currentUser.id}>`,
+          fields: [
+            { name: '👤 Имя Фамилия', value: `${data.firstName} ${data.lastName}`, inline: true },
+            { name: '📌 Статик', value: data.staticc, inline: true },
+            { name: '⭐ Ранг', value: data.rank, inline: true },
+            { name: '🏢 Отдел', value: data.department, inline: true },
+            { name: '📄 Причина', value: data.reason, inline: false }
+          ],
+          footer: { text: 'LSCSD • by stylenow' },
+          timestamp: new Date().toISOString()
+        };
+        await sendToWebhook(WEBHOOK_MAIN, null, embed);
+        await sendLog('Заявка в отдел', currentUser, `${data.firstName} ${data.lastName} → ${data.department}`);
+        alert('✅ Заявка отправлена!');
+        document.getElementById('modal').style.display = 'none';
+      };
+    }
+    
+    // ФОРМА ОБЖАЛОВАНИЕ ВЫГОВОРА
+    function renderAppealForm(container) {
+      container.innerHTML = `
+        <form id="formEl" enctype="multipart/form-data">
+          <div class="form-group"><label>Имя *</label><input id="firstName" required></div>
+          <div class="form-group"><label>Фамилия *</label><input id="lastName" required></div>
+          <div class="form-group"><label>Статик *</label><input id="staticc" required></div>
+          <div class="form-group"><label>Вид наказания *</label><input id="reprimandType" required></div>
+          <div class="form-group"><label>Кем выдано *</label><input id="issuedBy" required></div>
+          <div class="form-group"><label>Когда выдано *</label><input type="date" id="issuedDate" required></div>
+          <div class="form-group"><label>Причина из выговора *</label><textarea id="reasonGiven" rows="2" required></textarea></div>
+          <div class="form-group"><label>Описание ситуации *</label><textarea id="description" rows="3" required></textarea></div>
+          <div class="form-group"><label>Доказательство (скрин) *</label><input type="file" id="proof" accept="image/*" required></div>
+          <div class="error-message" id="formError"></div>
+          <button type="submit" class="btn-submit">Отправить</button>
+        </form>
+      `;
+      container.querySelector('#formEl').onsubmit = async (e) => {
+        e.preventDefault();
+        const proofFile = document.getElementById('proof').files[0];
+        const data = {
+          firstName: document.getElementById('firstName').value,
+          lastName: document.getElementById('lastName').value,
+          staticc: document.getElementById('staticc').value,
+          reprimandType: document.getElementById('reprimandType').value,
+          issuedBy: document.getElementById('issuedBy').value,
+          issuedDate: document.getElementById('issuedDate').value,
+          reasonGiven: document.getElementById('reasonGiven').value,
+          description: document.getElementById('description').value
+        };
+        if (!data.firstName || !data.lastName || !data.staticc || !data.reprimandType || !data.issuedBy || !data.issuedDate || !data.reasonGiven || !data.description || !proofFile) {
+          showError(container, 'Заполните все поля и прикрепите скриншот');
+          return;
+        }
+        const embed = {
+          title: '⚖ ОБЖАЛОВАНИЕ ВЫГОВОРА',
+          color: 0xd4af37,
+          description: `<@&${ROLE_IDS.IAD}>\n<@${currentUser.id}>`,
+          fields: [
+            { name: '👤 Имя Фамилия', value: `${data.firstName} ${data.lastName}`, inline: true },
+            { name: '📌 Статик', value: data.staticc, inline: true },
+            { name: '📋 Вид наказания', value: data.reprimandType, inline: true },
+            { name: '👮 Кем выдано', value: data.issuedBy, inline: true },
+            { name: '📅 Когда выдано', value: data.issuedDate, inline: true },
+            { name: '📄 Причина из выговора', value: data.reasonGiven, inline: false },
+            { name: '📝 Описание ситуации', value: data.description, inline: false }
+          ],
+          footer: { text: 'LSCSD • by stylenow' },
+          timestamp: new Date().toISOString()
+        };
+        await sendToWebhook(WEBHOOK_MAIN, null, embed, proofFile);
+        await sendLog('Обжалование выговора', currentUser, `${data.firstName} ${data.lastName}`);
+        alert('✅ Заявка отправлена!');
+        document.getElementById('modal').style.display = 'none';
+      };
+    }
+    
+    // ФОРМА ОТРАБОТКА ВЫГОВОРА
+    function renderWorkoffForm(container) {
+      container.innerHTML = `
+        <form id="formEl">
+          <div class="form-group"><label>Имя *</label><input id="firstName" required></div>
+          <div class="form-group"><label>Фамилия *</label><input id="lastName" required></div>
+          <div class="form-group"><label>Статик *</label><input id="staticc" required></div>
+          <div class="form-group"><label>Ранг *</label>
+            <select id="rank"><option>1-4</option><option>5-8</option><option>9-11</option><option>13</option></select>
+          </div>
+          <div class="form-group"><label>За что выговор *</label><textarea id="reason" rows="2" required></textarea></div>
+          <div class="form-group"><label>Тип наказания *</label>
+            <select id="punishmentType"><option>Устный выговор</option><option>Строгий выговор</option></select>
+          </div>
+          <div class="notice" id="penaltyNotice">💰 Выберите ранг и тип</div>
+          <div class="form-group"><label>Док-ва *</label><textarea id="evidence" rows="2" required></textarea></div>
+          <div class="error-message" id="formError"></div>
+          <button type="submit" class="btn-submit">Отправить</button>
+        </form>
+      `;
+      const rankSel = container.querySelector('#rank');
+      const typeSel = container.querySelector('#punishmentType');
+      const notice = container.querySelector('#penaltyNotice');
+      const penalty = { '1-4':{ 'Устный выговор':'15.000$ / 200 бинтов','Строгий выговор':'25.000$' },'5-8':{ 'Устный выговор':'20.000$ / 350 бинтов','Строгий выговор':'30.000$' },'9-11':{ 'Устный выговор':'25.000$ / 450 бинтов','Строгий выговор':'42.000$' },'13':{ 'Устный выговор':'35.000$ / 600 бинтов','Строгий выговор':'45.000$' } };
+      const update = () => { const r=rankSel.value, t=typeSel.value; notice.textContent = penalty[r]?.[t] ? `💸 Для снятия: ${penalty[r][t]}` : '💰 Выберите ранг и тип'; };
+      rankSel.onchange = update; typeSel.onchange = update; update();
+      container.querySelector('#formEl').onsubmit = async (e) => {
+        e.preventDefault();
+        const data = {
+          firstName: document.getElementById('firstName').value,
+          lastName: document.getElementById('lastName').value,
+          staticc: document.getElementById('staticc').value,
+          rank: document.getElementById('rank').value,
+          reason: document.getElementById('reason').value,
+          punishmentType: document.getElementById('punishmentType').value,
+          evidence: document.getElementById('evidence').value
+        };
+        if (!data.firstName || !data.lastName || !data.staticc || !data.rank || !data.reason || !data.punishmentType || !data.evidence) {
+          showError(container, 'Заполните все поля');
+          return;
+        }
+        const embed = {
+          title: '🛠 ОТРАБОТКА ВЫГОВОРА',
+          color: 0xd4af37,
+          description: `<@&${ROLE_IDS.IAD}>\n<@${currentUser.id}>`,
+          fields: [
+            { name: '👤 Имя Фамилия', value: `${data.firstName} ${data.lastName}`, inline: true },
+            { name: '📌 Статик', value: data.staticc, inline: true },
+            { name: '⭐ Ранг', value: data.rank, inline: true },
+            { name: '📋 За что выговор', value: data.reason, inline: false },
+            { name: '⚖ Тип наказания', value: data.punishmentType, inline: true },
+            { name: '📎 Док-ва', value: data.evidence, inline: false }
+          ],
+          footer: { text: 'LSCSD • by stylenow' },
+          timestamp: new Date().toISOString()
+        };
+        await sendToWebhook(WEBHOOK_MAIN, null, embed);
+        await sendLog('Отработка выговора', currentUser, `${data.firstName} ${data.lastName}`);
+        alert('✅ Заявка отправлена!');
+        document.getElementById('modal').style.display = 'none';
+      };
+    }
+    
+    // ФОРМА ПОВЫШЕНИЕ
+    function renderPromotionForm(container) {
+      container.innerHTML = `
+        <form id="formEl">
+          <div class="form-group"><label>Имя *</label><input id="firstName" required></div>
+          <div class="form-group"><label>Фамилия *</label><input id="lastName" required></div>
+          <div class="form-group"><label>Статик *</label><input id="staticc" required></div>
+          <div class="form-group"><label>Текущий ранг *</label><input id="currentRank" required></div>
+          <div class="form-group"><label>На какой ранг *</label><input id="targetRank" required></div>
+          <div class="form-group"><label>Кол-во баллов *</label><input type="number" id="points" required></div>
+          <div class="form-group"><label>Док-ва баллов *</label><textarea id="proof" rows="2" required></textarea></div>
+          <div class="form-group"><label>Отдел *</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department"></div>
+          <div class="error-message" id="formError"></div>
+          <button type="submit" class="btn-submit">Отправить</button>
+        </form>
+      `;
+      const btnsDiv = container.querySelector('#deptBtns');
+      DEPARTMENTS.forEach(dept => {
+        const btn = document.createElement('div');
+        btn.className = 'role-btn';
+        btn.textContent = dept;
+        btn.onclick = () => {
+          btnsDiv.querySelectorAll('.role-btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          document.getElementById('department').value = dept;
+        };
+        btnsDiv.appendChild(btn);
+      });
+      container.querySelector('#formEl').onsubmit = async (e) => {
+        e.preventDefault();
+        const data = {
+          firstName: document.getElementById('firstName').value,
+          lastName: document.getElementById('lastName').value,
+          staticc: document.getElementById('staticc').value,
+          currentRank: document.getElementById('currentRank').value,
+          targetRank: document.getElementById('targetRank').value,
+          points: document.getElementById('points').value,
+          proof: document.getElementById('proof').value,
+          department: document.getElementById('department').value
+        };
+        if (!data.firstName || !data.lastName || !data.staticc || !data.currentRank || !data.targetRank || !data.points || !data.proof || !data.department) {
+          showError(container, 'Заполните все поля');
+          return;
+        }
+        const roleId = ROLE_IDS[data.department];
+        const embed = {
+          title: `⭐ ЗАЯВКА НА ПОВЫШЕНИЕ (${data.department})`,
+          color: 0xd4af37,
+          description: `${roleId ? `<@&${roleId}>` : ''}\n<@${currentUser.id}>`,
+          fields: [
+            { name: '👤 Имя Фамилия', value: `${data.firstName} ${data.lastName}`, inline: true },
+            { name: '📌 Статик', value: data.staticc, inline: true },
+            { name: '📈 Текущий ранг', value: data.currentRank, inline: true },
+            { name: '🎯 Целевой ранг', value: data.targetRank, inline: true },
+            { name: '💯 Кол-во баллов', value: data.points, inline: true },
+            { name: '📎 Док-ва баллов', value: data.proof, inline: false }
+          ],
+          footer: { text: 'LSCSD • by stylenow' },
+          timestamp: new Date().toISOString()
+        };
+        await sendToWebhook(WEBHOOK_MAIN, null, embed);
+        await sendLog('Заявка на повышение', currentUser, `${data.firstName} ${data.lastName} → ${data.department}`);
+        alert('✅ Заявка отправлена!');
+        document.getElementById('modal').style.display = 'none';
+      };
+    }
+    
+    // ФОРМА ОТПУСК/ОТДЫХ
+    function renderLeaveForm(container, type) {
+      container.innerHTML = `
+        <form id="formEl">
+          <div class="form-group"><label>Отдел *</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department"></div>
+          <div class="form-group"><label>Причина *</label><textarea id="reason" rows="2" required></textarea></div>
+          <div class="form-group"><label>С какой даты *</label><input type="datetime-local" id="fromDate" required></div>
+          <div class="form-group"><label>По какую дату *</label><input type="datetime-local" id="toDate" required></div>
+          <div class="form-group"><label>Примечание</label><textarea id="note" rows="2"></textarea></div>
+          <div class="notice">⚠️ Максимум две недели, запрещено быть в игре</div>
+          <div class="error-message" id="formError"></div>
+          <button type="submit" class="btn-submit">Отправить</button>
+        </form>
+      `;
+      const btnsDiv = container.querySelector('#deptBtns');
+      DEPARTMENTS.forEach(dept => {
+        const btn = document.createElement('div');
+        btn.className = 'role-btn';
+        btn.textContent = dept;
+        btn.onclick = () => {
+          btnsDiv.querySelectorAll('.role-btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          document.getElementById('department').value = dept;
+        };
+        btnsDiv.appendChild(btn);
+      });
+      container.querySelector('#formEl').onsubmit = async (e) => {
+        e.preventDefault();
+        const data = {
+          department: document.getElementById('department').value,
+          reason: document.getElementById('reason').value,
+          fromDate: document.getElementById('fromDate').value,
+          toDate: document.getElementById('toDate').value,
+          note: document.getElementById('note').value
+        };
+        if (!data.department || !data.reason || !data.fromDate || !data.toDate) {
+          showError(container, 'Заполните обязательные поля');
+          return;
+        }
+        const roleId = ROLE_IDS[data.department];
+        const embed = {
+          title: type === 'отпуск' ? '🏖 ЗАЯВКА НА ОТПУСК' : '🌴 ЗАЯВКА НА ОТДЫХ',
+          color: 0xd4af37,
+          description: `${roleId ? `<@&${roleId}>` : ''}\n<@${currentUser.id}>`,
+          fields: [
+            { name: '🏢 Отдел', value: data.department, inline: true },
+            { name: '📋 Причина', value: data.reason, inline: true },
+            { name: '📅 Период', value: `${data.fromDate} → ${data.toDate}`, inline: false },
+            { name: '📝 Примечание', value: data.note || '—', inline: false }
+          ],
+          footer: { text: 'LSCSD • by stylenow' },
+          timestamp: new Date().toISOString()
+        };
+        await sendToWebhook(WEBHOOK_MAIN, null, embed);
+        await sendLog(`Заявка на ${type}`, currentUser, `${data.department}`);
+        alert('✅ Заявка отправлена!');
+        document.getElementById('modal').style.display = 'none';
+      };
+    }
+    
+    // ФОРМА ЗАЯВКА НА СПЕЦВООРУЖЕНИЕ
+    function renderSpecRequestForm(container) {
+      container.innerHTML = `
+        <form id="formEl">
+          <div class="form-group"><label>Имя *</label><input id="firstName" required></div>
+          <div class="form-group"><label>Фамилия *</label><input id="lastName" required></div>
+          <div class="form-group"><label>Статик *</label><input id="staticc" required></div>
+          <div class="form-group"><label>Ранг *</label><input id="rank" required></div>
+          <div class="form-group"><label>Отдел *</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department"></div>
+          <div class="form-group"><label>Какое спец вооружение? *</label><input id="weapon" required></div>
+          <div class="error-message" id="formError"></div>
+          <button type="submit" class="btn-submit">Отправить</button>
+        </form>
+      `;
+      const btnsDiv = container.querySelector('#deptBtns');
+      DEPARTMENTS.forEach(dept => {
+        const btn = document.createElement('div');
+        btn.className = 'role-btn';
+        btn.textContent = dept;
+        btn.onclick = () => {
+          btnsDiv.querySelectorAll('.role-btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          document.getElementById('department').value = dept;
+        };
+        btnsDiv.appendChild(btn);
+      });
+      container.querySelector('#formEl').onsubmit = async (e) => {
+        e.preventDefault();
+        const data = {
+          firstName: document.getElementById('firstName').value,
+          lastName: document.getElementById('lastName').value,
+          staticc: document.getElementById('staticc').value,
+          rank: document.getElementById('rank').value,
+          department: document.getElementById('department').value,
+          weapon: document.getElementById('weapon').value
+        };
+        if (!data.firstName || !data.lastName || !data.staticc || !data.rank || !data.department || !data.weapon) {
+          showError(container, 'Заполните все поля');
+          return;
+        }
+        const roleId = ROLE_IDS[data.department];
+        const embed = {
+          title: '🔫 ЗАЯВКА НА СПЕЦ ВООРУЖЕНИЕ',
+          color: 0xd4af37,
+          description: `${roleId ? `<@&${roleId}>` : ''}\n<@${currentUser.id}>`,
+          fields: [
+            { name: '👤 Имя Фамилия', value: `${data.firstName} ${data.lastName}`, inline: true },
+            { name: '📌 Статик', value: data.staticc, inline: true },
+            { name: '⭐ Ранг', value: data.rank, inline: true },
+            { name: '🏢 Отдел', value: data.department, inline: true },
+            { name: '🔫 Спец вооружение', value: data.weapon, inline: false }
+          ],
+          footer: { text: 'LSCSD • by stylenow' },
+          timestamp: new Date().toISOString()
+        };
+        await sendToWebhook(WEBHOOK_MAIN, null, embed);
+        await sendLog('Заявка на спецвооружение', currentUser, `${data.firstName} ${data.lastName} → ${data.weapon}`);
+        alert('✅ Заявка отправлена!');
+        document.getElementById('modal').style.display = 'none';
+      };
+    }
+    
+    // ФОРМА ПОЛУЧЕНИЕ СПЕЦВООРУЖЕНИЯ
+    function renderSpecReceiveForm(container) {
+      container.innerHTML = `
+        <form id="formEl" enctype="multipart/form-data">
+          <div class="form-group"><label>Имя *</label><input id="firstName" required></div>
+          <div class="form-group"><label>Фамилия *</label><input id="lastName" required></div>
+          <div class="form-group"><label>Статик *</label><input id="staticc" required></div>
+          <div class="form-group"><label>Ранг *</label><input id="rank" required></div>
+          <div class="form-group"><label>Отдел *</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department"></div>
+          <div class="form-group"><label>Какое спец вооружение? *</label><input id="weapon" required></div>
+          <div class="form-group"><label>Номер спецухи *</label><input id="weaponNumber" placeholder="SHPD-xxx-xxx-xxx" required></div>
+          <div class="form-group"><label>Кто выдал? *</label><input id="issuedBy" required></div>
+          <div class="form-group"><label>Скрин из инвентаря *</label><input type="file" id="screenshot" accept="image/*" required></div>
+          <div class="error-message" id="formError"></div>
+          <button type="submit" class="btn-submit">Отправить</button>
+        </form>
+      `;
+      const btnsDiv = container.querySelector('#deptBtns');
+      DEPARTMENTS.forEach(dept => {
+        const btn = document.createElement('div');
+        btn.className = 'role-btn';
+        btn.textContent = dept;
+        btn.onclick = () => {
+          btnsDiv.querySelectorAll('.role-btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          document.getElementById('department').value = dept;
+        };
+        btnsDiv.appendChild(btn);
+      });
+      container.querySelector('#formEl').onsubmit = async (e) => {
+        e.preventDefault();
+        const screenshot = document.getElementById('screenshot').files[0];
+        const data = {
+          firstName: document.getElementById('firstName').value,
+          lastName: document.getElementById('lastName').value,
+          staticc: document.getElementById('staticc').value,
+          rank: document.getElementById('rank').value,
+          department: document.getElementById('department').value,
+          weapon: document.getElementById('weapon').value,
+          weaponNumber: document.getElementById('weaponNumber').value,
+          issuedBy: document.getElementById('issuedBy').value
+        };
+        if (!data.firstName || !data.lastName || !data.staticc || !data.rank || !data.department || !data.weapon || !data.weaponNumber || !data.issuedBy || !screenshot) {
+          showError(container, 'Заполните все поля и прикрепите скриншот');
+          return;
+        }
+        const roleId = ROLE_IDS[data.department];
+        const embed = {
+          title: '📦 ПОЛУЧЕНИЕ СПЕЦ ВООРУЖЕНИЯ',
+          color: 0xd4af37,
+          description: `${roleId ? `<@&${roleId}>` : ''}\n<@${currentUser.id}>`,
+          fields: [
+            { name: '👤 Имя Фамилия', value: `${data.firstName} ${data.lastName}`, inline: true },
+            { name: '📌 Статик', value: data.staticc, inline: true },
+            { name: '⭐ Ранг', value: data.rank, inline: true },
+            { name: '🏢 Отдел', value: data.department, inline: true },
+            { name: '🔫 Спец вооружение', value: data.weapon, inline: true },
+            { name: '🔢 Номер спецухи', value: data.weaponNumber, inline: true },
+            { name: '👮 Кто выдал', value: data.issuedBy, inline: true }
+          ],
+          footer: { text: 'LSCSD • by stylenow' },
+          timestamp: new Date().toISOString()
+        };
+        await sendToWebhook(WEBHOOK_MAIN, null, embed, screenshot);
+        await sendLog('Получение спецвооружения', currentUser, `${data.firstName} ${data.lastName} → ${data.weapon}`);
+        alert('✅ Заявка отправлена!');
+        document.getElementById('modal').style.display = 'none';
+      };
+    }
+    
+    // ФОРМА УВОЛЬНЕНИЕ
+    function renderResignationForm(container) {
+      container.innerHTML = `
+        <form id="formEl">
+          <div class="form-group"><label>Имя *</label><input id="firstName" required></div>
+          <div class="form-group"><label>Фамилия *</label><input id="lastName" required></div>
+          <div class="form-group"><label>Static ID *</label><input id="staticId" required></div>
+          <div class="form-group"><label>Отдел *</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department"></div>
+          <div class="form-group"><label>Планшет *</label><input id="tablet" required></div>
+          <div class="form-group"><label>Инвентарь *</label><input id="inventory" required></div>
+          <div class="form-group"><label>Причина *</label><textarea id="reason" rows="3" required></textarea></div>
+          <div class="form-group"><label>Discord ID (опционально)</label><input id="discordId"></div>
+          <div class="error-message" id="formError"></div>
+          <button type="submit" class="btn-submit">Отправить рапорт</button>
+        </form>
+      `;
+      const btnsDiv = container.querySelector('#deptBtns');
+      DEPARTMENTS.forEach(dept => {
+        const btn = document.createElement('div');
+        btn.className = 'role-btn';
+        btn.textContent = dept;
+        btn.onclick = () => {
+          btnsDiv.querySelectorAll('.role-btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          document.getElementById('department').value = dept;
+        };
+        btnsDiv.appendChild(btn);
+      });
+      container.querySelector('#formEl').onsubmit = async (e) => {
+        e.preventDefault();
+        const data = {
+          firstName: document.getElementById('firstName').value,
+          lastName: document.getElementById('lastName').value,
+          staticId: document.getElementById('staticId').value,
+          department: document.getElementById('department').value,
+          tablet: document.getElementById('tablet').value,
+          inventory: document.getElementById('inventory').value,
+          reason: document.getElementById('reason').value,
+          discordId: document.getElementById('discordId').value
+        };
+        if (!data.firstName || !data.lastName || !data.staticId || !data.department || !data.tablet || !data.inventory || !data.reason) {
+          showError(container, 'Заполните все поля');
+          return;
+        }
+        const roleId = ROLE_IDS[data.department];
+        const embed = {
+          title: '📄 РАПОРТ НА УВОЛЬНЕНИЕ',
+          color: 0xd4af37,
+          description: `${roleId ? `<@&${roleId}>` : ''}\n<@${currentUser.id}>`,
+          fields: [
+            { name: '👤 Имя Фамилия', value: `${data.firstName} ${data.lastName}`, inline: true },
+            { name: '🔢 Static ID', value: data.staticId, inline: true },
+            { name: '🏢 Отдел', value: data.department, inline: true },
+            { name: '📱 Планшет', value: data.tablet, inline: true },
+            { name: '🎒 Инвентарь', value: data.inventory, inline: true },
+            { name: '📋 Причина', value: data.reason, inline: false },
+            { name: '🆔 Discord ID', value: data.discordId || currentUser?.id || '—', inline: true }
+          ],
+          footer: { text: 'LSCSD • by stylenow' },
+          timestamp: new Date().toISOString()
+        };
+        await sendToWebhook(WEBHOOK_MAIN, null, embed);
+        await sendLog('Рапорт на увольнение', currentUser, `${data.firstName} ${data.lastName} из ${data.department}`);
+        alert('✅ Рапорт отправлен!');
+        document.getElementById('modal').style.display = 'none';
+      };
+    }
+    
+    loadConfig().then(() => checkAuth());
+  })();
+</script>
+</body>
+</html>
