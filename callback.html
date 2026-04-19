@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Авторизация LSCSD</title>
+  <style>
+    body{background:#0a0c10;display:flex;justify-content:center;align-items:center;min-height:100vh;font-family:monospace;color:#d4af37;margin:0}
+    .loading{text-align:center}
+    .spinner{width:50px;height:50px;border:3px solid rgba(212,175,55,0.3);border-top-color:#d4af37;border-radius:50%;margin:20px auto;animation:spin 1s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .error{color:#ff6b6b}
+  </style>
+</head>
+<body>
+<div class="loading">
+  <div class="spinner"></div>
+  <p>🔐 Авторизация LSCSD...</p>
+  <p id="status" style="font-size:12px;color:#6b6f78">Обработка входа...</p>
+</div>
+<script>
+  (function() {
+    var statusEl = document.getElementById('status');
+    
+    if (window.location.hash && window.location.hash.includes('access_token')) {
+      statusEl.textContent = 'Токен получен, сохраняем...';
+      
+      var hash = window.location.hash.substring(1);
+      var params = new URLSearchParams(hash);
+      var token = params.get('access_token');
+      
+      if (token) {
+        statusEl.textContent = 'Получаем данные пользователя...';
+        
+        fetch('https://discord.com/api/users/@me', {
+          headers: { Authorization: 'Bearer ' + token }
+        })
+        .then(function(r) { 
+          if (!r.ok) throw new Error('Ошибка API Discord');
+          return r.json(); 
+        })
+        .then(function(user) {
+          statusEl.textContent = 'Привет, ' + user.username + '! Перенаправление...';
+          
+          var userData = {
+            id: user.id,
+            username: user.username,
+            avatar: user.avatar ? 'https://cdn.discordapp.com/avatars/' + user.id + '/' + user.avatar + '.png' : '',
+            access_token: token
+          };
+          
+          localStorage.setItem('lscsd_user', JSON.stringify(userData));
+          
+          setTimeout(function() {
+            window.location.href = '/lscsd/';
+          }, 1000);
+        })
+        .catch(function(err) {
+          statusEl.textContent = 'Ошибка: ' + err.message;
+          statusEl.className = 'error';
+          console.error(err);
+          setTimeout(function() {
+            window.location.href = '/lscsd/';
+          }, 3000);
+        });
+      } else {
+        statusEl.textContent = 'Ошибка: токен не найден';
+        statusEl.className = 'error';
+        setTimeout(function() {
+          window.location.href = '/lscsd/';
+        }, 2000);
+      }
+    } else {
+      statusEl.textContent = 'Нет токена в URL';
+      statusEl.className = 'error';
+      setTimeout(function() {
+        window.location.href = '/lscsd/';
+      }, 2000);
+    }
+  })();
+</script>
+</body>
+</html>
