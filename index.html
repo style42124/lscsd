@@ -299,9 +299,9 @@ const interval = setInterval(function() {
     location.reload();
   });
   
-  document.getElementById('authBtn')?.addEventListener('click', function() {
-    window.location.href = 'https://discord.com/api/oauth2/authorize?client_id=' + DISCORD_CLIENT_ID + '&redirect_uri=' + REDIRECT_URI + '&response_type=token&scope=identify%20guilds';
-  });
+document.getElementById('authBtn')?.addEventListener('click', function() {
+  window.location.href = 'https://discord.com/api/oauth2/authorize?client_id=1494686473520287774&redirect_uri=' + encodeURIComponent('https://style42124.github.io/lscsd/') + '&response_type=token&scope=identify';
+});
 
   function renderCards() {
     var container = document.getElementById('cardsGrid');
