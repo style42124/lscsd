@@ -268,12 +268,13 @@ var interval = setInterval(function() {
     location.reload();
   });
   
-  document.getElementById('authBtn')?.addEventListener('click', function() {
-    var authUrl = 'https://discord.com/api/oauth2/authorize?client_id=' + DISCORD_CLIENT_ID + 
-                  '&redirect_uri=' + encodeURIComponent(REDIRECT_URI) + 
-                  '&response_type=token&scope=identify';
-    window.location.href = authUrl;
-  });
+document.getElementById('authBtn')?.addEventListener('click', function() {
+  var redirectUri = 'https://style42124.github.io/lscsd/callback.html';
+  var authUrl = 'https://discord.com/api/oauth2/authorize?client_id=' + DISCORD_CLIENT_ID + 
+                '&redirect_uri=' + encodeURIComponent(redirectUri) + 
+                '&response_type=token&scope=identify';
+  window.location.href = authUrl;
+});
 
   function renderCards() {
     var container = document.getElementById('cardsGrid');
