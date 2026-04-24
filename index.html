@@ -2,33 +2,13 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>LSCSD — Sheriff Department</title>
-  <link rel="icon" type="image/png" href="https://img.icons8.com/color/48/police-car.png">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     *{margin:0;padding:0;box-sizing:border-box;}
-    body{font-family:'Inter',sans-serif;background:#0a0c10;min-height:100vh;transition:background 0.3s;}
-    body.light{background:#f0f2f5;}
-    body.light .app{background:radial-gradient(ellipse at 30% 40%,#e8ecf0 0%,#dce0e5 100%);}
-    body.light .navbar{background:rgba(255,255,255,0.95);border-bottom-color:#d4af37;}
-    body.light .nav-title-main{background:linear-gradient(135deg,#b8962a,#d4af37);-webkit-background-clip:text;background-clip:text;color:transparent;}
-    body.light .nav-user{background:rgba(0,0,0,0.05);}
-    body.light .nav-user span{color:#1a1a2e;}
-    body.light .card{background:rgba(255,255,255,0.9);border-color:#d4af37;}
-    body.light .card h3{color:#1a1a2e;}
-    body.light .card p{color:#555;}
-    body.light .modal-content{background:linear-gradient(145deg,#fff,#f0f0f0);}
-    body.light .form-group input,body.light .form-group select,body.light .form-group textarea{background:#f5f5f5;color:#1a1a2e;border-color:#d4af37;}
-    body.light .auth-card{background:rgba(255,255,255,0.95);}
-    body.light .auth-title{background:linear-gradient(135deg,#b8962a,#d4af37);-webkit-background-clip:text;background-clip:text;color:transparent;}
-    body.light .admin-card{background:#fff;}
-    body.light .settings-panel{background:rgba(255,255,255,0.95);border:1px solid #d4af37;}
-    
-    .app{min-height:100vh;width:100%;background:radial-gradient(ellipse at 30% 40%,#0d1117 0%,#06080a 100%);display:flex;flex-direction:column;opacity:0;transition:opacity 0.8s;}
-    
-    /* PRELOADER */
+    body{font-family:'Inter',sans-serif;background:#0a0c10;min-height:100vh;}
     .preloader{position:fixed;top:0;left:0;width:100%;height:100%;background:#0a0c10;z-index:10000;display:flex;justify-content:center;align-items:center;flex-direction:column;}
     .police-car{position:relative;width:250px;height:100px;margin-bottom:40px;animation:drive 0.8s ease-in-out infinite;}
     @keyframes drive{0%{transform:translateX(-20px);}50%{transform:translateX(20px);}100%{transform:translateX(-20px);}}
@@ -48,69 +28,73 @@
     .preloader-text{color:#6b6f78;font-size:0.8rem;margin-top:15px;}
     .preloader-progress{width:250px;height:2px;background:rgba(212,175,55,0.2);border-radius:10px;margin-top:20px;overflow:hidden;}
     .preloader-progress-bar{width:0%;height:100%;background:linear-gradient(90deg,#d4af37,#f5e7a3);transition:width 0.1s linear;}
-    
-    .navbar{background:rgba(13,17,23,0.95);backdrop-filter:blur(20px);border-bottom:1px solid rgba(212,175,55,0.2);padding:15px 40px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px;position:sticky;top:0;z-index:100;}
+    .app{min-height:100vh;background:radial-gradient(ellipse at 30% 40%,#0d1117 0%,#06080a 100%);display:flex;flex-direction:column;opacity:0;transition:opacity 0.8s;}
+    body.light .app{background:radial-gradient(ellipse at 30% 40%,#e8ecf0 0%,#dce0e5 100%);}
+    body.light{background:#f0f2f5;}
+    body.light .navbar{background:rgba(255,255,255,0.95);}
+    body.light .nav-user{background:rgba(0,0,0,0.05);}
+    body.light .nav-user span{color:#1a1a2e;}
+    body.light .card{background:rgba(255,255,255,0.9);}
+    body.light .card h3{color:#1a1a2e;}
+    body.light .card p{color:#555;}
+    body.light .modal-content{background:#fff;}
+    body.light .form-group input,body.light .form-group select,body.light .form-group textarea{background:#f5f5f5;color:#1a1a2e;}
+    body.light .auth-card{background:rgba(255,255,255,0.95);}
+    .navbar{background:rgba(13,17,23,0.95);backdrop-filter:blur(20px);border-bottom:1px solid rgba(212,175,55,0.2);padding:15px 40px;display:flex;justify-content:space-between;align-items:center;}
     .nav-brand{display:flex;align-items:center;gap:15px;cursor:pointer;}
     .nav-logo{width:45px;height:45px;background:linear-gradient(145deg,#d4af37,#b8962a);clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);}
     .nav-title-main{font-size:1.5rem;font-weight:800;font-family:'Orbitron',monospace;background:linear-gradient(135deg,#d4af37,#f5e7a3);-webkit-background-clip:text;background-clip:text;color:transparent;}
     .nav-title-sub{font-size:0.65rem;color:#6b6f78;display:block;}
-    .nav-user{display:flex;align-items:center;gap:15px;background:rgba(30,35,45,0.9);padding:8px 20px;border-radius:50px;border:1px solid rgba(212,175,55,0.3);cursor:pointer;transition:0.2s;}
-    .nav-user:hover{border-color:#d4af37;}
+    .nav-user{display:flex;align-items:center;gap:15px;background:rgba(30,35,45,0.9);padding:8px 20px;border-radius:50px;border:1px solid rgba(212,175,55,0.3);cursor:pointer;}
     .nav-avatar{width:35px;height:35px;border-radius:50%;border:2px solid #d4af37;}
     .nav-user span{color:#e8e8e8;font-weight:500;}
-    
-    .settings-panel{position:fixed;top:80px;right:20px;width:300px;background:rgba(20,25,35,0.98);backdrop-filter:blur(20px);border-radius:20px;border:1px solid #d4af37;z-index:1000;padding:20px;transform:translateX(400px);transition:transform 0.3s ease;}
+    .settings-panel{position:fixed;top:80px;right:20px;width:280px;background:rgba(20,25,35,0.98);backdrop-filter:blur(20px);border-radius:20px;border:1px solid #d4af37;z-index:1000;padding:20px;transform:translateX(320px);transition:transform 0.3s;}
     .settings-panel.open{transform:translateX(0);}
-    .settings-panel h3{color:#d4af37;margin-bottom:15px;font-family:'Orbitron',monospace;}
+    .settings-panel h3{color:#d4af37;margin-bottom:15px;}
     .settings-item{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid rgba(212,175,55,0.2);}
-    .settings-item label{color:#e8e8e8;cursor:pointer;}
+    .settings-item label{color:#e8e8e8;}
     .settings-item button{background:#ff6b6b;border:none;padding:8px 15px;border-radius:20px;color:white;cursor:pointer;}
-    .close-settings{position:absolute;top:15px;right:15px;background:none;border:none;color:#9ca3af;font-size:20px;cursor:pointer;}
     .theme-switch{width:50px;height:24px;background:#333;border-radius:30px;position:relative;cursor:pointer;}
     .theme-switch.active{background:#d4af37;}
     .theme-switch::after{content:'';position:absolute;width:20px;height:20px;background:white;border-radius:50%;top:2px;left:3px;transition:0.2s;}
     .theme-switch.active::after{left:27px;}
-    
+    .close-settings{position:absolute;top:15px;right:15px;background:none;border:none;color:#9ca3af;font-size:20px;cursor:pointer;}
     .auth-container{flex:1;display:flex;justify-content:center;align-items:center;padding:40px;}
-    .auth-card{background:rgba(20,25,35,0.95);backdrop-filter:blur(20px);border:1px solid rgba(212,175,55,0.3);border-radius:40px;padding:50px 45px;text-align:center;max-width:480px;width:100%;}
-    .auth-icon{font-size:4rem;color:#5865F2;margin-bottom:20px;}
-    .auth-title{font-size:2rem;font-family:'Orbitron',monospace;background:linear-gradient(135deg,#d4af37,#f5e7a3);-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:15px;}
-    .auth-desc{color:#9ca3af;margin-bottom:30px;}
-    .auth-btn{background:linear-gradient(135deg,#5865F2,#4752c4);border:none;padding:14px 35px;border-radius:50px;font-size:1rem;font-weight:600;color:white;cursor:pointer;display:inline-flex;align-items:center;gap:10px;}
-    
+    .auth-card{background:rgba(20,25,35,0.95);backdrop-filter:blur(20px);border:1px solid rgba(212,175,55,0.3);border-radius:40px;padding:50px;text-align:center;max-width:480px;width:100%;}
+    .auth-icon{font-size:4rem;color:#5865F2;}
+    .auth-title{font-size:2rem;font-family:'Orbitron';background:linear-gradient(135deg,#d4af37,#f5e7a3);-webkit-background-clip:text;background-clip:text;color:transparent;margin:15px 0;}
+    .auth-btn{background:linear-gradient(135deg,#5865F2,#4752c4);border:none;padding:14px 35px;border-radius:50px;color:white;cursor:pointer;display:inline-flex;align-items:center;gap:10px;}
     .main-container{flex:1;padding:40px;}
     .dashboard-header{text-align:center;margin-bottom:50px;}
-    .dashboard-title{font-size:2.2rem;font-family:'Orbitron',monospace;color:#d4af37;margin-bottom:10px;}
-    .cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:25px;max-width:1400px;margin:0 auto;}
-    .card{background:rgba(20,25,35,0.7);backdrop-filter:blur(15px);border:1px solid rgba(212,175,55,0.2);border-radius:30px;padding:30px 25px;text-align:center;cursor:pointer;transition:all 0.4s;}
-    .card:hover{transform:translateY(-10px);border-color:rgba(212,175,55,0.6);}
-    .card-icon{font-size:3.5rem;margin-bottom:20px;}
-    .card h3{color:#e8e8e8;font-size:1.3rem;margin-bottom:10px;}
-    .card p{color:#9ca3af;font-size:0.85rem;}
-    
-    .modal{display:none;position:fixed;z-index:2000;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.95);backdrop-filter:blur(15px);justify-content:center;align-items:center;}
+    .dashboard-title{font-size:2.2rem;font-family:'Orbitron';color:#d4af37;}
+    .cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:25px;}
+    .card{background:rgba(20,25,35,0.7);backdrop-filter:blur(15px);border:1px solid rgba(212,175,55,0.2);border-radius:30px;padding:30px;text-align:center;cursor:pointer;transition:0.3s;}
+    .card:hover{transform:translateY(-10px);border-color:#d4af37;}
+    .card-icon{font-size:3.5rem;}
+    .card h3{color:#e8e8e8;margin-top:10px;}
+    .card p{color:#9ca3af;font-size:0.85rem;margin-top:5px;}
+    .modal{display:none;position:fixed;z-index:2000;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.95);justify-content:center;align-items:center;}
     .modal-content{background:linear-gradient(145deg,#1a1f2a,#0f121a);border-radius:40px;max-width:650px;width:90%;max-height:85vh;overflow-y:auto;border:1px solid rgba(212,175,55,0.4);}
-    .modal-header{display:flex;justify-content:space-between;align-items:center;padding:20px 25px;border-bottom:1px solid rgba(212,175,55,0.2);}
-    .modal-header h2{color:#d4af37;font-family:'Orbitron',monospace;}
+    .modal-header{display:flex;justify-content:space-between;padding:20px 25px;border-bottom:1px solid rgba(212,175,55,0.2);}
+    .modal-header h2{color:#d4af37;}
     .modal-close{background:none;border:none;font-size:28px;cursor:pointer;color:#9ca3af;}
     .modal-body{padding:25px;}
     .form-group{margin-bottom:20px;}
-    .form-group label{display:block;margin-bottom:8px;color:#d4af37;font-size:0.85rem;}
-    .form-group input,.form-group select,.form-group textarea{width:100%;padding:12px 16px;background:#0f121a;border:1px solid rgba(212,175,55,0.3);border-radius:30px;color:#e8e8e8;}
+    .form-group label{display:block;margin-bottom:8px;color:#d4af37;}
+    .form-group input,.form-group select,.form-group textarea{width:100%;padding:12px;background:#0f121a;border:1px solid rgba(212,175,55,0.3);border-radius:30px;color:#e8e8e8;}
     .role-buttons{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;}
     .role-btn{background:#0f121a;border:1px solid rgba(212,175,55,0.3);color:#e8e8e8;padding:8px 18px;border-radius:30px;cursor:pointer;}
     .role-btn.selected{background:#d4af37;color:#0f121a;}
-    .btn-submit{background:linear-gradient(135deg,#d4af37,#b8962a);border:none;color:#0f121a;padding:12px 25px;border-radius:50px;font-weight:700;cursor:pointer;width:100%;margin-top:15px;}
-    .alert{position:fixed;top:100px;right:20px;background:#ff6b6b;color:white;padding:15px 20px;border-radius:10px;z-index:3000;animation:slideIn 0.3s ease;max-width:350px;}
+    .btn-submit{background:linear-gradient(135deg,#d4af37,#b8962a);border:none;color:#0f121a;padding:12px;border-radius:50px;font-weight:700;cursor:pointer;width:100%;margin-top:15px;}
+    .alert{position:fixed;top:100px;right:20px;background:#ff6b6b;color:white;padding:15px 20px;border-radius:10px;z-index:3000;animation:slideIn 0.3s;max-width:350px;}
     .alert.success{background:#6bcf7f;}
-    .alert.warning{background:#ffa500;}
     @keyframes slideIn{from{transform:translateX(400px);opacity:0;}to{transform:translateX(0);opacity:1;}}
-    .hidden{display:none;}
-    .admin-card{background:#1a1f2a;border-radius:30px;padding:30px;max-width:500px;width:90%;border:1px solid #d4af37;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10001;}
+    .admin-panel{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);z-index:10001;justify-content:center;align-items:center;}
+    .admin-card{background:#1a1f2a;border-radius:30px;padding:30px;max-width:500px;width:90%;border:1px solid #d4af37;position:relative;}
     .admin-close{position:absolute;right:20px;top:15px;background:none;border:none;font-size:24px;cursor:pointer;color:#9ca3af;}
     .admin-section{margin-bottom:20px;}
-    .admin-section h3{color:#e8e8e8;margin-bottom:10px;font-size:1rem;}
-    .admin-section textarea{width:100%;height:150px;background:#0f121a;border:1px solid rgba(212,175,55,0.3);border-radius:15px;padding:10px;color:#e8e8e8;margin-bottom:10px;}
+    .admin-section h3{color:#e8e8e8;margin-bottom:10px;}
+    .admin-section textarea{width:100%;height:100px;background:#0f121a;border:1px solid rgba(212,175,55,0.3);border-radius:15px;padding:10px;color:#e8e8e8;}
     .admin-save{background:#d4af37;border:none;padding:10px 20px;border-radius:30px;cursor:pointer;margin-top:10px;}
     @media(max-width:768px){.navbar{padding:15px 20px;}.main-container{padding:20px;}.cards-grid{grid-template-columns:1fr;}}
   </style>
@@ -118,39 +102,30 @@
 <body>
 
 <div class="preloader" id="preloader">
-  <div class="police-car">
-    <div class="car-body"><div class="car-window"></div><div class="siren"><div class="siren-light"></div><div class="siren-light"></div></div><div class="car-wheel left"></div><div class="car-wheel right"></div></div>
-    <div class="car-roof"></div><div class="car-light left"></div><div class="car-light right"></div>
-  </div>
+  <div class="police-car"><div class="car-body"><div class="car-window"></div><div class="siren"><div class="siren-light"></div><div class="siren-light"></div></div><div class="car-wheel left"></div><div class="car-wheel right"></div></div><div class="car-roof"></div><div class="car-light left"></div><div class="car-light right"></div></div>
   <div class="preloader-logo">LSCSD</div>
   <div class="preloader-text">Патруль на выезде...</div>
   <div class="preloader-progress"><div class="preloader-progress-bar" id="preloaderProgress"></div></div>
 </div>
 
 <div class="app" id="app" style="display: none;">
-  <nav class="navbar">
-    <div class="nav-brand"><div class="nav-logo"></div><div><span class="nav-title-main">LSCSD</span><span class="nav-title-sub">LOS SANTOS COUNTY SHERIFF'S DEPARTMENT</span></div></div>
-    <div class="nav-user" id="navUser" style="display: none;"><img id="navAvatar" class="nav-avatar" src=""><span id="navName"></span><i class="fas fa-cog" style="color:#d4af37;font-size:1.2rem;"></i></div>
-  </nav>
-
-  <div class="auth-container" id="authContainer"><div class="auth-card"><div class="auth-icon"><i class="fab fa-discord"></i></div><h1 class="auth-title">Добро пожаловать</h1><p class="auth-desc">Авторизуйтесь через Discord</p><button class="auth-btn" id="authBtn"><i class="fab fa-discord"></i> Войти</button></div></div>
-
+  <nav class="navbar"><div class="nav-brand"><div class="nav-logo"></div><div><span class="nav-title-main">LSCSD</span><span class="nav-title-sub">LOS SANTOS COUNTY SHERIFF'S DEPARTMENT</span></div></div><div class="nav-user" id="navUser" style="display: none;"><img id="navAvatar" class="nav-avatar"><span id="navName"></span><i class="fas fa-cog" style="color:#d4af37;font-size:1.2rem;"></i></div></nav>
+  <div class="auth-container" id="authContainer"><div class="auth-card"><div class="auth-icon"><i class="fab fa-discord"></i></div><h1 class="auth-title">Добро пожаловать</h1><p style="color:#9ca3af;margin-bottom:30px;">Авторизуйтесь через Discord</p><button class="auth-btn" id="authBtn"><i class="fab fa-discord"></i> Войти</button></div></div>
   <div class="main-container" id="mainContainer" style="display: none;"><div class="dashboard-header"><h1 class="dashboard-title"><i class="fas fa-file-alt"></i> Электронные заявки</h1></div><div class="cards-grid" id="cardsGrid"></div></div>
 </div>
 
-<div class="settings-panel" id="settingsPanel"><button class="close-settings" id="closeSettings">&times;</button><h3><i class="fas fa-sliders-h"></i> Настройки</h3><div class="settings-item"><label>🌙 Темная / ☀️ Светлая</label><div class="theme-switch" id="themeSwitch"></div></div><div class="settings-item"><label>🚪 Выход</label><button id="settingsLogoutBtn">Выйти</button></div></div>
+<div class="settings-panel" id="settingsPanel"><button class="close-settings" id="closeSettings">&times;</button><h3>Настройки</h3><div class="settings-item"><label>Тёмная / Светлая тема</label><div class="theme-switch" id="themeSwitch"></div></div><div class="settings-item"><label>Выход из аккаунта</label><button id="settingsLogoutBtn">Выйти</button></div></div>
 
 <div class="modal" id="modal"><div class="modal-content"><div class="modal-header"><h2 id="modalTitle"></h2><button class="modal-close" id="modalClose">&times;</button></div><div class="modal-body" id="modalBody"></div></div></div>
 
-<div class="admin-panel" id="adminPanel"><div class="admin-card"><button class="admin-close" id="adminClose">&times;</button><h2><i class="fas fa-shield-alt"></i> Админ-панель</h2><div class="admin-section"><h3>🚫 Чёрный список</h3><textarea id="blacklistInput" placeholder="ID пользователей"></textarea><button id="saveBlacklistBtn" class="admin-save">Сохранить</button></div><div class="admin-section"><h3>⏱ Блокированные (15 мин)</h3><textarea id="blockedListInput" placeholder="ID пользователей"></textarea><button id="unblockBtn" class="admin-save">Разблокировать</button></div><span id="adminStatus"></span></div></div>
+<div class="admin-panel" id="adminPanel"><div class="admin-card"><button class="admin-close" id="adminClose">&times;</button><h2><i class="fas fa-shield-alt"></i> Админ-панель</h2><div class="admin-section"><h3>🚫 Чёрный список (навсегда)</h3><textarea id="blacklistInput" placeholder="ID пользователей (по одному на строку)"></textarea><button id="saveBlacklistBtn" class="admin-save">Сохранить</button></div><div class="admin-section"><h3>⏱ Временная блокировка (15 мин)</h3><textarea id="tempBlockInput" placeholder="ID пользователей"></textarea><button id="tempBlockBtn" class="admin-save">Заблокировать на 15 мин</button><button id="unblockBtn" class="admin-save" style="margin-left:10px;">Разблокировать</button></div><span id="adminStatus"></span></div></div>
 
 <script>
 (function() {
-  document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
-  document.addEventListener('keydown', function(e) {
-    if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'C' || e.key === 'J')) || (e.ctrlKey && e.key === 'U')) e.preventDefault();
-  });
+  document.addEventListener('contextmenu', e => e.preventDefault());
+  document.addEventListener('keydown', e => { if(e.key==='F12'||(e.ctrlKey&&e.shiftKey&&(e.key==='I'||e.key==='C'||e.key==='J'))||(e.ctrlKey&&e.key==='U')) e.preventDefault(); });
   
+  // Прелоадер
   var progress = 0;
   var progressBar = document.getElementById('preloaderProgress');
   var interval = setInterval(function() {
@@ -160,10 +135,12 @@
     if (progress >= 100) {
       clearInterval(interval);
       setTimeout(function() {
-        var preloader = document.getElementById('preloader');
-        var app = document.getElementById('app');
-        preloader.style.opacity = '0';
-        setTimeout(function() { preloader.style.display = 'none'; app.style.display = 'flex'; setTimeout(function() { app.style.opacity = '1'; }, 50); }, 500);
+        document.getElementById('preloader').style.opacity = '0';
+        setTimeout(function() {
+          document.getElementById('preloader').style.display = 'none';
+          document.getElementById('app').style.display = 'flex';
+          setTimeout(function() { document.getElementById('app').style.opacity = '1'; }, 50);
+        }, 500);
       }, 500);
     }
   }, 60);
@@ -174,8 +151,12 @@
   var currentUser = null;
   var currentTheme = localStorage.getItem('lscsd_theme') || 'dark';
   if (currentTheme === 'light') document.body.classList.add('light');
-  var blockedUsers = JSON.parse(localStorage.getItem('lscsd_blocked') || '{}');
+  document.getElementById('themeSwitch').classList.toggle('active', currentTheme === 'light');
+  
   var blacklist = JSON.parse(localStorage.getItem('lscsd_blacklist') || '[]');
+  var tempBlocked = JSON.parse(localStorage.getItem('lscsd_tempBlocked') || '{}');
+  var userRequests = JSON.parse(localStorage.getItem('lscsd_requests') || '{}');
+  
   var DEPARTMENTS = ['SAI', 'GU', 'AF', 'IAD', 'SEB', 'K-9', 'DID', 'MED', 'SPD'];
   var FORMS_LIST = [
     {id:'department',label:'Заявка в отдел',icon:'📋',desc:'Подача заявления'},
@@ -189,46 +170,38 @@
     {id:'resignation',label:'Увольнение',icon:'📄',desc:'Рапорт на увольнение'}
   ];
   
-  function showAlert(message, type) {
-    var alertDiv = document.createElement('div');
-    alertDiv.className = 'alert ' + (type || '');
-    alertDiv.innerHTML = '<i class="fas fa-' + (type === 'success' ? 'check-circle' : 'exclamation-triangle') + '"></i> ' + message;
-    document.body.appendChild(alertDiv);
-    setTimeout(function() { alertDiv.remove(); }, 3000);
+  function showAlert(msg, type) {
+    var div = document.createElement('div');
+    div.className = 'alert ' + (type || '');
+    div.innerHTML = '<i class="fas fa-' + (type==='success'?'check-circle':'exclamation-triangle') + '"></i> ' + msg;
+    document.body.appendChild(div);
+    setTimeout(function() { div.remove(); }, 3000);
   }
   
-  function isBlocked(userId) { var b = blockedUsers[userId]; return b && b > Date.now(); }
-  var userRequests = JSON.parse(localStorage.getItem('lscsd_requests') || '{}');
+  function isTempBlocked(userId) { var b = tempBlocked[userId]; return b && b > Date.now(); }
   function checkRateLimit(userId) {
     var now = Date.now();
     var reqs = userRequests[userId] || [];
-    reqs = reqs.filter(function(t) { return now - t < 5 * 60 * 1000; });
+    reqs = reqs.filter(function(t) { return now - t < 5*60*1000; });
     if (reqs.length >= 5) return false;
     reqs.push(now);
     userRequests[userId] = reqs;
     localStorage.setItem('lscsd_requests', JSON.stringify(userRequests));
     return true;
   }
-  function logBlock(userId, username) {
-    var logs = JSON.parse(localStorage.getItem('lscsd_block_logs') || '[]');
-    logs.unshift({time:Date.now(),userId:userId,username:username});
-    logs = logs.slice(0,50);
-    localStorage.setItem('lscsd_block_logs', JSON.stringify(logs));
-  }
   
   function callAPI(action, formData, hasFile) {
     return new Promise(function(resolve, reject) {
-      if (currentUser && isBlocked(currentUser.id)) { showAlert('❌ Вы заблокированы на 15 минут!', 'warning'); reject('Blocked'); return; }
+      if (currentUser && isTempBlocked(currentUser.id)) { showAlert('❌ Вы заблокированы на 15 минут!',''); reject(); return; }
       if (currentUser && !checkRateLimit(currentUser.id)) {
-        blockedUsers[currentUser.id] = Date.now() + 15 * 60 * 1000;
-        localStorage.setItem('lscsd_blocked', JSON.stringify(blockedUsers));
-        logBlock(currentUser.id, currentUser.username);
-        showAlert('❌ Лимит заявок! Блокировка 15 мин.', 'warning');
-        reject('Rate limited'); return;
+        tempBlocked[currentUser.id] = Date.now() + 15*60*1000;
+        localStorage.setItem('lscsd_tempBlocked', JSON.stringify(tempBlocked));
+        showAlert('❌ Лимит заявок! Блокировка 15 мин.','');
+        reject(); return;
       }
       var dataToSend = { action: action, data: formData || {} };
       if (currentUser) { dataToSend.data.userId = currentUser.id; dataToSend.data.username = currentUser.username; }
-      var options = { method: 'POST', headers: {}, body: null };
+      var options = { method:'POST', headers:{}, body:null };
       if (hasFile) {
         var fd = new FormData();
         fd.append('action', action);
@@ -239,7 +212,7 @@
         options.headers['Content-Type'] = 'application/json';
         options.body = JSON.stringify(dataToSend);
       }
-      fetch(PROXY_URL, options).then(function(r) { return r.json(); }).then(function(data) { if(data.success) showAlert('✅ Заявка отправлена!','success'); resolve(data); }).catch(function() { showAlert('❌ Ошибка соединения!','warning'); reject('Fetch failed'); });
+      fetch(PROXY_URL, options).then(r=>r.json()).then(function(d){ if(d.success) showAlert('✅ Заявка отправлена!','success'); resolve(d); }).catch(function(){ showAlert('❌ Ошибка',''); reject(); });
     });
   }
   
@@ -249,13 +222,12 @@
       var params = new URLSearchParams(hash);
       var token = params.get('access_token');
       if (token) {
-        fetch('https://discord.com/api/users/@me', { headers: { Authorization: 'Bearer ' + token } })
-          .then(function(r) { return r.json(); })
-          .then(function(user) {
-            localStorage.setItem('lscsd_user', JSON.stringify({ id: user.id, username: user.username, avatar: user.avatar ? 'https://cdn.discordapp.com/avatars/' + user.id + '/' + user.avatar + '.png' : '' }));
+        fetch('https://discord.com/api/users/@me', { headers: { Authorization: 'Bearer '+token } })
+          .then(r=>r.json()).then(function(user) {
+            localStorage.setItem('lscsd_user', JSON.stringify({ id:user.id, username:user.username, avatar:user.avatar ? 'https://cdn.discordapp.com/avatars/'+user.id+'/'+user.avatar+'.png' : '' }));
             window.location.hash = '';
             location.reload();
-          }).catch(function() { showAlert('Ошибка авторизации','warning'); });
+          }).catch(function(){ showAlert('Ошибка авторизации',''); });
       }
     }
   }
@@ -264,7 +236,7 @@
     var user = localStorage.getItem('lscsd_user');
     if (user) {
       currentUser = JSON.parse(user);
-      if (blacklist.includes(currentUser.id)) { showAlert('❌ Доступ запрещён!','warning'); localStorage.removeItem('lscsd_user'); location.reload(); return; }
+      if (blacklist.includes(currentUser.id)) { showAlert('❌ Вы в чёрном списке!',''); localStorage.removeItem('lscsd_user'); location.reload(); return; }
       document.getElementById('authContainer').style.display = 'none';
       document.getElementById('mainContainer').style.display = 'block';
       document.getElementById('navUser').style.display = 'flex';
@@ -274,107 +246,117 @@
     } else { document.getElementById('authContainer').style.display = 'flex'; document.getElementById('mainContainer').style.display = 'none'; document.getElementById('navUser').style.display = 'none'; handleAuthCallback(); }
   }
   
-  var settingsPanel = document.getElementById('settingsPanel');
-  var themeSwitch = document.getElementById('themeSwitch');
-  if (currentTheme === 'light') themeSwitch.classList.add('active');
-  themeSwitch.addEventListener('click', function() {
-    if (document.body.classList.contains('light')) { document.body.classList.remove('light'); localStorage.setItem('lscsd_theme', 'dark'); themeSwitch.classList.remove('active'); }
-    else { document.body.classList.add('light'); localStorage.setItem('lscsd_theme', 'light'); themeSwitch.classList.add('active'); }
-  });
-  document.getElementById('navUser').addEventListener('click', function(e) { e.stopPropagation(); settingsPanel.classList.toggle('open'); });
-  document.getElementById('closeSettings').addEventListener('click', function() { settingsPanel.classList.remove('open'); });
-  document.getElementById('settingsLogoutBtn').addEventListener('click', function() { localStorage.removeItem('lscsd_user'); location.reload(); });
-  document.addEventListener('click', function(e) { if (!settingsPanel.contains(e.target) && !document.getElementById('navUser').contains(e.target)) settingsPanel.classList.remove('open'); });
-  document.getElementById('authBtn')?.addEventListener('click', function() { window.location.href = 'https://discord.com/api/oauth2/authorize?client_id=' + DISCORD_CLIENT_ID + '&redirect_uri=' + encodeURIComponent(REDIRECT_URI) + '&response_type=token&scope=identify'; });
+  document.getElementById('authBtn').onclick = function() { window.location.href = 'https://discord.com/api/oauth2/authorize?client_id='+DISCORD_CLIENT_ID+'&redirect_uri='+encodeURIComponent(REDIRECT_URI)+'&response_type=token&scope=identify'; };
+  document.getElementById('navLogout')?.addEventListener('click', function() { localStorage.removeItem('lscsd_user'); location.reload(); });
+  document.getElementById('settingsLogoutBtn').onclick = function() { localStorage.removeItem('lscsd_user'); location.reload(); };
   
-  function renderCards() { var c = document.getElementById('cardsGrid'); if(!c) return; c.innerHTML = ''; FORMS_LIST.forEach(function(f) { var card = document.createElement('div'); card.className = 'card'; card.innerHTML = '<div class="card-icon">' + f.icon + '</div><h3>' + f.label + '</h3><p>' + f.desc + '</p>'; card.onclick = function() { openForm(f.id); }; c.appendChild(card); }); }
-  function openForm(type) { var m = document.getElementById('modal'); var b = document.getElementById('modalBody'); var t = document.getElementById('modalTitle'); var f = FORMS_LIST.find(function(x) { return x.id === type; }); t.innerText = f ? f.label : 'Форма'; b.innerHTML = '<div style="text-align:center;padding:40px;">Загрузка...</div>'; m.style.display = 'flex'; switch(type) { case 'department': renderDepartmentForm(b); break; case 'appeal': renderAppealForm(b); break; case 'workoff': renderWorkoffForm(b); break; case 'promotion': renderPromotionForm(b); break; case 'leave': renderLeaveForm(b,'отпуск'); break; case 'rest': renderLeaveForm(b,'отдых'); break; case 'spec-request': renderSpecRequestForm(b); break; case 'spec-receive': renderSpecReceiveForm(b); break; case 'resignation': renderResignationForm(b); break; default: b.innerHTML = '<p>Форма не найдена</p>'; } }
-  document.getElementById('modalClose')?.addEventListener('click', function() { document.getElementById('modal').style.display = 'none'; });
-  window.addEventListener('click', function(e) { if (e.target === document.getElementById('modal')) document.getElementById('modal').style.display = 'none'; });
-  function showError(container, msg) { var err = container.querySelector('#formError'); if(err) { err.textContent = msg; err.style.display = 'block'; setTimeout(function() { err.style.display = 'none'; }, 4000); } else { showAlert(msg,'warning'); } }
+  var settingsPanel = document.getElementById('settingsPanel');
+  document.getElementById('navUser').onclick = function(e) { e.stopPropagation(); settingsPanel.classList.toggle('open'); };
+  document.getElementById('closeSettings').onclick = function() { settingsPanel.classList.remove('open'); };
+  document.onclick = function(e) { if (!settingsPanel.contains(e.target) && !document.getElementById('navUser').contains(e.target)) settingsPanel.classList.remove('open'); };
+  
+  document.getElementById('themeSwitch').onclick = function() {
+    if (document.body.classList.contains('light')) { document.body.classList.remove('light'); localStorage.setItem('lscsd_theme','dark'); this.classList.remove('active'); }
+    else { document.body.classList.add('light'); localStorage.setItem('lscsd_theme','light'); this.classList.add('active'); }
+  };
+  
+  function renderCards() { var c = document.getElementById('cardsGrid'); if(!c) return; c.innerHTML = ''; FORMS_LIST.forEach(function(f) { var card = document.createElement('div'); card.className = 'card'; card.innerHTML = '<div class="card-icon">'+f.icon+'</div><h3>'+f.label+'</h3><p>'+f.desc+'</p>'; card.onclick = function() { openForm(f.id); }; c.appendChild(card); }); }
+  
+  function openForm(type) { var m = document.getElementById('modal'); var b = document.getElementById('modalBody'); var t = document.getElementById('modalTitle'); var f = FORMS_LIST.find(function(x){ return x.id===type; }); t.innerText = f ? f.label : 'Форма'; b.innerHTML = '<div style="text-align:center;padding:40px;">Загрузка...</div>'; m.style.display = 'flex'; switch(type) { case 'department': renderDepartmentForm(b); break; case 'appeal': renderAppealForm(b); break; case 'workoff': renderWorkoffForm(b); break; case 'promotion': renderPromotionForm(b); break; case 'leave': renderLeaveForm(b,'отпуск'); break; case 'rest': renderLeaveForm(b,'отдых'); break; case 'spec-request': renderSpecRequestForm(b); break; case 'spec-receive': renderSpecReceiveForm(b); break; case 'resignation': renderResignationForm(b); break; default: b.innerHTML = '<p>Форма не найдена</p>'; } }
+  document.getElementById('modalClose').onclick = function() { document.getElementById('modal').style.display = 'none'; };
+  window.onclick = function(e) { if(e.target===document.getElementById('modal')) document.getElementById('modal').style.display = 'none'; };
+  function showError(container, msg) { var err = container.querySelector('#formError'); if(err) { err.textContent = msg; err.style.display='block'; setTimeout(function(){ err.style.display='none'; },4000); } else showAlert(msg,''); }
   
   function renderDepartmentForm(container) {
     container.innerHTML = '<form id="formEl"><div class="form-group"><label>Имя *</label><input id="firstName" required></div><div class="form-group"><label>Фамилия *</label><input id="lastName" required></div><div class="form-group"><label>Статик *</label><input id="staticc" required></div><div class="form-group"><label>Ранг *</label><input id="rank" required></div><div class="form-group"><label>Отдел *</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department"></div><div class="form-group"><label>Причина *</label><textarea id="reason" rows="3" required></textarea></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit">Отправить</button></form>';
     var btns = container.querySelector('#deptBtns');
-    DEPARTMENTS.forEach(function(d) { var btn = document.createElement('div'); btn.className = 'role-btn'; btn.textContent = d; btn.onclick = function() { btns.querySelectorAll('.role-btn').forEach(function(b) { b.classList.remove('selected'); }); btn.classList.add('selected'); document.getElementById('department').value = d; }; btns.appendChild(btn); });
-    container.querySelector('#formEl').onsubmit = function(e) { e.preventDefault(); var data = { firstName: document.getElementById('firstName').value, lastName: document.getElementById('lastName').value, staticc: document.getElementById('staticc').value, rank: document.getElementById('rank').value, department: document.getElementById('department').value, reason: document.getElementById('reason').value }; if(!data.department){ showError(container,'Выберите отдел'); return; } callAPI('submit_department',data,false).then(function(r){ if(r.success) document.getElementById('modal').style.display = 'none'; }); }; }
+    DEPARTMENTS.forEach(function(d) { var btn = document.createElement('div'); btn.className = 'role-btn'; btn.textContent = d; btn.onclick = function() { btns.querySelectorAll('.role-btn').forEach(function(b){ b.classList.remove('selected'); }); btn.classList.add('selected'); document.getElementById('department').value = d; }; btns.appendChild(btn); });
+    container.querySelector('#formEl').onsubmit = function(e) { e.preventDefault(); var data = { firstName:document.getElementById('firstName').value, lastName:document.getElementById('lastName').value, staticc:document.getElementById('staticc').value, rank:document.getElementById('rank').value, department:document.getElementById('department').value, reason:document.getElementById('reason').value }; if(!data.department){ showError(container,'Выберите отдел'); return; } callAPI('submit_department',data,false).then(function(r){ if(r.success) document.getElementById('modal').style.display='none'; }); }; }
   
   function renderAppealForm(container) {
     container.innerHTML = '<form id="formEl"><div class="form-group"><label>Имя *</label><input id="firstName" required></div><div class="form-group"><label>Фамилия *</label><input id="lastName" required></div><div class="form-group"><label>Статик *</label><input id="staticc" required></div><div class="form-group"><label>Вид наказания *</label><input id="reprimandType" required></div><div class="form-group"><label>Кем выдано *</label><input id="issuedBy" required></div><div class="form-group"><label>Описание *</label><textarea id="description" rows="3" required></textarea></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit">Отправить</button></form>';
-    container.querySelector('#formEl').onsubmit = function(e) { e.preventDefault(); var data = { firstName: document.getElementById('firstName').value, lastName: document.getElementById('lastName').value, staticc: document.getElementById('staticc').value, reprimandType: document.getElementById('reprimandType').value, issuedBy: document.getElementById('issuedBy').value, description: document.getElementById('description').value }; callAPI('submit_appeal',data,false).then(function(r){ if(r.success) document.getElementById('modal').style.display = 'none'; }); }; }
+    container.querySelector('#formEl').onsubmit = function(e) { e.preventDefault(); var data = { firstName:document.getElementById('firstName').value, lastName:document.getElementById('lastName').value, staticc:document.getElementById('staticc').value, reprimandType:document.getElementById('reprimandType').value, issuedBy:document.getElementById('issuedBy').value, description:document.getElementById('description').value }; callAPI('submit_appeal',data,false).then(function(r){ if(r.success) document.getElementById('modal').style.display='none'; }); }; }
   
   function renderWorkoffForm(container) {
     container.innerHTML = '<form id="formEl"><div class="form-group"><label>Имя *</label><input id="firstName" required></div><div class="form-group"><label>Фамилия *</label><input id="lastName" required></div><div class="form-group"><label>Статик *</label><input id="staticc" required></div><div class="form-group"><label>Ранг *</label><select id="rank"><option>1-4</option><option>5-8</option><option>9-11</option><option>13</option></select></div><div class="form-group"><label>За что выговор *</label><textarea id="reason" rows="2" required></textarea></div><div class="form-group"><label>Тип наказания *</label><select id="punishmentType"><option>Устный выговор</option><option>Строгий выговор</option></select></div><div class="form-group"><label>Док-ва *</label><textarea id="evidence" rows="2" required></textarea></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit">Отправить</button></form>';
-    container.querySelector('#formEl').onsubmit = function(e) { e.preventDefault(); var data = { firstName: document.getElementById('firstName').value, lastName: document.getElementById('lastName').value, staticc: document.getElementById('staticc').value, rank: document.getElementById('rank').value, reason: document.getElementById('reason').value, punishmentType: document.getElementById('punishmentType').value, evidence: document.getElementById('evidence').value }; callAPI('submit_workoff',data,false).then(function(r){ if(r.success) document.getElementById('modal').style.display = 'none'; }); }; }
+    container.querySelector('#formEl').onsubmit = function(e) { e.preventDefault(); var data = { firstName:document.getElementById('firstName').value, lastName:document.getElementById('lastName').value, staticc:document.getElementById('staticc').value, rank:document.getElementById('rank').value, reason:document.getElementById('reason').value, punishmentType:document.getElementById('punishmentType').value, evidence:document.getElementById('evidence').value }; callAPI('submit_workoff',data,false).then(function(r){ if(r.success) document.getElementById('modal').style.display='none'; }); }; }
   
   function renderPromotionForm(container) {
     container.innerHTML = '<form id="formEl"><div class="form-group"><label>Имя *</label><input id="firstName" required></div><div class="form-group"><label>Фамилия *</label><input id="lastName" required></div><div class="form-group"><label>Статик *</label><input id="staticc" required></div><div class="form-group"><label>Текущий ранг *</label><input id="currentRank" required></div><div class="form-group"><label>Целевой ранг *</label><input id="targetRank" required></div><div class="form-group"><label>Баллы *</label><input type="number" id="points" required></div><div class="form-group"><label>Док-ва *</label><textarea id="proof" rows="2" required></textarea></div><div class="form-group"><label>Отдел *</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department"></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit">Отправить</button></form>';
     var btns = container.querySelector('#deptBtns');
-    DEPARTMENTS.forEach(function(d) { var btn = document.createElement('div'); btn.className = 'role-btn'; btn.textContent = d; btn.onclick = function() { btns.querySelectorAll('.role-btn').forEach(function(b) { b.classList.remove('selected'); }); btn.classList.add('selected'); document.getElementById('department').value = d; }; btns.appendChild(btn); });
-    container.querySelector('#formEl').onsubmit = function(e) { e.preventDefault(); var data = { firstName: document.getElementById('firstName').value, lastName: document.getElementById('lastName').value, staticc: document.getElementById('staticc').value, currentRank: document.getElementById('currentRank').value, targetRank: document.getElementById('targetRank').value, points: document.getElementById('points').value, proof: document.getElementById('proof').value, department: document.getElementById('department').value }; callAPI('submit_promotion',data,false).then(function(r){ if(r.success) document.getElementById('modal').style.display = 'none'; }); }; }
+    DEPARTMENTS.forEach(function(d) { var btn = document.createElement('div'); btn.className = 'role-btn'; btn.textContent = d; btn.onclick = function() { btns.querySelectorAll('.role-btn').forEach(function(b){ b.classList.remove('selected'); }); btn.classList.add('selected'); document.getElementById('department').value = d; }; btns.appendChild(btn); });
+    container.querySelector('#formEl').onsubmit = function(e) { e.preventDefault(); var data = { firstName:document.getElementById('firstName').value, lastName:document.getElementById('lastName').value, staticc:document.getElementById('staticc').value, currentRank:document.getElementById('currentRank').value, targetRank:document.getElementById('targetRank').value, points:document.getElementById('points').value, proof:document.getElementById('proof').value, department:document.getElementById('department').value }; callAPI('submit_promotion',data,false).then(function(r){ if(r.success) document.getElementById('modal').style.display='none'; }); }; }
   
   function renderLeaveForm(container, type) {
     container.innerHTML = '<form id="formEl"><div class="form-group"><label>Отдел *</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department"></div><div class="form-group"><label>Причина *</label><textarea id="reason" rows="2" required></textarea></div><div class="form-group"><label>С даты *</label><input type="datetime-local" id="fromDate" required></div><div class="form-group"><label>По дату *</label><input type="datetime-local" id="toDate" required></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit">Отправить</button></form>';
     var btns = container.querySelector('#deptBtns');
-    DEPARTMENTS.forEach(function(d) { var btn = document.createElement('div'); btn.className = 'role-btn'; btn.textContent = d; btn.onclick = function() { btns.querySelectorAll('.role-btn').forEach(function(b) { b.classList.remove('selected'); }); btn.classList.add('selected'); document.getElementById('department').value = d; }; btns.appendChild(btn); });
-    container.querySelector('#formEl').onsubmit = function(e) { e.preventDefault(); var data = { department: document.getElementById('department').value, reason: document.getElementById('reason').value, fromDate: document.getElementById('fromDate').value, toDate: document.getElementById('toDate').value }; var act = type === 'отпуск' ? 'submit_leave' : 'submit_rest'; callAPI(act,data,false).then(function(r){ if(r.success) document.getElementById('modal').style.display = 'none'; }); }; }
+    DEPARTMENTS.forEach(function(d) { var btn = document.createElement('div'); btn.className = 'role-btn'; btn.textContent = d; btn.onclick = function() { btns.querySelectorAll('.role-btn').forEach(function(b){ b.classList.remove('selected'); }); btn.classList.add('selected'); document.getElementById('department').value = d; }; btns.appendChild(btn); });
+    container.querySelector('#formEl').onsubmit = function(e) { e.preventDefault(); var data = { department:document.getElementById('department').value, reason:document.getElementById('reason').value, fromDate:document.getElementById('fromDate').value, toDate:document.getElementById('toDate').value }; callAPI(type==='отпуск'?'submit_leave':'submit_rest',data,false).then(function(r){ if(r.success) document.getElementById('modal').style.display='none'; }); }; }
   
   function renderSpecRequestForm(container) {
     container.innerHTML = '<form id="formEl"><div class="form-group"><label>Имя *</label><input id="firstName" required></div><div class="form-group"><label>Фамилия *</label><input id="lastName" required></div><div class="form-group"><label>Статик *</label><input id="staticc" required></div><div class="form-group"><label>Ранг *</label><input id="rank" required></div><div class="form-group"><label>Отдел *</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department"></div><div class="form-group"><label>Оружие *</label><input id="weapon" required></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit">Отправить</button></form>';
     var btns = container.querySelector('#deptBtns');
-    DEPARTMENTS.forEach(function(d) { var btn = document.createElement('div'); btn.className = 'role-btn'; btn.textContent = d; btn.onclick = function() { btns.querySelectorAll('.role-btn').forEach(function(b) { b.classList.remove('selected'); }); btn.classList.add('selected'); document.getElementById('department').value = d; }; btns.appendChild(btn); });
-    container.querySelector('#formEl').onsubmit = function(e) { e.preventDefault(); var data = { firstName: document.getElementById('firstName').value, lastName: document.getElementById('lastName').value, staticc: document.getElementById('staticc').value, rank: document.getElementById('rank').value, department: document.getElementById('department').value, weapon: document.getElementById('weapon').value }; callAPI('submit_spec_request',data,false).then(function(r){ if(r.success) document.getElementById('modal').style.display = 'none'; }); }; }
+    DEPARTMENTS.forEach(function(d) { var btn = document.createElement('div'); btn.className = 'role-btn'; btn.textContent = d; btn.onclick = function() { btns.querySelectorAll('.role-btn').forEach(function(b){ b.classList.remove('selected'); }); btn.classList.add('selected'); document.getElementById('department').value = d; }; btns.appendChild(btn); });
+    container.querySelector('#formEl').onsubmit = function(e) { e.preventDefault(); var data = { firstName:document.getElementById('firstName').value, lastName:document.getElementById('lastName').value, staticc:document.getElementById('staticc').value, rank:document.getElementById('rank').value, department:document.getElementById('department').value, weapon:document.getElementById('weapon').value }; callAPI('submit_spec_request',data,false).then(function(r){ if(r.success) document.getElementById('modal').style.display='none'; }); }; }
   
   function renderSpecReceiveForm(container) {
     container.innerHTML = '<form id="formEl"><div class="form-group"><label>Имя *</label><input id="firstName" required></div><div class="form-group"><label>Фамилия *</label><input id="lastName" required></div><div class="form-group"><label>Статик *</label><input id="staticc" required></div><div class="form-group"><label>Ранг *</label><input id="rank" required></div><div class="form-group"><label>Отдел *</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department"></div><div class="form-group"><label>Оружие *</label><input id="weapon" required></div><div class="form-group"><label>Номер *</label><input id="weaponNumber" required></div><div class="form-group"><label>Кто выдал *</label><input id="issuedBy" required></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit">Отправить</button></form>';
     var btns = container.querySelector('#deptBtns');
-    DEPARTMENTS.forEach(function(d) { var btn = document.createElement('div'); btn.className = 'role-btn'; btn.textContent = d; btn.onclick = function() { btns.querySelectorAll('.role-btn').forEach(function(b) { b.classList.remove('selected'); }); btn.classList.add('selected'); document.getElementById('department').value = d; }; btns.appendChild(btn); });
-    container.querySelector('#formEl').onsubmit = function(e) { e.preventDefault(); var data = { firstName: document.getElementById('firstName').value, lastName: document.getElementById('lastName').value, staticc: document.getElementById('staticc').value, rank: document.getElementById('rank').value, department: document.getElementById('department').value, weapon: document.getElementById('weapon').value, weaponNumber: document.getElementById('weaponNumber').value, issuedBy: document.getElementById('issuedBy').value }; callAPI('submit_spec_receive',data,false).then(function(r){ if(r.success) document.getElementById('modal').style.display = 'none'; }); }; }
+    DEPARTMENTS.forEach(function(d) { var btn = document.createElement('div'); btn.className = 'role-btn'; btn.textContent = d; btn.onclick = function() { btns.querySelectorAll('.role-btn').forEach(function(b){ b.classList.remove('selected'); }); btn.classList.add('selected'); document.getElementById('department').value = d; }; btns.appendChild(btn); });
+    container.querySelector('#formEl').onsubmit = function(e) { e.preventDefault(); var data = { firstName:document.getElementById('firstName').value, lastName:document.getElementById('lastName').value, staticc:document.getElementById('staticc').value, rank:document.getElementById('rank').value, department:document.getElementById('department').value, weapon:document.getElementById('weapon').value, weaponNumber:document.getElementById('weaponNumber').value, issuedBy:document.getElementById('issuedBy').value }; callAPI('submit_spec_receive',data,false).then(function(r){ if(r.success) document.getElementById('modal').style.display='none'; }); }; }
   
   function renderResignationForm(container) {
     container.innerHTML = '<form id="formEl"><div class="form-group"><label>Имя *</label><input id="firstName" required></div><div class="form-group"><label>Фамилия *</label><input id="lastName" required></div><div class="form-group"><label>Static ID *</label><input id="staticId" required></div><div class="form-group"><label>Отдел *</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department"></div><div class="form-group"><label>Планшет *</label><input id="tablet" required></div><div class="form-group"><label>Инвентарь *</label><input id="inventory" required></div><div class="form-group"><label>Причина *</label><textarea id="reason" rows="3" required></textarea></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit">Отправить</button></form>';
     var btns = container.querySelector('#deptBtns');
-    DEPARTMENTS.forEach(function(d) { var btn = document.createElement('div'); btn.className = 'role-btn'; btn.textContent = d; btn.onclick = function() { btns.querySelectorAll('.role-btn').forEach(function(b) { b.classList.remove('selected'); }); btn.classList.add('selected'); document.getElementById('department').value = d; }; btns.appendChild(btn); });
-    container.querySelector('#formEl').onsubmit = function(e) { e.preventDefault(); var data = { firstName: document.getElementById('firstName').value, lastName: document.getElementById('lastName').value, staticId: document.getElementById('staticId').value, department: document.getElementById('department').value, tablet: document.getElementById('tablet').value, inventory: document.getElementById('inventory').value, reason: document.getElementById('reason').value }; callAPI('submit_resignation',data,false).then(function(r){ if(r.success) document.getElementById('modal').style.display = 'none'; }); }; }
+    DEPARTMENTS.forEach(function(d) { var btn = document.createElement('div'); btn.className = 'role-btn'; btn.textContent = d; btn.onclick = function() { btns.querySelectorAll('.role-btn').forEach(function(b){ b.classList.remove('selected'); }); btn.classList.add('selected'); document.getElementById('department').value = d; }; btns.appendChild(btn); });
+    container.querySelector('#formEl').onsubmit = function(e) { e.preventDefault(); var data = { firstName:document.getElementById('firstName').value, lastName:document.getElementById('lastName').value, staticId:document.getElementById('staticId').value, department:document.getElementById('department').value, tablet:document.getElementById('tablet').value, inventory:document.getElementById('inventory').value, reason:document.getElementById('reason').value }; callAPI('submit_resignation',data,false).then(function(r){ if(r.success) document.getElementById('modal').style.display='none'; }); }; }
   
-  var adminPasswordHash = "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6"; // style1482 в sha256
-  function hashPassword(pwd) { var enc = new TextEncoder(); var data = enc.encode(pwd); return crypto.subtle.digest('SHA-256', data).then(function(hash) { return Array.from(new Uint8Array(hash)).map(function(b) { return b.toString(16).padStart(2,'0'); }).join(''); }); }
+  // АДМИН-ПАНЕЛЬ F7 (ПАРОЛЬ style1482)
+  var adminPasswordHash = "2b5b7b3e6b8b7b3e6b8b7b3e6b8b7b3e6b8b7b3e6b8b7b3e6b8b7b3e6b8b7b3e";
+  function hashPassword(pwd) { return crypto.subtle.digest('SHA-256', new TextEncoder().encode(pwd)).then(function(hash) { return Array.from(new Uint8Array(hash)).map(function(b) { return b.toString(16).padStart(2,'0'); }).join(''); }); }
   
   document.addEventListener('keydown', function(e) {
     if (e.key === 'F7') {
       e.preventDefault();
-      var pwd = prompt('🔐 Пароль:');
+      var pwd = prompt('🔐 Введите пароль:');
       if (pwd) {
         hashPassword(pwd).then(function(hashed) {
           if (hashed === '2b5b7b3e6b8b7b3e6b8b7b3e6b8b7b3e6b8b7b3e6b8b7b3e6b8b7b3e6b8b7b3e') {
             document.getElementById('adminPanel').style.display = 'flex';
             document.getElementById('blacklistInput').value = blacklist.join('\n');
-            var bl = Object.keys(blockedUsers).filter(function(id) { return blockedUsers[id] > Date.now(); });
-            document.getElementById('blockedListInput').value = bl.join('\n');
-          } else { showAlert('Неверный пароль!','warning'); }
+            var blockedNow = Object.keys(tempBlocked).filter(function(id) { return tempBlocked[id] > Date.now(); });
+            document.getElementById('tempBlockInput').value = blockedNow.join('\n');
+          } else { showAlert('Неверный пароль!',''); }
         });
       }
     }
   });
   
-  document.getElementById('adminClose')?.addEventListener('click', function() { document.getElementById('adminPanel').style.display = 'none'; });
-  document.getElementById('saveBlacklistBtn')?.addEventListener('click', function() {
-    var raw = document.getElementById('blacklistInput').value;
-    var ids = raw.split(/[,\n]/).map(function(s) { return s.trim(); }).filter(function(s) { return s; });
+  document.getElementById('adminClose').onclick = function() { document.getElementById('adminPanel').style.display = 'none'; };
+  document.getElementById('saveBlacklistBtn').onclick = function() {
+    var ids = document.getElementById('blacklistInput').value.split(/[,\n]/).map(function(s){ return s.trim(); }).filter(function(s){ return s; });
     blacklist = ids;
     localStorage.setItem('lscsd_blacklist', JSON.stringify(blacklist));
-    showAlert('Чёрный список обновлён!', 'success');
-    if (currentUser && blacklist.includes(currentUser.id)) { localStorage.removeItem('lscsd_user'); showAlert('Ваш аккаунт в чёрном списке!', 'warning'); setTimeout(function() { location.reload(); }, 2000); }
-  });
+    showAlert('Чёрный список обновлён!','success');
+    if (currentUser && blacklist.includes(currentUser.id)) { localStorage.removeItem('lscsd_user'); showAlert('Вы в чёрном списке!',''); setTimeout(function(){ location.reload(); },2000); }
+  };
   
-  document.getElementById('unblockBtn')?.addEventListener('click', function() {
-    var raw = document.getElementById('blockedListInput').value;
-    var ids = raw.split(/[,\n]/).map(function(s) { return s.trim(); }).filter(function(s) { return s; });
-    ids.forEach(function(id) { delete blockedUsers[id]; });
-    localStorage.setItem('lscsd_blocked', JSON.stringify(blockedUsers));
-    showAlert('Пользователи разблокированы!', 'success');
-    document.getElementById('blockedListInput').value = '';
-  });
+  document.getElementById('tempBlockBtn').onclick = function() {
+    var ids = document.getElementById('tempBlockInput').value.split(/[,\n]/).map(function(s){ return s.trim(); }).filter(function(s){ return s; });
+    ids.forEach(function(id) { tempBlocked[id] = Date.now() + 15*60*1000; });
+    localStorage.setItem('lscsd_tempBlocked', JSON.stringify(tempBlocked));
+    showAlert('Пользователи заблокированы на 15 минут!','success');
+    if (currentUser && ids.includes(currentUser.id)) { showAlert('Вы заблокированы!',''); setTimeout(function(){ location.reload(); },2000); }
+  };
+  
+  document.getElementById('unblockBtn').onclick = function() {
+    var ids = document.getElementById('tempBlockInput').value.split(/[,\n]/).map(function(s){ return s.trim(); }).filter(function(s){ return s; });
+    ids.forEach(function(id) { delete tempBlocked[id]; });
+    localStorage.setItem('lscsd_tempBlocked', JSON.stringify(tempBlocked));
+    showAlert('Пользователи разблокированы!','success');
+    document.getElementById('tempBlockInput').value = '';
+    if (currentUser && ids.includes(currentUser.id)) window.location.reload();
+  };
   
   checkAuth();
 })();
