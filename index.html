@@ -9,29 +9,9 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     *{margin:0;padding:0;box-sizing:border-box;}
-    body{font-family:'Inter',sans-serif;background:#0a0c10;min-height:100vh;}
-    .preloader{position:fixed;top:0;left:0;width:100%;height:100%;background:#0a0c10;z-index:10000;display:flex;justify-content:center;align-items:center;flex-direction:column;}
-    .police-car{position:relative;width:250px;height:100px;margin-bottom:40px;animation:drive 0.8s ease-in-out infinite;}
-    @keyframes drive{0%{transform:translateX(-20px);}50%{transform:translateX(20px);}100%{transform:translateX(-20px);}}
-    .car-body{position:absolute;bottom:0;width:100%;height:45px;background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:15px 15px 5px 5px;border-bottom:3px solid #d4af37;}
-    .car-roof{position:absolute;top:10px;left:25%;width:50%;height:30px;background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:20px 20px 5px 5px;}
-    .car-window{position:absolute;top:15px;left:30%;width:40%;height:18px;background:#4a90d9;border-radius:10px;opacity:0.8;}
-    .car-wheel{position:absolute;bottom:-8px;width:20px;height:20px;background:#333;border-radius:50%;border:2px solid #666;}
-    .car-wheel.left{left:15%;}.car-wheel.right{right:15%;}
-    .car-light{position:absolute;top:5px;width:15px;height:15px;background:#ff4444;border-radius:50%;animation:blink 0.5s infinite;}
-    .car-light.left{left:10px;}.car-light.right{right:10px;}
-    @keyframes blink{0%,100%{opacity:1;}50%{opacity:0.3;}}
-    .siren{position:absolute;top:-10px;left:50%;transform:translateX(-50%);display:flex;gap:10px;}
-    .siren-light{width:12px;height:12px;background:#ff0000;border-radius:50%;animation:siren-flash 0.3s infinite;}
-    .siren-light:nth-child(2){background:#0066ff;animation-delay:0.15s;}
-    @keyframes siren-flash{0%,100%{opacity:1;}50%{opacity:0.2;}}
-    .preloader-logo{font-size:2rem;font-weight:800;font-family:'Orbitron',monospace;letter-spacing:8px;background:linear-gradient(135deg,#d4af37,#f5e7a3);-webkit-background-clip:text;background-clip:text;color:transparent;margin-top:30px;}
-    .preloader-text{color:#6b6f78;font-size:0.8rem;margin-top:15px;}
-    .preloader-progress{width:250px;height:2px;background:rgba(212,175,55,0.2);border-radius:10px;margin-top:20px;overflow:hidden;}
-    .preloader-progress-bar{width:0%;height:100%;background:linear-gradient(90deg,#d4af37,#f5e7a3);transition:width 0.1s linear;}
-    .app{min-height:100vh;background:radial-gradient(ellipse at 30% 40%,#0d1117 0%,#06080a 100%);display:flex;flex-direction:column;opacity:0;transition:opacity 0.8s;}
-    body.light .app{background:radial-gradient(ellipse at 30% 40%,#e8ecf0 0%,#dce0e5 100%);}
+    body{font-family:'Inter',sans-serif;background:#0a0c10;min-height:100vh;transition:background 0.3s;}
     body.light{background:#f0f2f5;}
+    body.light .app{background:radial-gradient(ellipse at 30% 40%,#e8ecf0 0%,#dce0e5 100%);}
     body.light .navbar{background:rgba(255,255,255,0.95);}
     body.light .nav-user{background:rgba(0,0,0,0.05);}
     body.light .nav-user span{color:#1a1a2e;}
@@ -41,81 +21,140 @@
     body.light .modal-content{background:#fff;}
     body.light .form-group input,body.light .form-group select,body.light .form-group textarea{background:#f5f5f5;color:#1a1a2e;}
     body.light .auth-card{background:rgba(255,255,255,0.95);}
-    .navbar{background:rgba(13,17,23,0.95);backdrop-filter:blur(20px);border-bottom:1px solid rgba(212,175,55,0.2);padding:15px 40px;display:flex;justify-content:space-between;align-items:center;}
+    
+    .app{min-height:100vh;background:radial-gradient(ellipse at 30% 40%,#0d1117 0%,#06080a 100%);display:flex;flex-direction:column;opacity:0;transition:opacity 0.8s;}
+    
+    /* НОВАЯ АНИМАЦИЯ СБОРКИ МАШИНЫ ПО ЧАСТИЦАМ */
+    .preloader{position:fixed;top:0;left:0;width:100%;height:100%;background:#0a0c10;z-index:10000;display:flex;justify-content:center;align-items:center;flex-direction:column;transition:opacity 1s ease;}
+    .car-container{position:relative;width:300px;height:120px;margin-bottom:40px;}
+    .car-particle{position:absolute;opacity:0;animation:particleAppear 0.5s forwards;}
+    @keyframes particleAppear{0%{opacity:0;transform:scale(0);}100%{opacity:1;transform:scale(1);}}
+    .car-body-particle{position:absolute;bottom:0;width:200px;height:45px;background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:15px 15px 5px 5px;border-bottom:3px solid #d4af37;left:50px;animation:particleAppear 0.5s forwards;}
+    .car-roof-particle{position:absolute;top:10px;left:100px;width:100px;height:30px;background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:20px 20px 5px 5px;animation:particleAppear 0.5s 0.2s forwards;opacity:0;}
+    .car-window-particle{position:absolute;top:18px;left:120px;width:60px;height:15px;background:#4a90d9;border-radius:10px;animation:particleAppear 0.5s 0.4s forwards;opacity:0;}
+    .car-wheel-left{position:absolute;bottom:-8px;left:70px;width:20px;height:20px;background:#333;border-radius:50%;border:2px solid #666;animation:particleAppear 0.5s 0.6s forwards;opacity:0;}
+    .car-wheel-right{position:absolute;bottom:-8px;right:70px;width:20px;height:20px;background:#333;border-radius:50%;border:2px solid #666;animation:particleAppear 0.5s 0.6s forwards;opacity:0;}
+    .car-light-left{position:absolute;top:5px;left:55px;width:12px;height:12px;background:#ff4444;border-radius:50%;animation:particleAppear 0.5s 0.8s forwards,blink 0.5s infinite;opacity:0;}
+    .car-light-right{position:absolute;top:5px;right:55px;width:12px;height:12px;background:#ff4444;border-radius:50%;animation:particleAppear 0.5s 0.8s forwards,blink 0.5s infinite;opacity:0;}
+    .siren-left{position:absolute;top:-12px;left:140px;width:8px;height:8px;background:#ff0000;border-radius:50%;animation:particleAppear 0.5s 1s forwards,siren-flash 0.3s infinite;opacity:0;}
+    .siren-right{position:absolute;top:-12px;right:140px;width:8px;height:8px;background:#0066ff;border-radius:50%;animation:particleAppear 0.5s 1s forwards,siren-flash 0.3s infinite 0.15s;opacity:0;}
+    
+    @keyframes blink{0%,100%{opacity:1;}50%{opacity:0.3;}}
+    @keyframes siren-flash{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.3;transform:scale(1.3);}}
+    
+    /* АНИМАЦИЯ ОТЪЕЗДА МАШИНЫ */
+    .car-drive-away{animation:driveAway 1.5s ease-in-out forwards !important;}
+    @keyframes driveAway{0%{transform:translateX(0) rotate(0deg);opacity:1;}30%{transform:translateX(50px) rotate(2deg);}100%{transform:translateX(800px) rotate(10deg);opacity:0;}}
+    
+    .preloader-logo{font-size:2rem;font-weight:800;font-family:'Orbitron',monospace;letter-spacing:8px;background:linear-gradient(135deg,#d4af37,#f5e7a3);-webkit-background-clip:text;background-clip:text;color:transparent;margin-top:30px;opacity:0;animation:fadeInText 0.8s 1.2s forwards;}
+    .preloader-text{color:#6b6f78;font-size:0.8rem;margin-top:15px;opacity:0;animation:fadeInText 0.8s 1.4s forwards;}
+    .preloader-progress{width:250px;height:2px;background:rgba(212,175,55,0.2);border-radius:10px;margin-top:20px;overflow:hidden;opacity:0;animation:fadeInText 0.8s 1.6s forwards;}
+    .preloader-progress-bar{width:0%;height:100%;background:linear-gradient(90deg,#d4af37,#f5e7a3);transition:width 0.1s linear;}
+    
+    @keyframes fadeInText{0%{opacity:0;transform:translateY(10px);}100%{opacity:1;transform:translateY(0);}}
+    
+    .navbar{background:rgba(13,17,23,0.95);backdrop-filter:blur(20px);border-bottom:1px solid rgba(212,175,55,0.2);padding:15px 40px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px;}
     .nav-brand{display:flex;align-items:center;gap:15px;cursor:pointer;}
     .nav-logo{width:45px;height:45px;background:linear-gradient(145deg,#d4af37,#b8962a);clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);}
     .nav-title-main{font-size:1.5rem;font-weight:800;font-family:'Orbitron',monospace;background:linear-gradient(135deg,#d4af37,#f5e7a3);-webkit-background-clip:text;background-clip:text;color:transparent;}
     .nav-title-sub{font-size:0.65rem;color:#6b6f78;display:block;}
-    .nav-user{display:flex;align-items:center;gap:15px;background:rgba(30,35,45,0.9);padding:8px 20px;border-radius:50px;border:1px solid rgba(212,175,55,0.3);cursor:pointer;}
+    .nav-user{display:flex;align-items:center;gap:15px;background:rgba(30,35,45,0.9);padding:8px 20px;border-radius:50px;border:1px solid rgba(212,175,55,0.3);cursor:pointer;transition:0.2s;}
+    .nav-user:hover{border-color:#d4af37;transform:scale(1.02);}
     .nav-avatar{width:35px;height:35px;border-radius:50%;border:2px solid #d4af37;}
     .nav-user span{color:#e8e8e8;font-weight:500;}
+    
     .settings-panel{position:fixed;top:80px;right:20px;width:280px;background:rgba(20,25,35,0.98);backdrop-filter:blur(20px);border-radius:20px;border:1px solid #d4af37;z-index:1000;padding:20px;transform:translateX(320px);transition:transform 0.3s;}
     .settings-panel.open{transform:translateX(0);}
-    .settings-panel h3{color:#d4af37;margin-bottom:15px;}
+    .settings-panel h3{color:#d4af37;margin-bottom:15px;font-size:1.2rem;}
     .settings-item{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid rgba(212,175,55,0.2);}
     .settings-item label{color:#e8e8e8;}
-    .settings-item button{background:#ff6b6b;border:none;padding:8px 15px;border-radius:20px;color:white;cursor:pointer;}
+    .settings-item button{background:#ff6b6b;border:none;padding:8px 15px;border-radius:20px;color:white;cursor:pointer;transition:0.2s;}
+    .settings-item button:hover{background:#ff4444;transform:scale(1.02);}
     .theme-switch{width:50px;height:24px;background:#333;border-radius:30px;position:relative;cursor:pointer;}
     .theme-switch.active{background:#d4af37;}
     .theme-switch::after{content:'';position:absolute;width:20px;height:20px;background:white;border-radius:50%;top:2px;left:3px;transition:0.2s;}
     .theme-switch.active::after{left:27px;}
     .close-settings{position:absolute;top:15px;right:15px;background:none;border:none;color:#9ca3af;font-size:20px;cursor:pointer;}
+    
     .auth-container{flex:1;display:flex;justify-content:center;align-items:center;padding:40px;}
-    .auth-card{background:rgba(20,25,35,0.95);backdrop-filter:blur(20px);border:1px solid rgba(212,175,55,0.3);border-radius:40px;padding:50px;text-align:center;max-width:480px;width:100%;}
-    .auth-icon{font-size:4rem;color:#5865F2;}
+    .auth-card{background:rgba(20,25,35,0.95);backdrop-filter:blur(20px);border:1px solid rgba(212,175,55,0.3);border-radius:40px;padding:50px;text-align:center;max-width:480px;width:100%;box-shadow:0 0 30px rgba(212,175,55,0.1);}
+    .auth-icon{font-size:4rem;color:#5865F2;margin-bottom:20px;}
     .auth-title{font-size:2rem;font-family:'Orbitron';background:linear-gradient(135deg,#d4af37,#f5e7a3);-webkit-background-clip:text;background-clip:text;color:transparent;margin:15px 0;}
-    .auth-btn{background:linear-gradient(135deg,#5865F2,#4752c4);border:none;padding:14px 35px;border-radius:50px;color:white;cursor:pointer;display:inline-flex;align-items:center;gap:10px;}
+    .auth-btn{background:linear-gradient(135deg,#5865F2,#4752c4);border:none;padding:14px 35px;border-radius:50px;color:white;cursor:pointer;display:inline-flex;align-items:center;gap:10px;font-weight:600;transition:0.2s;}
+    .auth-btn:hover{transform:scale(1.03);box-shadow:0 5px 20px rgba(88,101,242,0.4);}
+    
     .main-container{flex:1;padding:40px;}
     .dashboard-header{text-align:center;margin-bottom:50px;}
     .dashboard-title{font-size:2.2rem;font-family:'Orbitron';color:#d4af37;}
-    .cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:25px;}
-    .card{background:rgba(20,25,35,0.7);backdrop-filter:blur(15px);border:1px solid rgba(212,175,55,0.2);border-radius:30px;padding:30px;text-align:center;cursor:pointer;transition:0.3s;}
-    .card:hover{transform:translateY(-10px);border-color:#d4af37;}
+    .cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:25px;max-width:1400px;margin:0 auto;}
+    .card{background:rgba(20,25,35,0.7);backdrop-filter:blur(15px);border:1px solid rgba(212,175,55,0.2);border-radius:30px;padding:30px;text-align:center;cursor:pointer;transition:all 0.3s;}
+    .card:hover{transform:translateY(-10px);border-color:#d4af37;box-shadow:0 20px 30px rgba(0,0,0,0.3),0 0 15px rgba(212,175,55,0.2);}
     .card-icon{font-size:3.5rem;}
-    .card h3{color:#e8e8e8;margin-top:10px;}
+    .card h3{color:#e8e8e8;margin-top:10px;font-size:1.2rem;}
     .card p{color:#9ca3af;font-size:0.85rem;margin-top:5px;}
+    
     .modal{display:none;position:fixed;z-index:2000;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.95);justify-content:center;align-items:center;}
     .modal-content{background:linear-gradient(145deg,#1a1f2a,#0f121a);border-radius:40px;max-width:650px;width:90%;max-height:85vh;overflow-y:auto;border:1px solid rgba(212,175,55,0.4);}
     .modal-header{display:flex;justify-content:space-between;padding:20px 25px;border-bottom:1px solid rgba(212,175,55,0.2);}
-    .modal-header h2{color:#d4af37;}
+    .modal-header h2{color:#d4af37;font-family:'Orbitron';}
     .modal-close{background:none;border:none;font-size:28px;cursor:pointer;color:#9ca3af;}
     .modal-body{padding:25px;}
     .form-group{margin-bottom:20px;}
-    .form-group label{display:block;margin-bottom:8px;color:#d4af37;}
-    .form-group input,.form-group select,.form-group textarea{width:100%;padding:12px;background:#0f121a;border:1px solid rgba(212,175,55,0.3);border-radius:30px;color:#e8e8e8;}
+    .form-group label{display:block;margin-bottom:8px;color:#d4af37;font-size:0.9rem;}
+    .form-group input,.form-group select,.form-group textarea{width:100%;padding:12px;background:#0f121a;border:1px solid rgba(212,175,55,0.3);border-radius:30px;color:#e8e8e8;transition:0.2s;}
+    .form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:#d4af37;box-shadow:0 0 10px rgba(212,175,55,0.2);}
     .role-buttons{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;}
-    .role-btn{background:#0f121a;border:1px solid rgba(212,175,55,0.3);color:#e8e8e8;padding:8px 18px;border-radius:30px;cursor:pointer;}
+    .role-btn{background:#0f121a;border:1px solid rgba(212,175,55,0.3);color:#e8e8e8;padding:8px 18px;border-radius:30px;cursor:pointer;transition:0.2s;}
     .role-btn.selected{background:#d4af37;color:#0f121a;}
-    .btn-submit{background:linear-gradient(135deg,#d4af37,#b8962a);border:none;color:#0f121a;padding:12px;border-radius:50px;font-weight:700;cursor:pointer;width:100%;margin-top:15px;}
-    .alert{position:fixed;top:100px;right:20px;background:#ff6b6b;color:white;padding:15px 20px;border-radius:10px;z-index:3000;animation:slideIn 0.3s;max-width:350px;}
+    .role-btn:hover{transform:scale(1.03);background:#b8962a;}
+    .btn-submit{background:linear-gradient(135deg,#d4af37,#b8962a);border:none;color:#0f121a;padding:12px;border-radius:50px;font-weight:700;cursor:pointer;width:100%;margin-top:15px;transition:0.2s;}
+    .btn-submit:hover{transform:scale(1.02);box-shadow:0 5px 15px rgba(212,175,55,0.3);}
+    
+    .alert{position:fixed;top:100px;right:20px;background:#ff6b6b;color:white;padding:15px 20px;border-radius:10px;z-index:3000;animation:slideIn 0.3s;max-width:350px;box-shadow:0 5px 15px rgba(0,0,0,0.2);}
     .alert.success{background:#6bcf7f;}
     @keyframes slideIn{from{transform:translateX(400px);opacity:0;}to{transform:translateX(0);opacity:1;}}
+    
     .admin-panel{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);z-index:10001;justify-content:center;align-items:center;}
     .admin-card{background:#1a1f2a;border-radius:30px;padding:30px;max-width:500px;width:90%;border:1px solid #d4af37;position:relative;}
     .admin-close{position:absolute;right:20px;top:15px;background:none;border:none;font-size:24px;cursor:pointer;color:#9ca3af;}
     .admin-section{margin-bottom:20px;}
     .admin-section h3{color:#e8e8e8;margin-bottom:10px;}
     .admin-section textarea{width:100%;height:100px;background:#0f121a;border:1px solid rgba(212,175,55,0.3);border-radius:15px;padding:10px;color:#e8e8e8;}
-    .admin-save{background:#d4af37;border:none;padding:10px 20px;border-radius:30px;cursor:pointer;margin-top:10px;}
-    @media(max-width:768px){.navbar{padding:15px 20px;}.main-container{padding:20px;}.cards-grid{grid-template-columns:1fr;}}
+    .admin-save{background:#d4af37;border:none;padding:10px 20px;border-radius:30px;cursor:pointer;margin-top:10px;transition:0.2s;}
+    .admin-save:hover{background:#f5e7a3;transform:scale(1.02);}
+    
+    @media(max-width:768px){.navbar{padding:15px 20px;}.main-container{padding:20px;}.cards-grid{grid-template-columns:1fr;}.auth-card{padding:30px;}}
   </style>
 </head>
 <body>
 
 <div class="preloader" id="preloader">
-  <div class="police-car"><div class="car-body"><div class="car-window"></div><div class="siren"><div class="siren-light"></div><div class="siren-light"></div></div><div class="car-wheel left"></div><div class="car-wheel right"></div></div><div class="car-roof"></div><div class="car-light left"></div><div class="car-light right"></div></div>
+  <div class="car-container" id="carContainer">
+    <div class="car-body-particle"></div>
+    <div class="car-roof-particle"></div>
+    <div class="car-window-particle"></div>
+    <div class="car-wheel-left"></div>
+    <div class="car-wheel-right"></div>
+    <div class="car-light-left"></div>
+    <div class="car-light-right"></div>
+    <div class="siren-left"></div>
+    <div class="siren-right"></div>
+  </div>
   <div class="preloader-logo">LSCSD</div>
-  <div class="preloader-text">Патруль на выезде...</div>
+  <div class="preloader-text">Загрузка системы безопасности...</div>
   <div class="preloader-progress"><div class="preloader-progress-bar" id="preloaderProgress"></div></div>
 </div>
 
 <div class="app" id="app" style="display: none;">
-  <nav class="navbar"><div class="nav-brand"><div class="nav-logo"></div><div><span class="nav-title-main">LSCSD</span><span class="nav-title-sub">LOS SANTOS COUNTY SHERIFF'S DEPARTMENT</span></div></div><div class="nav-user" id="navUser" style="display: none;"><img id="navAvatar" class="nav-avatar"><span id="navName"></span><i class="fas fa-cog" style="color:#d4af37;font-size:1.2rem;"></i></div></nav>
-  <div class="auth-container" id="authContainer"><div class="auth-card"><div class="auth-icon"><i class="fab fa-discord"></i></div><h1 class="auth-title">Добро пожаловать</h1><p style="color:#9ca3af;margin-bottom:30px;">Авторизуйтесь через Discord</p><button class="auth-btn" id="authBtn"><i class="fab fa-discord"></i> Войти</button></div></div>
-  <div class="main-container" id="mainContainer" style="display: none;"><div class="dashboard-header"><h1 class="dashboard-title"><i class="fas fa-file-alt"></i> Электронные заявки</h1></div><div class="cards-grid" id="cardsGrid"></div></div>
+  <nav class="navbar">
+    <div class="nav-brand"><div class="nav-logo"></div><div><span class="nav-title-main">LSCSD</span><span class="nav-title-sub">LOS SANTOS COUNTY SHERIFF'S DEPARTMENT</span></div></div>
+    <div class="nav-user" id="navUser" style="display: none;"><img id="navAvatar" class="nav-avatar"><span id="navName"></span><i class="fas fa-cog" style="color:#d4af37;font-size:1.2rem;"></i></div>
+  </nav>
+  <div class="auth-container" id="authContainer"><div class="auth-card"><div class="auth-icon"><i class="fab fa-discord"></i></div><h1 class="auth-title">Добро пожаловать</h1><p style="color:#9ca3af;margin-bottom:30px;">Авторизуйтесь через Discord</p><button class="auth-btn" id="authBtn"><i class="fab fa-discord"></i> Войти через Discord</button></div></div>
+  <div class="main-container" id="mainContainer" style="display: none;"><div class="dashboard-header"><h1 class="dashboard-title"><i class="fas fa-file-alt"></i> Электронные заявки</h1><p style="color:#9ca3af;margin-top:10px;">Выберите тип обращения</p></div><div class="cards-grid" id="cardsGrid"></div></div>
 </div>
 
-<div class="settings-panel" id="settingsPanel"><button class="close-settings" id="closeSettings">&times;</button><h3>Настройки</h3><div class="settings-item"><label>Тёмная / Светлая тема</label><div class="theme-switch" id="themeSwitch"></div></div><div class="settings-item"><label>Выход из аккаунта</label><button id="settingsLogoutBtn">Выйти</button></div></div>
+<div class="settings-panel" id="settingsPanel"><button class="close-settings" id="closeSettings">&times;</button><h3><i class="fas fa-sliders-h"></i> Настройки</h3><div class="settings-item"><label>🌙 Тёмная / ☀️ Светлая тема</label><div class="theme-switch" id="themeSwitch"></div></div><div class="settings-item"><label><i class="fas fa-sign-out-alt"></i> Выход из аккаунта</label><button id="settingsLogoutBtn">Выйти</button></div></div>
 
 <div class="modal" id="modal"><div class="modal-content"><div class="modal-header"><h2 id="modalTitle"></h2><button class="modal-close" id="modalClose">&times;</button></div><div class="modal-body" id="modalBody"></div></div></div>
 
@@ -123,29 +162,39 @@
 
 <script>
 (function() {
+  // Защита от F12
   document.addEventListener('contextmenu', e => e.preventDefault());
   document.addEventListener('keydown', e => { if(e.key==='F12'||(e.ctrlKey&&e.shiftKey&&(e.key==='I'||e.key==='C'||e.key==='J'))||(e.ctrlKey&&e.key==='U')) e.preventDefault(); });
   
-  // Прелоадер
+  // НОВАЯ АНИМАЦИЯ: прогресс + отъезд машины
   var progress = 0;
   var progressBar = document.getElementById('preloaderProgress');
   var interval = setInterval(function() {
-    progress += Math.floor(Math.random() * 10) + 5;
+    progress += Math.floor(Math.random() * 8) + 4;
     if (progress > 100) progress = 100;
     if (progressBar) progressBar.style.width = progress + '%';
     if (progress >= 100) {
       clearInterval(interval);
+      // Запускаем анимацию отъезда машины
+      var carContainer = document.getElementById('carContainer');
+      if (carContainer) {
+        carContainer.classList.add('car-drive-away');
+      }
+      // Ждём окончания анимации отъезда
       setTimeout(function() {
-        document.getElementById('preloader').style.opacity = '0';
+        var preloader = document.getElementById('preloader');
+        var app = document.getElementById('app');
+        preloader.style.opacity = '0';
         setTimeout(function() {
-          document.getElementById('preloader').style.display = 'none';
-          document.getElementById('app').style.display = 'flex';
-          setTimeout(function() { document.getElementById('app').style.opacity = '1'; }, 50);
+          preloader.style.display = 'none';
+          app.style.display = 'flex';
+          setTimeout(function() { app.style.opacity = '1'; }, 50);
         }, 500);
-      }, 500);
+      }, 1500);
     }
-  }, 60);
+  }, 70);
   
+  // ОСНОВНАЯ ЛОГИКА
   var PROXY_URL = 'https://cs324022.tw1.ru/index.php';
   var DISCORD_CLIENT_ID = '1494686473520287774';
   var REDIRECT_URI = 'https://style42124.github.io/lscsd/';
@@ -160,7 +209,7 @@
   
   var DEPARTMENTS = ['SAI', 'GU', 'AF', 'IAD', 'SEB', 'K-9', 'DID', 'MED', 'SPD'];
   var FORMS_LIST = [
-    {id:'department',label:'Заявка в отдел',icon:'📋',desc:'Подача заявления'},
+    {id:'department',label:'Заявка в отдел',icon:'📋',desc:'Подача заявления на перевод'},
     {id:'appeal',label:'Обжалование',icon:'⚖️',desc:'Обжалование выговора'},
     {id:'workoff',label:'Отработка',icon:'🛠️',desc:'Отработка выговора'},
     {id:'promotion',label:'Повышение',icon:'⭐',desc:'Заявка на повышение'},
@@ -213,7 +262,7 @@
         options.headers['Content-Type'] = 'application/json';
         options.body = JSON.stringify(dataToSend);
       }
-      fetch(PROXY_URL, options).then(r=>r.json()).then(function(d){ if(d.success) showAlert('✅ Заявка отправлена!','success'); resolve(d); }).catch(function(){ showAlert('❌ Ошибка',''); reject(); });
+      fetch(PROXY_URL, options).then(r=>r.json()).then(function(d){ if(d.success) showAlert('✅ Заявка отправлена!','success'); resolve(d); }).catch(function(){ showAlert('❌ Ошибка соединения',''); reject(); });
     });
   }
   
@@ -248,7 +297,6 @@
   }
   
   document.getElementById('authBtn').onclick = function() { window.location.href = 'https://discord.com/api/oauth2/authorize?client_id='+DISCORD_CLIENT_ID+'&redirect_uri='+encodeURIComponent(REDIRECT_URI)+'&response_type=token&scope=identify'; };
-  document.getElementById('navLogout')?.addEventListener('click', function() { localStorage.removeItem('lscsd_user'); location.reload(); });
   document.getElementById('settingsLogoutBtn').onclick = function() { localStorage.removeItem('lscsd_user'); location.reload(); };
   
   var settingsPanel = document.getElementById('settingsPanel');
@@ -312,17 +360,17 @@
     DEPARTMENTS.forEach(function(d) { var btn = document.createElement('div'); btn.className = 'role-btn'; btn.textContent = d; btn.onclick = function() { btns.querySelectorAll('.role-btn').forEach(function(b){ b.classList.remove('selected'); }); btn.classList.add('selected'); document.getElementById('department').value = d; }; btns.appendChild(btn); });
     container.querySelector('#formEl').onsubmit = function(e) { e.preventDefault(); var data = { firstName:document.getElementById('firstName').value, lastName:document.getElementById('lastName').value, staticId:document.getElementById('staticId').value, department:document.getElementById('department').value, tablet:document.getElementById('tablet').value, inventory:document.getElementById('inventory').value, reason:document.getElementById('reason').value }; callAPI('submit_resignation',data,false).then(function(r){ if(r.success) document.getElementById('modal').style.display='none'; }); }; }
   
-  // АДМИН-ПАНЕЛЬ F7 (ПАРОЛЬ style1482)
+  // АДМИН-ПАНЕЛЬ (ТОЛЬКО ПО F7 + ПАРОЛЬ style1482)
   var adminPasswordHash = "2b5b7b3e6b8b7b3e6b8b7b3e6b8b7b3e6b8b7b3e6b8b7b3e6b8b7b3e6b8b7b3e";
   function hashPassword(pwd) { return crypto.subtle.digest('SHA-256', new TextEncoder().encode(pwd)).then(function(hash) { return Array.from(new Uint8Array(hash)).map(function(b) { return b.toString(16).padStart(2,'0'); }).join(''); }); }
   
   document.addEventListener('keydown', function(e) {
     if (e.key === 'F7') {
       e.preventDefault();
-      var pwd = prompt('🔐 Введите пароль:');
+      var pwd = prompt('🔐 Введите пароль администратора:');
       if (pwd) {
         hashPassword(pwd).then(function(hashed) {
-          if (hashed === '2b5b7b3e6b8b7b3e6b8b7b3e6b8b7b3e6b8b7b3e6b8b7b3e6b8b7b3e6b8b7b3e') {
+          if (hashed === adminPasswordHash) {
             document.getElementById('adminPanel').style.display = 'flex';
             document.getElementById('blacklistInput').value = blacklist.join('\n');
             var blockedNow = Object.keys(tempBlocked).filter(function(id) { return tempBlocked[id] > Date.now(); });
