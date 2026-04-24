@@ -319,11 +319,6 @@
       var card = document.createElement('div');
       card.className = 'card';
       card.innerHTML = '<div class="card-icon">'+f.icon+'</div><h3>'+f.label+'</h3><p>'+f.desc+'</p>';
-      var panelBtn = document.createElement('button');
-      panelBtn.innerHTML = '<i class="fas fa-tachometer-alt"></i> Панель';
-      panelBtn.style.cssText = 'background:#d4af37;border:none;padding:5px 12px;border-radius:20px;margin-top:12px;cursor:pointer;font-size:12px;';
-      panelBtn.onclick = function(e) { e.stopPropagation(); window.location.href = '/lscsd/panel.html'; };
-      card.appendChild(panelBtn);
       card.onclick = function() { openForm(f.id); };
       c.appendChild(card);
     });
