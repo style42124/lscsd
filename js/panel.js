@@ -110,6 +110,7 @@
       if (res.success) {
         showNotification('Роль назначена!', 'success');
         loadAllUsers();
+        loadApplications();
       } else {
         showNotification(res.error || 'Ошибка', 'error');
       }
@@ -162,10 +163,10 @@
       card.innerHTML = 
         '<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">' +
           '<div class="badge-icon"><i class="fab fa-discord"></i></div>' +
-          '<div><strong style="color:#e8e8e8;">' + user.id + '</strong><br><span class="user-role-tag ' + roleClass + '">' + (roleLevels[user.role.level] || 'Младший состав') + '</span>' +
+          '<div><strong style="color:#fff;">' + user.id + '</strong><br><span class="user-role-tag ' + roleClass + '">' + (roleLevels[user.role.level] || 'Младший состав') + '</span>' +
           (user.role.department ? '<span style="margin-left:5px; color:#d4af37;">(' + user.role.department + ')</span>' : '') + '</div>' +
         '</div>';
-      if (currentUserRole && currentUserRole.level >= 7 && user.id !== currentUser.id) {
+      if (currentUserRole && (currentUserRole.level >= 7 || currentUserRole.level === 9) && user.id !== currentUser.id) {
         var btn = document.createElement('button');
         btn.innerHTML = '<i class="fas fa-edit"></i> Назначить роль';
         btn.style.cssText = 'background:#d4af37;border:none;padding:6px 12px;border-radius:20px;cursor:pointer;width:100%;margin-top:10px;color:#0f121a;font-weight:bold;';
@@ -250,9 +251,9 @@
     var appDataDiv = document.getElementById('reviewAppData');
     if (appDataDiv) {
       appDataDiv.innerHTML = 
-        '<p><strong>Тип:</strong> ' + (typeNames[appData.type] || appData.type) + '</p>' +
-        '<p><strong>Заявитель:</strong> <@' + appData.userId + '></p>' +
-        '<p><strong>Дата:</strong> ' + (appData.created_at || '') + '</p>';
+        '<p><strong style="color:#e8e8e8;">Тип:</strong> <span style="color:#d4af37;">' + (typeNames[appData.type] || appData.type) + '</span></p>' +
+        '<p><strong style="color:#e8e8e8;">Заявитель:</strong> <span style="color:#fff;">' + (appData.username || appData.userId) + '</span></p>' +
+        '<p><strong style="color:#e8e8e8;">Дата:</strong> <span style="color:#9ca3af;">' + (appData.created_at || '') + '</span></p>';
     }
     var statusSelect = document.getElementById('reviewStatus');
     if (statusSelect) statusSelect.value = 'approved';
@@ -273,6 +274,10 @@
       closeBtn.onclick = function() { modal.style.display = 'none'; };
     }
   }
+  
+  document.getElementById('backToMainBtn').onclick = function() {
+    window.location.href = '/lscsd/';
+  };
   
   function handleAuthCallback() {
     var hash = window.location.hash.substring(1);
@@ -305,7 +310,7 @@
       loadUserRole().then(function() {
         if (currentUserRole && currentUserRole.level < 2 && currentUserRole.level !== 6) {
           if (mainContainer) {
-            mainContainer.innerHTML = '<div style="text-align:center;padding:50px;"><h2>Доступ запрещён</h2><p>У вас недостаточно прав для доступа к панели управления.</p><button onclick="window.location.href=\'/lscsd/\'" class="btn-primary" style="background:#d4af37;border:none;padding:10px 20px;border-radius:30px;cursor:pointer;">Вернуться на главную</button></div>';
+            mainContainer.innerHTML = '<div style="text-align:center;padding:50px;"><h2 style="color:#d4af37;">Доступ запрещён</h2><p style="color:#e8e8e8;">У вас недостаточно прав для доступа к панели управления.</p><button onclick="window.location.href=\'/lscsd/\'" class="btn-primary" style="background:#d4af37;border:none;padding:10px 20px;border-radius:30px;cursor:pointer;margin-top:20px;">Вернуться на главную</button></div>';
           }
           return;
         }
