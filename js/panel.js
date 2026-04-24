@@ -162,13 +162,13 @@
       card.innerHTML = 
         '<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">' +
           '<div class="badge-icon"><i class="fab fa-discord"></i></div>' +
-          '<div><strong>' + user.id + '</strong><br><span class="user-role-tag ' + roleClass + '">' + (roleLevels[user.role.level] || 'Младший состав') + '</span>' +
-          (user.role.department ? '<span style="margin-left:5px;">(' + user.role.department + ')</span>' : '') + '</div>' +
+          '<div><strong style="color:#e8e8e8;">' + user.id + '</strong><br><span class="user-role-tag ' + roleClass + '">' + (roleLevels[user.role.level] || 'Младший состав') + '</span>' +
+          (user.role.department ? '<span style="margin-left:5px; color:#d4af37;">(' + user.role.department + ')</span>' : '') + '</div>' +
         '</div>';
       if (currentUserRole && currentUserRole.level >= 7 && user.id !== currentUser.id) {
         var btn = document.createElement('button');
         btn.innerHTML = '<i class="fas fa-edit"></i> Назначить роль';
-        btn.style.cssText = 'background:#d4af37;border:none;padding:6px 12px;border-radius:20px;cursor:pointer;width:100%;margin-top:10px;';
+        btn.style.cssText = 'background:#d4af37;border:none;padding:6px 12px;border-radius:20px;cursor:pointer;width:100%;margin-top:10px;color:#0f121a;font-weight:bold;';
         btn.onclick = (function(uid, urole) { return function() { openRoleModal(uid, urole); }; })(user.id, user.role);
         card.appendChild(btn);
       }
