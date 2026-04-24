@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>LSCSD — Sheriff Department</title>
-  <link rel="icon" type="image/png" href="/lscsd/foto.png">
+  <link rel="icon" type="image/png" href="/lscsd/file.png">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="css/style.css">
@@ -30,11 +30,10 @@
     <div class="nav-brand"><div class="nav-logo"></div><div><span class="nav-title-main">LSCSD</span><span class="nav-title-sub">LOS SANTOS COUNTY SHERIFF'S DEPARTMENT</span></div></div>
     <div class="nav-user" id="navUser" style="display: none;">
       <img id="navAvatar" class="nav-avatar"><span id="navName"></span>
-      <button id="panelBtn" class="panel-btn" style="display:none; background:#d4af37; border:none; padding:5px 12px; border-radius:20px; margin-left:10px; cursor:pointer; font-size:12px; font-weight:bold;"><i class="fas fa-tachometer-alt"></i> Панель</button>
-      <i class="fas fa-cog" style="color:#d4af37;font-size:1rem; margin-left:8px;"></i>
+      <i class="fas fa-cog" style="color:#d4af37;font-size:1rem; margin-left:8px; cursor:pointer;"></i>
     </div>
   </nav>
-  
+
   <div class="auth-container" id="authContainer">
     <div class="auth-card">
       <div class="auth-icon"><i class="fab fa-discord"></i></div>
@@ -43,19 +42,19 @@
       <button class="auth-btn" id="authBtn"><i class="fab fa-discord"></i> Войти через Discord</button>
     </div>
   </div>
-  
+
   <div class="main-container" id="mainContainer" style="display: none;">
     <div class="dashboard-header">
       <h1 class="dashboard-title"><i class="fas fa-file-alt"></i> Электронные заявки</h1>
       <p style="color:#9ca3af;margin-top:8px;">Выберите тип обращения</p>
     </div>
-    
+
     <div class="tabs">
       <button class="tab-btn active" data-tab="applications">📋 Заявки</button>
       <button class="tab-btn" data-tab="history">📜 История</button>
       <button class="tab-btn" data-tab="stats">📊 Статистика</button>
     </div>
-    
+
     <div id="applications-tab" class="tab-content active"><div class="cards-grid" id="cardsGrid"></div></div>
     <div id="history-tab" class="tab-content">
       <div class="search-box"><input type="text" id="historySearch" placeholder="🔍 Поиск по заявкам..."></div>
@@ -75,6 +74,7 @@
   <div class="settings-item"><label><i class="fas fa-save"></i> Автозаполнение</label><div class="theme-switch" id="autoFillSwitch"></div></div>
   <div class="settings-item"><label><i class="fas fa-bug"></i> Сообщить о баге</label><button id="reportBugBtn">Сообщить</button></div>
   <div class="settings-item"><label><i class="fas fa-sign-out-alt"></i> Выход из аккаунта</label><button id="settingsLogoutBtn">Выйти</button></div>
+  <div class="settings-item" id="panelBtnContainer" style="display:none;"><label><i class="fas fa-tachometer-alt"></i> Панель управления</label><button id="panelBtn">Открыть</button></div>
 </div>
 
 <div class="bug-modal" id="bugModal">
