@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>LSCSD — Панель управления</title>
-  <link rel="icon" type="image/png" href="/lscsd/foto.png">
+  <link rel="icon" type="image/png" href="/lscsd/favicon.png">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="css/style.css">
@@ -23,18 +23,37 @@
     .review-content{background:linear-gradient(145deg,#1a1f2a,#0f121a);border-radius:20px;max-width:500px;width:90%;padding:25px;border:1px solid #d4af37;}
     .role-select{width:100%;padding:10px;background:#0f121a;border:1px solid rgba(212,175,55,0.3);border-radius:12px;color:#e8e8e8;margin:10px 0;}
     .dept-select{width:100%;padding:10px;background:#0f121a;border:1px solid rgba(212,175,55,0.3);border-radius:12px;color:#e8e8e8;margin:10px 0;}
-    .btn-primary{background:#d4af37;border:none;padding:10px 20px;border-radius:30px;cursor:pointer;margin:5px;}
+    .btn-primary{background:#d4af37;border:none;padding:10px 20px;border-radius:30px;cursor:pointer;margin:5px;color:#0f121a;font-weight:bold;}
     .btn-danger{background:#ff6b6b;border:none;padding:10px 20px;border-radius:30px;cursor:pointer;color:white;}
     .btn-success{background:#6bcf7f;border:none;padding:10px 20px;border-radius:30px;cursor:pointer;}
     .filters{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;}
-    .filter-btn{background:rgba(20,25,35,0.7);border:1px solid rgba(212,175,55,0.3);border-radius:20px;padding:8px 16px;cursor:pointer;}
+    .filter-btn{background:rgba(20,25,35,0.7);border:1px solid rgba(212,175,55,0.3);border-radius:20px;padding:8px 16px;cursor:pointer;color:#e8e8e8;}
     .filter-btn.active{background:#d4af37;color:#0f121a;}
     .user-role-tag{padding:4px 10px;border-radius:20px;font-size:12px;display:inline-block;margin-top:8px;}
-    .role-1{background:#2c3e50;}
-    .role-2,.role-3,.role-4,.role-5{background:#16a085;}
-    .role-6{background:#8e44ad;}
-    .role-7,.role-8,.role-9{background:#c0392b;}
-    .badge-icon{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#d4af37,#b8962a);display:flex;align-items:center;justify-content:center;font-size:20px;}
+    .role-1{background:#2c3e50;color:white;}
+    .role-2,.role-3,.role-4,.role-5{background:#16a085;color:white;}
+    .role-6{background:#8e44ad;color:white;}
+    .role-7,.role-8,.role-9{background:#c0392b;color:white;}
+    .badge-icon{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#d4af37,#b8962a);display:flex;align-items:center;justify-content:center;font-size:20px;color:#0f121a;}
+    .main-container{flex:1;padding:30px;}
+    .dashboard-header{text-align:center;margin-bottom:35px;}
+    .dashboard-title{font-size:1.8rem;font-family:'Orbitron';color:#d4af37;}
+    .tabs{display:flex;justify-content:center;gap:10px;margin-bottom:30px;flex-wrap:wrap;}
+    .tab-btn{background:rgba(20,25,35,0.7);border:1px solid rgba(212,175,55,0.3);border-radius:30px;padding:10px 25px;color:#e8e8e8;cursor:pointer;transition:0.2s;}
+    .tab-btn.active{background:#d4af37;color:#0f121a;}
+    .tab-btn:hover{transform:translateY(-2px);border-color:#d4af37;}
+    .tab-content{display:none;}
+    .tab-content.active{display:block;}
+    .search-box{width:100%;max-width:400px;margin:0 auto 20px;}
+    .search-box input{width:100%;padding:10px 15px;background:#0f121a;border:1px solid rgba(212,175,55,0.3);border-radius:30px;color:#e8e8e8;}
+    .notification{position:fixed;top:90px;right:20px;min-width:300px;background:linear-gradient(135deg,#1a1f2a,#0f121a);border-left:4px solid #d4af37;border-radius:12px;padding:14px 20px;z-index:3000;animation:slideInRight 0.3s ease, fadeOut 0.3s ease 2.7s forwards;}
+    .notification.success{border-left-color:#6bcf7f;}
+    .notification.error{border-left-color:#ff6b6b;}
+    .notification-title{font-weight:600;margin-bottom:5px;}
+    .notification.success .notification-title{color:#6bcf7f;}
+    .notification.error .notification-title{color:#ff6b6b;}
+    @keyframes slideInRight{from{transform:translateX(400px);opacity:0;}to{transform:translateX(0);opacity:1;}}
+    @keyframes fadeOut{to{opacity:0;visibility:hidden;}}
   </style>
 </head>
 <body>
@@ -55,7 +74,7 @@
     <div class="nav-brand"><div class="nav-logo"></div><div><span class="nav-title-main">LSCSD PANEL</span><span class="nav-title-sub">УПРАВЛЕНИЕ ПЕРСОНАЛОМ</span></div></div>
     <div class="nav-user" id="navUser">
       <img id="navAvatar" class="nav-avatar"><span id="navName"></span>
-      <span id="userRoleBadge" style="font-size:11px;background:#d4af37;color:#0f121a;padding:2px 8px;border-radius:20px;"></span>
+      <span id="userRoleBadge" style="font-size:11px;background:#d4af37;color:#0f121a;padding:2px 8px;border-radius:20px;margin-left:8px;"></span>
     </div>
   </nav>
 
@@ -113,7 +132,7 @@
   <div class="review-content">
     <h3 style="color:#d4af37;"><i class="fas fa-user-tag"></i> Назначение роли</h3>
     <p id="roleTargetName" style="margin:10px 0;"></p>
-    <select id="roleLevelSelect" class="role-select" id="roleLevelSelect">
+    <select id="roleLevelSelect" class="role-select">
       <option value="1">Младший состав</option>
       <option value="2">Dep.Head (старший состав)</option>
       <option value="3">Head (старший состав)</option>
