@@ -260,10 +260,15 @@
       document.getElementById('navUser').style.display = 'flex';
       document.getElementById('navName').innerText = currentUser.username;
       if (currentUser.avatar) document.getElementById('navAvatar').src = currentUser.avatar;
-      loadUserRoleFromServer().then(function() {
+      loadUserRoleFromServer().then(function(role) {
         renderCards();
         renderHistory();
         renderStats();
+        var panelBtn = document.getElementById('panelBtn');
+        if (panelBtn && role && role.level >= 2) {
+          panelBtn.style.display = 'block';
+          panelBtn.onclick = function() { window.location.href = '/lscsd/panel.html'; };
+        }
       });
     } else { 
       document.getElementById('authContainer').style.display = 'flex'; 
