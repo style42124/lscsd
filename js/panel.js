@@ -196,12 +196,12 @@
       var statusText = app.data.status === 'pending' ? '⏳ На рассмотрении' : (app.data.status === 'approved' ? '✅ Одобрена' : '❌ Отклонена');
       item.innerHTML = 
         '<div style="display:flex;justify-content:space-between;align-items:center;">' +
-          '<span class="type">' + (typeNames[app.data.type] || app.data.type) + '</span>' +
-          '<span style="font-size:11px;">#' + app.id + '</span>' +
+          '<span class="type" style="color:#e8e8e8;">' + (typeNames[app.data.type] || app.data.type) + '</span>' +
+          '<span style="font-size:11px; color:#9ca3af;">#' + app.id + '</span>' +
         '</div>' +
-        '<div style="font-size:12px;color:#9ca3af;margin:5px 0;">От: ' + (app.data.username || app.data.userId) + '</div>' +
-        '<div style="font-size:11px;">' + statusText + '</div>' +
-        '<div style="font-size:11px;color:#6b6f78;">' + (app.data.created_at || '') + '</div>';
+        '<div style="font-size:12px; color:#d4af37; margin:5px 0;">От: ' + (app.data.username || app.data.userId) + '</div>' +
+        '<div style="font-size:11px; color:#e8e8e8;">' + statusText + '</div>' +
+        '<div style="font-size:11px; color:#6b6f78;">' + (app.data.created_at || '') + '</div>';
       if (app.data.status === 'pending') {
         var canReview = false;
         if (currentUserRole && currentUserRole.level >= 2) canReview = true;
@@ -209,7 +209,7 @@
         if (canReview) {
           var reviewBtn = document.createElement('button');
           reviewBtn.innerHTML = '<i class="fas fa-gavel"></i> Рассмотреть';
-          reviewBtn.style.cssText = 'background:#d4af37;border:none;padding:5px 12px;border-radius:20px;cursor:pointer;margin-top:8px;width:100%;';
+          reviewBtn.style.cssText = 'background:#d4af37;border:none;padding:5px 12px;border-radius:20px;cursor:pointer;margin-top:8px;width:100%;color:#0f121a;font-weight:bold;';
           reviewBtn.onclick = (function(aid, adata) { return function() { openReviewModal(aid, adata); }; })(app.id, app.data);
           item.appendChild(reviewBtn);
         }
