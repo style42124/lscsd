@@ -4,13 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>LSCSD — Панель управления</title>
-  <link rel="icon" type="image/png" href="/lscsd/favicon.png">
+  <link rel="icon" type="image/png" href="/lscsd/file.png">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="css/style.css">
   <style>
     .panel-container{max-width:1400px;margin:0 auto;padding:20px;}
-    .users-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px;margin-top:20px;}
+    .users-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(350px,1fr));gap:20px;margin-top:20px;}
     .user-card{background:rgba(20,25,35,0.7);border-radius:20px;padding:18px;border:1px solid rgba(212,175,55,0.3);transition:0.2s;}
     .user-card:hover{border-color:#d4af37;}
     .app-list{max-height:500px;overflow-y:auto;}
@@ -54,6 +54,15 @@
     .notification.error .notification-title{color:#ff6b6b;}
     @keyframes slideInRight{from{transform:translateX(400px);opacity:0;}to{transform:translateX(0);opacity:1;}}
     @keyframes fadeOut{to{opacity:0;visibility:hidden;}}
+    .navbar{background:rgba(13,17,23,0.95);backdrop-filter:blur(20px);border-bottom:1px solid rgba(212,175,55,0.2);padding:12px 35px;display:flex;justify-content:space-between;align-items:center;}
+    .nav-brand{display:flex;align-items:center;gap:12px;cursor:pointer;}
+    .nav-logo{width:40px;height:40px;background:linear-gradient(145deg,#d4af37,#b8962a);clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);}
+    .nav-title-main{font-size:1.2rem;font-weight:800;font-family:'Orbitron';background:linear-gradient(135deg,#d4af37,#f5e7a3);-webkit-background-clip:text;background-clip:text;color:transparent;}
+    .nav-title-sub{font-size:0.55rem;color:#6b6f78;display:block;}
+    .nav-user{display:flex;align-items:center;gap:12px;background:rgba(30,35,45,0.9);padding:5px 16px;border-radius:40px;border:1px solid rgba(212,175,55,0.3);}
+    .nav-avatar{width:30px;height:30px;border-radius:50%;border:2px solid #d4af37;}
+    .nav-user span{color:#e8e8e8;font-weight:500;font-size:13px;}
+    .back-btn{background:#d4af37;border:none;padding:6px 14px;border-radius:20px;cursor:pointer;color:#0f121a;font-weight:bold;margin-left:10px;}
   </style>
 </head>
 <body>
@@ -75,6 +84,7 @@
     <div class="nav-user" id="navUser">
       <img id="navAvatar" class="nav-avatar"><span id="navName"></span>
       <span id="userRoleBadge" style="font-size:11px;background:#d4af37;color:#0f121a;padding:2px 8px;border-radius:20px;margin-left:8px;"></span>
+      <button class="back-btn" id="backToMainBtn"><i class="fas fa-home"></i> На главную</button>
     </div>
   </nav>
 
@@ -89,17 +99,17 @@
 
   <div class="main-container" id="mainContainer" style="display: none;">
     <div class="dashboard-header"><h1 class="dashboard-title"><i class="fas fa-users-cog"></i> Управление отделом</h1></div>
-    
+
     <div class="tabs">
       <button class="tab-btn active" data-tab="users">👥 Сотрудники</button>
       <button class="tab-btn" data-tab="applications">📋 Заявки</button>
     </div>
-    
+
     <div id="users-tab" class="tab-content active">
       <div class="search-box"><input type="text" id="userSearch" placeholder="🔍 Поиск по имени или ID..."></div>
       <div class="users-grid" id="usersGrid"></div>
     </div>
-    
+
     <div id="applications-tab" class="tab-content">
       <div class="filters" id="appFilters">
         <button class="filter-btn active" data-filter="all">Все заявки</button>
@@ -131,7 +141,7 @@
 <div class="role-modal" id="roleModal">
   <div class="review-content">
     <h3 style="color:#d4af37;"><i class="fas fa-user-tag"></i> Назначение роли</h3>
-    <p id="roleTargetName" style="margin:10px 0;"></p>
+    <p id="roleTargetName" style="margin:10px 0; color:#e8e8e8;"></p>
     <select id="roleLevelSelect" class="role-select">
       <option value="1">Младший состав</option>
       <option value="2">Dep.Head (старший состав)</option>
