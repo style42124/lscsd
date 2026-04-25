@@ -57,21 +57,21 @@
   }
 
   function loadAllUsers() {
-    if (currentUserRole && (currentUserRole.level >= 7 || currentUserRole.level === 9)) {
-      return fetch(PROXY_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'get_all_users_roles' })
-      }).then(r => r.json()).then(res => {
-        if (res.success) {
-          allUsers = res.users;
-          renderUsers();
-        }
-      });
-    }
-    return Promise.resolve();
+  // Для уровней 2 и выше загружаем список (для отображения)
+  if (currentUserRole && currentUserRole.level >= 2) {
+    return fetch(PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'get_all_users_roles' })
+    }).then(r => r.json()).then(res => {
+      if (res.success) {
+        allUsers = res.users;
+        renderUsers();
+      }
+    });
   }
-
+  return Promise.resolve();
+}
   function loadApplications() {
     return fetch(PROXY_URL, {
       method: 'POST',
