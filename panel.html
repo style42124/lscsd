@@ -7,111 +7,253 @@
   <link rel="icon" type="image/png" href="/lscsd/file.png">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
   <style>
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body { background:#0a0c10; font-family:'Inter',sans-serif; color:#e8e8e8; }
-    /* прелоадер */
-    .preloader { position:fixed; top:0; left:0; width:100%; height:100%; background:#0a0c10; z-index:10000; display:flex; justify-content:center; align-items:center; flex-direction:column; transition:opacity 0.5s; }
-    .preloader-logo { font-size:2rem; font-family:'Orbitron'; background:linear-gradient(135deg,#d4af37,#f5e7a3); -webkit-background-clip:text; background-clip:text; color:transparent; margin-bottom:20px; }
-    .preloader-progress { width:240px; height:2px; background:rgba(212,175,55,0.2); border-radius:10px; overflow:hidden; }
-    .preloader-progress-bar { width:0%; height:100%; background:linear-gradient(90deg,#d4af37,#f5e7a3); transition:width 0.1s linear; }
-    /* navbar */
-    .navbar { background:rgba(13,17,23,0.95); backdrop-filter:blur(20px); border-bottom:1px solid rgba(212,175,55,0.3); padding:12px 35px; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:100; }
-    .nav-brand { display:flex; align-items:center; gap:12px; cursor:pointer; }
-    .nav-logo { width:40px; height:40px; background:linear-gradient(145deg,#d4af37,#b8962a); clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%); }
-    .nav-title-main { font-size:1.2rem; font-weight:800; font-family:'Orbitron'; background:linear-gradient(135deg,#d4af37,#f5e7a3); -webkit-background-clip:text; background-clip:text; color:transparent; }
-    .nav-title-sub { font-size:0.55rem; color:#6b6f78; }
-    .nav-user { display:flex; align-items:center; gap:12px; background:rgba(30,35,45,0.9); padding:5px 16px; border-radius:40px; border:1px solid rgba(212,175,55,0.3); }
-    .nav-avatar { width:30px; height:30px; border-radius:50%; border:2px solid #d4af37; }
-    .back-btn { background:#d4af37; border:none; padding:5px 12px; border-radius:20px; cursor:pointer; color:#0f121a; font-weight:bold; transition:0.2s; }
-    .back-btn:hover { transform:scale(1.02); }
-    /* auth */
-    .auth-container { flex:1; display:flex; justify-content:center; align-items:center; padding:40px; min-height:60vh; }
-    .auth-card { background:rgba(20,25,35,0.95); backdrop-filter:blur(20px); border:1px solid rgba(212,175,55,0.4); border-radius:40px; padding:50px; text-align:center; max-width:450px; width:100%; }
-    .auth-icon { font-size:4rem; color:#5865F2; margin-bottom:20px; }
-    .auth-title { font-size:1.8rem; font-family:'Orbitron'; background:linear-gradient(135deg,#d4af37,#f5e7a3); -webkit-background-clip:text; background-clip:text; color:transparent; }
-    .auth-btn { background:#5865F2; border:none; padding:12px 28px; border-radius:40px; color:white; font-weight:600; cursor:pointer; transition:0.2s; }
-    .auth-btn:hover { transform:scale(1.02); }
-    /* main */
-    .main-container { padding:30px; }
-    .dashboard-header { text-align:center; margin-bottom:30px; }
-    .dashboard-title { font-size:1.8rem; font-family:'Orbitron'; color:#d4af37; }
-    .tabs { display:flex; justify-content:center; gap:15px; margin-bottom:30px; }
-    .tab-btn { background:rgba(20,25,35,0.7); border:1px solid rgba(212,175,55,0.3); border-radius:40px; padding:10px 25px; cursor:pointer; color:#e8e8e8; transition:0.2s; }
-    .tab-btn.active { background:#d4af37; color:#0f121a; }
-    .users-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:20px; margin-top:20px; }
-    .user-card { background:rgba(20,25,35,0.7); backdrop-filter:blur(10px); border-radius:24px; padding:18px; border:1px solid rgba(212,175,55,0.2); transition:0.3s; display:flex; justify-content:space-between; align-items:center; }
-    .user-card:hover { border-color:#d4af37; transform:translateY(-2px); }
-    .user-info { display:flex; align-items:center; gap:15px; }
-    .badge-icon { width:45px; height:45px; background:linear-gradient(145deg,#d4af37,#b8962a); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.5rem; color:#0f121a; }
-    .user-role-tag { display:inline-block; padding:4px 12px; border-radius:20px; font-size:0.7rem; font-weight:600; margin-top:6px; }
-    .role-1 { background:#2c3e50; }
-    .role-2,.role-3,.role-4,.role-5 { background:#16a085; }
-    .role-6 { background:#8e44ad; }
-    .role-7,.role-8,.role-9 { background:#c0392b; }
-    .user-actions button { background:none; border:none; color:#d4af37; font-size:1.3rem; cursor:pointer; transition:0.2s; }
-    .user-actions button:hover { color:#f5e7a3; transform:scale(1.1); }
-    .search-box { max-width:400px; margin:0 auto 30px; }
-    .search-box input { width:100%; padding:12px 20px; background:#0f121a; border:1px solid rgba(212,175,55,0.3); border-radius:50px; color:#e8e8e8; }
-    /* модалки */
-    .modal-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); backdrop-filter:blur(15px); z-index:2000; display:flex; justify-content:center; align-items:center; }
-    .modal-card { background:linear-gradient(145deg,#1a1f2a,#0f121a); border-radius:30px; max-width:500px; width:90%; padding:30px; border:1px solid #d4af37; animation:modalPop 0.2s; }
-    @keyframes modalPop { from { opacity:0; transform:scale(0.95); } to { opacity:1; transform:scale(1); } }
-    .flex-buttons { display:flex; gap:12px; margin-top:20px; flex-wrap:wrap; }
-    .btn-primary { background:#d4af37; border:none; padding:10px 20px; border-radius:30px; font-weight:bold; cursor:pointer; color:#0f121a; }
-    .btn-cancel { background:#ff6b6b; border:none; padding:10px 20px; border-radius:30px; font-weight:bold; cursor:pointer; color:white; }
-    .notification { position:fixed; top:20px; right:20px; background:#1a1f2a; border-left:4px solid #d4af37; border-radius:12px; padding:12px 20px; min-width:260px; z-index:9999; animation:slideInRight 0.3s, fadeOut 0.3s 2.7s forwards; }
-    @keyframes slideInRight { from { transform:translateX(400px); opacity:0; } to { transform:translateX(0); opacity:1; } }
-    @keyframes fadeOut { to { opacity:0; visibility:hidden; } }
+    /* только специфика панели */
+    .users-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .user-card {
+      background: rgba(20,25,35,0.7);
+      backdrop-filter: blur(10px);
+      border-radius: 24px;
+      padding: 18px;
+      border: 1px solid rgba(212,175,55,0.2);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: 0.3s;
+    }
+    .user-card:hover {
+      border-color: #d4af37;
+      transform: translateY(-2px);
+    }
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    .badge-icon {
+      width: 45px;
+      height: 45px;
+      background: linear-gradient(145deg, #d4af37, #b8962a);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      color: #0f121a;
+    }
+    .user-role-tag {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      margin-top: 6px;
+    }
+    .role-1 { background: #2c3e50; color: #fff; }
+    .role-2, .role-3, .role-4, .role-5 { background: #16a085; color: #fff; }
+    .role-6 { background: #8e44ad; color: #fff; }
+    .role-7, .role-8, .role-9 { background: #c0392b; color: #fff; }
+    .user-actions button {
+      background: none;
+      border: none;
+      color: #d4af37;
+      font-size: 1.3rem;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .user-actions button:hover {
+      color: #f5e7a3;
+      transform: scale(1.1);
+    }
+    .search-box {
+      max-width: 400px;
+      margin: 0 auto 30px;
+    }
+    .search-box input {
+      width: 100%;
+      padding: 12px 20px;
+      background: #0f121a;
+      border: 1px solid rgba(212,175,55,0.3);
+      border-radius: 50px;
+      color: #e8e8e8;
+    }
+    .filters {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 25px;
+      flex-wrap: wrap;
+    }
+    .filter-btn {
+      background: rgba(20,25,35,0.7);
+      border: 1px solid rgba(212,175,55,0.3);
+      border-radius: 30px;
+      padding: 8px 20px;
+      cursor: pointer;
+      color: #e8e8e8;
+      transition: 0.2s;
+    }
+    .filter-btn.active {
+      background: #d4af37;
+      color: #0f121a;
+    }
+    .app-list {
+      max-height: 550px;
+      overflow-y: auto;
+    }
+    .app-item {
+      background: rgba(20,25,35,0.5);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 12px;
+      border-left: 4px solid #d4af37;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .app-item:hover {
+      background: rgba(212,175,55,0.1);
+    }
+    .app-status-pending { border-left-color: #ffa500; }
+    .app-status-approved { border-left-color: #6bcf7f; }
+    .app-status-rejected { border-left-color: #ff6b6b; }
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.95);
+      backdrop-filter: blur(15px);
+      z-index: 2000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-card {
+      background: linear-gradient(145deg, #1a1f2a, #0f121a);
+      border-radius: 30px;
+      max-width: 500px;
+      width: 90%;
+      padding: 30px;
+      border: 1px solid #d4af37;
+      animation: modalPop 0.2s;
+    }
+    @keyframes modalPop {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .flex-buttons {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+    .btn-primary {
+      background: #d4af37;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 30px;
+      font-weight: bold;
+      cursor: pointer;
+      color: #0f121a;
+      transition: 0.2s;
+    }
+    .btn-primary:hover {
+      transform: scale(1.02);
+    }
+    .btn-cancel {
+      background: #ff6b6b;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 30px;
+      font-weight: bold;
+      cursor: pointer;
+      color: white;
+    }
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #1a1f2a;
+      border-left: 4px solid #d4af37;
+      border-radius: 12px;
+      padding: 12px 20px;
+      min-width: 260px;
+      z-index: 9999;
+      animation: slideInRight 0.3s, fadeOut 0.3s 2.7s forwards;
+    }
+    @keyframes slideInRight {
+      from { transform: translateX(400px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes fadeOut {
+      to { opacity: 0; visibility: hidden; }
+    }
   </style>
 </head>
 <body>
-
-<div class="preloader" id="preloader">
-  <div class="preloader-logo">LSCSD PANEL</div>
-  <div class="preloader-progress"><div class="preloader-progress-bar" id="preloaderProgress"></div></div>
-</div>
-
-<div id="app" style="display:none;">
-  <nav class="navbar">
-    <div class="nav-brand"><div class="nav-logo"></div><div><span class="nav-title-main">LSCSD PANEL</span><div class="nav-title-sub">УПРАВЛЕНИЕ ПЕРСОНАЛОМ</div></div></div>
-    <div class="nav-user">
-      <img id="navAvatar" class="nav-avatar"><span id="navName"></span>
-      <span id="userRoleBadge" style="background:#d4af37;color:#0f121a;padding:2px 8px;border-radius:20px;font-size:12px;"></span>
-      <button class="back-btn" id="backToMainBtn"><i class="fas fa-home"></i> На главную</button>
+  <div class="preloader" id="preloader">
+    <div class="badge-container">
+      <div class="siren-glow"><div class="siren-glow-light"></div><div class="siren-glow-light"></div></div>
+      <div class="badge-star"></div><div class="badge-inner"></div>
+      <div class="badge-text">LSCSD<br><span>PANEL ADMIN</span></div>
     </div>
-  </nav>
-
-  <div class="auth-container" id="authContainer">
-    <div class="auth-card">
-      <div class="auth-icon"><i class="fab fa-discord"></i></div>
-      <h1 class="auth-title">Панель управления</h1>
-      <button class="auth-btn" id="authBtn">Войти через Discord</button>
-    </div>
+    <div class="preloader-logo">УПРАВЛЕНИЕ</div>
+    <div class="preloader-text">Загрузка панели...</div>
+    <div class="preloader-progress"><div class="preloader-progress-bar" id="preloaderProgress"></div></div>
   </div>
 
-  <div class="main-container" id="mainContainer" style="display:none;">
-    <div class="dashboard-header"><h1 class="dashboard-title"><i class="fas fa-users-cog"></i> Управление отделом</h1></div>
-    <div class="tabs">
-      <button class="tab-btn active" data-tab="users">👥 Сотрудники</button>
-      <button class="tab-btn" data-tab="applications">📋 Заявки</button>
-    </div>
-    <div id="users-tab" class="tab-content active">
-      <div class="search-box"><input type="text" id="userSearch" placeholder="🔍 Поиск по ID..."></div>
-      <div class="users-grid" id="usersGrid"></div>
-    </div>
-    <div id="applications-tab" class="tab-content">
-      <div class="filters" style="display:flex; gap:12px; justify-content:center; margin-bottom:25px;">
-        <button class="filter-btn active" data-filter="all">Все</button>
-        <button class="filter-btn" data-filter="pending">На рассмотрении</button>
-        <button class="filter-btn" data-filter="approved">Одобренные</button>
-        <button class="filter-btn" data-filter="rejected">Отклоненные</button>
+  <div class="app" id="app" style="display: none;">
+    <nav class="navbar">
+      <div class="nav-brand">
+        <div class="nav-logo"></div>
+        <div><span class="nav-title-main">LSCSD PANEL</span><span class="nav-title-sub">УПРАВЛЕНИЕ ПЕРСОНАЛОМ</span></div>
       </div>
-      <div id="applicationsList" style="max-height:550px; overflow-y:auto;"></div>
+      <div class="nav-user">
+        <img id="navAvatar" class="nav-avatar"><span id="navName"></span>
+        <span id="userRoleBadge" style="background:#d4af37; color:#0f121a; padding:2px 8px; border-radius:20px; font-size:12px;"></span>
+        <button class="back-btn" id="backToMainBtn"><i class="fas fa-home"></i> На главную</button>
+      </div>
+    </nav>
+
+    <div class="auth-container" id="authContainer">
+      <div class="auth-card">
+        <div class="auth-icon"><i class="fab fa-discord"></i></div>
+        <h1 class="auth-title">Панель управления</h1>
+        <button class="auth-btn" id="authBtn">Войти через Discord</button>
+      </div>
+    </div>
+
+    <div class="main-container" id="mainContainer" style="display: none;">
+      <div class="dashboard-header">
+        <h1 class="dashboard-title"><i class="fas fa-users-cog"></i> Управление отделом</h1>
+      </div>
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="users">👥 Сотрудники</button>
+        <button class="tab-btn" data-tab="applications">📋 Заявки</button>
+      </div>
+      <div id="users-tab" class="tab-content active">
+        <div class="search-box"><input type="text" id="userSearch" placeholder="🔍 Поиск по ID..."></div>
+        <div class="users-grid" id="usersGrid"></div>
+      </div>
+      <div id="applications-tab" class="tab-content">
+        <div class="filters">
+          <button class="filter-btn active" data-filter="all">Все</button>
+          <button class="filter-btn" data-filter="pending">На рассмотрении</button>
+          <button class="filter-btn" data-filter="approved">Одобренные</button>
+          <button class="filter-btn" data-filter="rejected">Отклоненные</button>
+        </div>
+        <div class="app-list" id="applicationsList"></div>
+      </div>
     </div>
   </div>
-</div>
 
-<script src="js/panel.js"></script>
+  <script src="js/panel.js"></script>
 </body>
 </html>
