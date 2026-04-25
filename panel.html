@@ -809,4 +809,96 @@
       };
       const modal = document.getElementById('reviewModal');
       document.getElementById('reviewAppData').innerHTML = `
-        <p><strong>Тип:</strong> ${typeNames[
+        <p><strong>Тип:</strong> ${typeNames[appData.type] || appData.type}</p>
+        <p><strong>Заявитель:</strong> ${escapeHtml(appData.username || appData.userId)}</p>
+        <p><strong>Дата:</strong> ${appData.created_at || ''}</p>
+      `;
+      modal.style.display = 'flex';
+      const submitBtn = document.getElementById('submitReviewBtn');
+      const closeBtn = document.getElementById('closeReviewBtn');
+      const statusSelect = document.getElementById('reviewStatus');
+      const commentArea = document.getElementById('reviewComment');
+      
+      const newSubmitHandler = () => {
+        const status = statusSelect.value;
+        const comment = commentArea.value;
+        reviewApplication(appId, status, comment, appData, typeNames[appData.type] || appData.type).then(() => {
+          modal.style.display = 'none';
+          loadApplications();
+        });
+      };
+      const newCloseHandler = () => {
+        modal.style.display = 'none';
+      };
+      submitBtn.onclick = newSubmitHandler;
+      closeBtn.onclick = newCloseHandler;
+    }
+
+    function handleAuthCallback() {
+      const hash = window.location.hash.substring(1);
+      if (hash && hash.includes('access_token')) {
+        const params = new URLSearchParams(hash);
+        const token = params.get('access_token');
+        if (token) {
+          fetch('https://discord.com/api/users/@me', { headers: { Authorization: `Bearer ${token}` } })
+            .then(r => r.json()).then(user => {
+              localStorage.setItem('lscsd_user', JSON.stringify({ id: user.id, username: user.username, avatar: user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png` : '' }));
+              window.location.hash = '';
+              location.reload();
+            }).catch(() => showNotification('Ошибка авторизации', 'error'));
+        }
+      }
+    }
+
+    function checkAuth() {
+      const user = localStorage.getItem('lscsd_user');
+      if (user) {
+        currentUser = JSON.parse(user);
+        document.getElementById('authContainer').style.display = 'none';
+        document.getElementById('mainContainer').style.display = 'block';
+        document.getElementById('navName').innerText = currentUser.username;
+        if (currentUser.avatar) document.getElementById('navAvatar').src = currentUser.avatar;
+        loadUserRole().then(() => {
+          loadAllUsers();
+          loadApplications();
+        });
+      } else {
+        document.getElementById('authContainer').style.display = 'flex';
+        document.getElementById('mainContainer').style.display = 'none';
+        handleAuthCallback();
+      }
+    }
+
+    document.getElementById('authBtn').onclick = () => {
+      window.location.href = `https://discord.com/api/oauth2/authorize?client_id=1494686473520287774&redirect_uri=${encodeURIComponent('https://style42124.github.io/lscsd/panel.html')}&response_type=token&scope=identify`;
+    };
+    document.getElementById('backToMainBtn').onclick = () => window.location.href = '/lscsd/';
+    document.getElementById('userSearch')?.addEventListener('input', () => renderUsers());
+
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    tabBtns.forEach(btn => {
+      btn.onclick = () => {
+        tabBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+        document.getElementById(`${btn.dataset.tab}-tab`).classList.add('active');
+        if (btn.dataset.tab === 'users') renderUsers();
+        if (btn.dataset.tab === 'applications') renderApplications();
+      };
+    });
+
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    filterBtns.forEach(btn => {
+      btn.onclick = () => {
+        filterBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilter = btn.dataset.filter;
+        renderApplications();
+      };
+    });
+
+    checkAuth();
+  })();
+</script>
+</body>
+</html>
