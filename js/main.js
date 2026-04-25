@@ -1,10 +1,6 @@
 (function() {
-  document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
-  document.addEventListener('keydown', function(e) {
-    if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'C' || e.key === 'J')) || (e.ctrlKey && e.key === 'U')) {
-      e.preventDefault();
-    }
-  });
+  document.addEventListener('contextmenu', e => e.preventDefault());
+  document.addEventListener('keydown', e => { if(e.key==='F12'||(e.ctrlKey&&e.shiftKey&&(e.key==='I'||e.key==='C'||e.key==='J'))||(e.ctrlKey&&e.key==='U')) e.preventDefault(); });
 
   var PROXY_URL = 'https://cs324022.tw1.ru/index.php';
   var DISCORD_CLIENT_ID = '1494686473520287774';
@@ -28,9 +24,8 @@
   var usersRoles = JSON.parse(localStorage.getItem('lscsd_users_roles') || '{}');
 
   var DEPARTMENTS = ['SAI', 'GU', 'AF', 'IAD', 'SEB', 'K-9', 'DID', 'MED', 'SPD', 'HS'];
-  
   var FORMS_LIST = [
-    {id:'department', label:'Заявка в отдел', icon:'📋', desc:'Подача заявления на перевод'},
+    {id:'department', label:'Заявка в отдел', icon:'📋', desc:'Подача заявления'},
     {id:'appeal', label:'Обжалование', icon:'⚖️', desc:'Обжалование выговора'},
     {id:'workoff', label:'Отработка', icon:'🛠️', desc:'Отработка выговора'},
     {id:'promotion', label:'Повышение', icon:'⭐', desc:'Заявка на повышение'},
@@ -41,20 +36,28 @@
     {id:'resignation', label:'Увольнение', icon:'📄', desc:'Рапорт на увольнение'}
   ];
 
-  function showNotification(message, type, title) {
+  var typeNamesMap = {
+    'submit_department': '📋 Заявка в отдел', 'submit_promotion': '⭐ Повышение',
+    'submit_appeal': '⚖ Обжалование', 'submit_workoff': '🛠 Отработка',
+    'submit_leave': '🏖 Отпуск', 'submit_rest': '🌴 Отдых',
+    'submit_spec_request': '🔫 Спецвооружение', 'submit_spec_receive': '📦 Получение спец',
+    'submit_resignation': '📄 Увольнение'
+  };
+
+  function showNotification(msg, type) {
     var div = document.createElement('div');
     div.className = 'notification ' + (type || 'info');
-    div.innerHTML = '<div class="notification-title">' + (type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️') + ' ' + (title || (type === 'success' ? 'Успешно' : type === 'error' ? 'Ошибка' : 'Внимание')) + '</div><div class="notification-message">' + message + '</div>';
+    div.innerHTML = '<div class="notification-title">' + (type==='success'?'✅':'⚠️') + '</div><div>' + msg + '</div>';
     document.body.appendChild(div);
-    setTimeout(function() { if(div) div.remove(); }, 3000);
+    setTimeout(() => div.remove(), 3000);
   }
 
-  function isTempBlocked(userId) { var b = tempBlocked[userId]; return b && b > Date.now(); }
+  function isTempBlocked(userId) { return tempBlocked[userId] && tempBlocked[userId] > Date.now(); }
   
   function checkRateLimit(userId) {
     var now = Date.now();
     var reqs = userRequests[userId] || [];
-    reqs = reqs.filter(function(t) { return now - t < 5*60*1000; });
+    reqs = reqs.filter(t => now - t < 5*60*1000);
     if (reqs.length >= 5) return false;
     reqs.push(now);
     userRequests[userId] = reqs;
@@ -68,7 +71,7 @@
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'get_user_role', data: { userId: currentUser.id } })
-    }).then(function(r) { return r.json(); }).then(function(res) {
+    }).then(r => r.json()).then(res => {
       if (res.success) {
         currentUserRole = res.role;
         usersRoles[currentUser.id] = currentUserRole;
@@ -96,7 +99,7 @@
   }
 
   function addToHistory(type, data) {
-    userHistory.unshift({type: type, data: data, time: new Date().toLocaleString(), userId: currentUser?.id});
+    userHistory.unshift({type, data, time: new Date().toLocaleString(), userId: currentUser?.id});
     userHistory = userHistory.slice(0, 100);
     localStorage.setItem('lscsd_user_history', JSON.stringify(userHistory));
     renderHistory();
@@ -104,8 +107,8 @@
   }
 
   function callAPI(action, formData, hasFile) {
-    return new Promise(function(resolve, reject) {
-      if (isSending) { showNotification('Подождите, заявка уже отправляется...', 'warning'); reject(); return; }
+    return new Promise((resolve, reject) => {
+      if (isSending) { showNotification('Подождите...', 'warning'); reject(); return; }
       if (currentUser && isTempBlocked(currentUser.id)) { showNotification('Вы заблокированы на 15 минут!', 'error'); reject(); return; }
       if (currentUser && !checkRateLimit(currentUser.id)) {
         tempBlocked[currentUser.id] = Date.now() + 15*60*1000;
@@ -114,39 +117,31 @@
         reject(); return;
       }
       isSending = true;
-      var dataToSend = { action: action, data: formData || {} };
-      if (currentUser) { 
-        dataToSend.data.userId = currentUser.id; 
-        dataToSend.data.username = currentUser.username; 
-        dataToSend.data.userRole = currentUserRole ? currentUserRole.level : 1;
-      }
+      var dataToSend = { action, data: formData || {} };
+      if (currentUser) { dataToSend.data.userId = currentUser.id; dataToSend.data.username = currentUser.username; dataToSend.data.userRole = currentUserRole ? currentUserRole.level : 1; }
       var options = { method:'POST', headers:{}, body:null };
       if (hasFile) {
         var fd = new FormData();
         fd.append('action', action);
         fd.append('data', JSON.stringify(dataToSend.data));
         if (formData && formData.attachments) {
-          for (var i = 0; i < formData.attachments.length; i++) {
-            fd.append('attachments[]', formData.attachments[i]);
-          }
+          for (var i = 0; i < formData.attachments.length; i++) fd.append('attachments[]', formData.attachments[i]);
         }
         options.body = fd;
       } else {
         options.headers['Content-Type'] = 'application/json';
         options.body = JSON.stringify(dataToSend);
       }
-      fetch(PROXY_URL, options).then(function(r) { return r.json(); }).then(function(d){ 
+      fetch(PROXY_URL, options).then(r => r.json()).then(d => {
         isSending = false;
-        if(d.success) {
+        if (d.success) {
           showNotification('Заявка отправлена!', 'success');
           addToHistory(action, formData);
+        } else {
+          showNotification('Ошибка: ' + (d.error || 'неизвестная'), 'error');
         }
-        resolve(d); 
-      }).catch(function(){ 
-        isSending = false;
-        showNotification('Ошибка соединения с сервером', 'error');
-        reject(); 
-      });
+        resolve(d);
+      }).catch(() => { isSending = false; showNotification('Ошибка соединения', 'error'); reject(); });
     });
   }
 
@@ -155,77 +150,8 @@
     fetch(PROXY_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'report_bug',
-        data: { userId: currentUser.id, username: currentUser.username, bugType: bugType, bugDescription: bugDesc }
-      })
-    }).then(function(r) { return r.json(); }).then(function(res){
-      if(res.success) showNotification('Баг отправлен разработчику!', 'success');
-      else showNotification('Ошибка отправки', 'error');
-    }).catch(function(){ showNotification('Ошибка', 'error'); });
-  }
-
-  function checkAdminPassword(password) {
-    return fetch(PROXY_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'admin_auth', data: { password: password } })
-    }).then(function(r) { return r.json(); }).then(function(res) { return res.success === true; });
-  }
-
-  document.addEventListener('keydown', function(e) {
-    if (e.key === 'F7') {
-      e.preventDefault();
-      var pwd = prompt('Введите пароль администратора:');
-      if (pwd) {
-        checkAdminPassword(pwd).then(function(isValid) {
-          if (isValid) {
-            document.getElementById('adminPanel').style.display = 'flex';
-            document.getElementById('blacklistInput').value = blacklist.join('\n');
-            var blockedNow = Object.keys(tempBlocked).filter(function(id) { return tempBlocked[id] > Date.now(); });
-            document.getElementById('tempBlockInput').value = blockedNow.join('\n');
-          } else { showNotification('Неверный пароль!', 'error'); }
-        });
-      }
-    }
-  });
-
-  function renderHistory() {
-    var container = document.getElementById('historyList');
-    if (!container) return;
-    var searchTerm = document.getElementById('historySearch')?.value.toLowerCase() || '';
-    var filtered = userHistory.filter(function(h) { return h.type.toLowerCase().indexOf(searchTerm) !== -1 || JSON.stringify(h.data).toLowerCase().indexOf(searchTerm) !== -1; });
-    container.innerHTML = '';
-    filtered.forEach(function(h) {
-      var div = document.createElement('div');
-      div.className = 'history-item';
-      div.innerHTML = '<div class="time">' + h.time + '</div><div class="type" style="color:#d4af37;">' + h.type + '</div><div class="details" style="color:#9ca3af;">' + JSON.stringify(h.data).substring(0, 100) + '</div>';
-      container.appendChild(div);
-    });
-    if (filtered.length === 0) container.innerHTML = '<div style="text-align:center;padding:20px;color:#6b6f78;">Нет заявок</div>';
-  }
-
-  function renderStats() {
-    var stats = {total: userHistory.length, byType: {}};
-    userHistory.forEach(function(h) {
-      stats.byType[h.type] = (stats.byType[h.type] || 0) + 1;
-    });
-    var container = document.getElementById('statsGrid');
-    if (container) {
-      container.innerHTML = '<div class="stat-card"><div class="stat-number">' + stats.total + '</div><div class="stat-label">Всего заявок</div></div>';
-      for (var type in stats.byType) {
-        container.innerHTML += '<div class="stat-card"><div class="stat-number">' + stats.byType[type] + '</div><div class="stat-label">' + type + '</div></div>';
-      }
-    }
-    var ctx = document.getElementById('statsChart')?.getContext('2d');
-    if (ctx && window.statsChart) window.statsChart.destroy();
-    if (ctx) {
-      window.statsChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: { labels: Object.keys(stats.byType), datasets: [{ data: Object.values(stats.byType), backgroundColor: ['#d4af37', '#5865F2', '#6bcf7f', '#ff6b6b', '#ffa500', '#4a90d9', '#9b59b6'] }] },
-        options: { responsive: true, plugins: { legend: { labels: { color: '#e8e8e8' } } } }
-      });
-    }
+      body: JSON.stringify({ action: 'report_bug', data: { userId: currentUser.id, username: currentUser.username, bugType, bugDescription: bugDesc } })
+    }).then(r => r.json()).then(res => { if(res.success) showNotification('Баг отправлен!', 'success'); else showNotification('Ошибка', 'error'); });
   }
 
   function handleAuthCallback() {
@@ -235,7 +161,7 @@
       var token = params.get('access_token');
       if (token) {
         fetch('https://discord.com/api/users/@me', { headers: { Authorization: 'Bearer '+token } })
-          .then(function(r) { return r.json(); }).then(function(user) {
+          .then(r => r.json()).then(user => {
             if (!usersRoles[user.id]) {
               usersRoles[user.id] = { level: 1, name: 'Младший состав', department: null };
               localStorage.setItem('lscsd_users_roles', JSON.stringify(usersRoles));
@@ -243,7 +169,7 @@
             localStorage.setItem('lscsd_user', JSON.stringify({ id:user.id, username:user.username, avatar:user.avatar ? 'https://cdn.discordapp.com/avatars/'+user.id+'/'+user.avatar+'.png' : '' }));
             window.location.hash = '';
             location.reload();
-          }).catch(function(){ showNotification('Ошибка авторизации', 'error'); });
+          }).catch(() => showNotification('Ошибка авторизации', 'error'));
       }
     }
   }
@@ -258,32 +184,32 @@
       document.getElementById('navUser').style.display = 'flex';
       document.getElementById('navName').innerText = currentUser.username;
       if (currentUser.avatar) document.getElementById('navAvatar').src = currentUser.avatar;
-      loadUserRoleFromServer().then(function(role) {
+      loadUserRoleFromServer().then(role => {
         renderCards();
         renderHistory();
         renderStats();
         var panelContainer = document.getElementById('panelBtnContainer');
         var panelBtn = document.getElementById('panelBtn');
-        if (panelContainer && panelBtn && role && role.level >= 2) {
+        if (panelContainer && panelBtn && role && (role.level >= 7 || role.level === 9)) {
           panelContainer.style.display = 'flex';
-          panelBtn.onclick = function() { window.location.href = '/lscsd/panel.html'; };
+          panelBtn.onclick = () => window.location.href = '/lscsd/panel.html';
         }
       });
-    } else { 
-      document.getElementById('authContainer').style.display = 'flex'; 
-      document.getElementById('mainContainer').style.display = 'none'; 
-      document.getElementById('navUser').style.display = 'none'; 
-      handleAuthCallback(); 
+    } else {
+      document.getElementById('authContainer').style.display = 'flex';
+      document.getElementById('mainContainer').style.display = 'none';
+      document.getElementById('navUser').style.display = 'none';
+      handleAuthCallback();
     }
   }
 
-  document.getElementById('authBtn').onclick = function() { window.location.href = 'https://discord.com/api/oauth2/authorize?client_id='+DISCORD_CLIENT_ID+'&redirect_uri='+encodeURIComponent(REDIRECT_URI)+'&response_type=token&scope=identify'; };
-  document.getElementById('settingsLogoutBtn').onclick = function() { localStorage.removeItem('lscsd_user'); location.reload(); };
+  document.getElementById('authBtn').onclick = () => window.location.href = 'https://discord.com/api/oauth2/authorize?client_id='+DISCORD_CLIENT_ID+'&redirect_uri='+encodeURIComponent(REDIRECT_URI)+'&response_type=token&scope=identify';
+  document.getElementById('settingsLogoutBtn').onclick = () => { localStorage.removeItem('lscsd_user'); location.reload(); };
 
   var settingsPanel = document.getElementById('settingsPanel');
-  document.getElementById('navUser').onclick = function(e) { e.stopPropagation(); settingsPanel.classList.toggle('open'); };
-  document.getElementById('closeSettings').onclick = function() { settingsPanel.classList.remove('open'); };
-  document.onclick = function(e) { if (!settingsPanel.contains(e.target) && !document.getElementById('navUser').contains(e.target)) settingsPanel.classList.remove('open'); };
+  document.getElementById('navUser').onclick = e => { e.stopPropagation(); settingsPanel.classList.toggle('open'); };
+  document.getElementById('closeSettings').onclick = () => settingsPanel.classList.remove('open');
+  document.onclick = e => { if (!settingsPanel.contains(e.target) && !document.getElementById('navUser').contains(e.target)) settingsPanel.classList.remove('open'); };
 
   if (document.getElementById('themeSwitch')) {
     document.getElementById('themeSwitch').onclick = function() {
@@ -291,7 +217,6 @@
       else { document.body.classList.add('light'); localStorage.setItem('lscsd_theme','light'); this.classList.add('active'); }
     };
   }
-
   if (document.getElementById('autoFillSwitch')) {
     document.getElementById('autoFillSwitch').onclick = function() {
       autoFillEnabled = !autoFillEnabled;
@@ -301,14 +226,13 @@
     };
   }
 
-  document.getElementById('historySearch')?.addEventListener('input', function() { renderHistory(); });
-
+  document.getElementById('historySearch')?.addEventListener('input', () => renderHistory());
   var tabBtns = document.querySelectorAll('.tab-btn');
-  tabBtns.forEach(function(btn) {
+  tabBtns.forEach(btn => {
     btn.onclick = function() {
-      tabBtns.forEach(function(b) { b.classList.remove('active'); });
+      tabBtns.forEach(b => b.classList.remove('active'));
       this.classList.add('active');
-      document.querySelectorAll('.tab-content').forEach(function(tab) { tab.classList.remove('active'); });
+      document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
       document.getElementById(this.dataset.tab + '-tab').classList.add('active');
       if (this.dataset.tab === 'stats') renderStats();
       if (this.dataset.tab === 'history') renderHistory();
@@ -319,11 +243,11 @@
     var c = document.getElementById('cardsGrid');
     if(!c) return;
     c.innerHTML = '';
-    FORMS_LIST.forEach(function(f) {
+    FORMS_LIST.forEach(f => {
       var card = document.createElement('div');
       card.className = 'card';
       card.innerHTML = '<div class="card-icon">'+f.icon+'</div><h3>'+f.label+'</h3><p>'+f.desc+'</p>';
-      card.onclick = function() { openForm(f.id); };
+      card.onclick = () => openForm(f.id);
       c.appendChild(card);
     });
   }
@@ -332,7 +256,7 @@
     var m = document.getElementById('modal');
     var b = document.getElementById('modalBody');
     var t = document.getElementById('modalTitle');
-    var f = FORMS_LIST.find(function(x){ return x.id===type; });
+    var f = FORMS_LIST.find(x => x.id===type);
     t.innerText = f ? f.label : 'Форма';
     b.innerHTML = '<div style="text-align:center;padding:30px;">Загрузка...</div>';
     m.style.display = 'flex';
@@ -349,11 +273,9 @@
       default: b.innerHTML = '<p>Форма не найдена</p>';
     }
   }
-
-  document.getElementById('modalClose').onclick = function() { document.getElementById('modal').style.display = 'none'; };
-  window.onclick = function(e) { if(e.target===document.getElementById('modal')) document.getElementById('modal').style.display = 'none'; };
-  
-  function showError(container, msg) { var err = container.querySelector('#formError'); if(err) { err.textContent = msg; err.style.display='block'; setTimeout(function(){ err.style.display='none'; },4000); } else showNotification(msg,'error'); }
+  document.getElementById('modalClose').onclick = () => document.getElementById('modal').style.display = 'none';
+  window.onclick = e => { if(e.target===document.getElementById('modal')) document.getElementById('modal').style.display = 'none'; };
+  function showError(container, msg) { var err = container.querySelector('#formError'); if(err) { err.textContent = msg; err.style.display='block'; setTimeout(()=> err.style.display='none',4000); } else showNotification(msg,'error'); }
 
   function createFilePreview(container, files, inputId) {
     var previewDiv = container.querySelector('#filePreview');
@@ -388,67 +310,70 @@
 
   function renderDepartmentForm(container) {
     var saved = loadAutoFillData('department');
-    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Имя</label><input id="firstName" value="' + (saved.firstName || '') + '" required></div><div class="form-group"><label>Фамилия</label><input id="lastName" value="' + (saved.lastName || '') + '" required></div><div class="form-group"><label>Статик</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Ранг</label><input id="rank" value="' + (saved.rank || '') + '" required></div><div class="form-group"><label>Отдел</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department" value="' + (saved.department || '') + '"></div><div class="form-group"><label>Причина</label><textarea id="reason" rows="3" required>' + (saved.reason || '') + '</textarea></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
+    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Имя</label><input id="firstName" value="' + (saved.firstName || '') + '" required></div><div class="form-group"><label>Фамилия</label><input id="lastName" value="' + (saved.lastName || '') + '" required></div><div class="form-group"><label>Статик</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Ранг</label><input id="rank" value="' + (saved.rank || '') + '" required></div><div class="form-group"><label>Отдел</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department" value="' + (saved.department || '') + '"></div><div class="form-group"><label>Причина</label><textarea id="reason" rows="3" required>' + (saved.reason || '') + '</textarea></div><div class="form-group"><label>Вложения</label><input type="file" id="attachments" multiple accept="image/*,application/pdf"></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
     var btns = container.querySelector('#deptBtns');
-    DEPARTMENTS.forEach(function(d) { var btn = document.createElement('div'); btn.className = 'role-btn'; btn.textContent = d; if (saved.department === d) btn.classList.add('selected'); btn.onclick = function() { btns.querySelectorAll('.role-btn').forEach(function(b){ b.classList.remove('selected'); }); btn.classList.add('selected'); document.getElementById('department').value = d; }; btns.appendChild(btn); });
-    container.querySelector('#formEl').onsubmit = function(e) {
+    DEPARTMENTS.forEach(d => { var btn = document.createElement('div'); btn.className = 'role-btn'; btn.textContent = d; if (saved.department === d) btn.classList.add('selected'); btn.onclick = function() { btns.querySelectorAll('.role-btn').forEach(b => b.classList.remove('selected')); btn.classList.add('selected'); document.getElementById('department').value = d; }; btns.appendChild(btn); });
+    var attachments = [];
+    var fileInput = container.querySelector('#attachments');
+    fileInput.onchange = e => { attachments = Array.from(e.target.files); createFilePreview(container, attachments, 'attachments'); };
+    container.querySelector('#formEl').onsubmit = e => {
       e.preventDefault();
       var btn = document.getElementById('submitBtn');
       if (btn.disabled) return;
       btn.disabled = true;
       btn.textContent = 'Отправка...';
-      var data = { firstName:document.getElementById('firstName').value, lastName:document.getElementById('lastName').value, staticc:document.getElementById('staticc').value, rank:document.getElementById('rank').value, department:document.getElementById('department').value, reason:document.getElementById('reason').value };
+      var data = { firstName:document.getElementById('firstName').value, lastName:document.getElementById('lastName').value, staticc:document.getElementById('staticc').value, rank:document.getElementById('rank').value, department:document.getElementById('department').value, reason:document.getElementById('reason').value, attachments };
       if(!data.department){ showError(container,'Выберите отдел'); btn.disabled = false; btn.textContent = 'Отправить'; return; }
       saveAutoFillData({ firstName:data.firstName, lastName:data.lastName, staticc:data.staticc, rank:data.rank, department:data.department, reason:data.reason }, 'department');
-      callAPI('submit_department', data, false).then(function(r){ if(r.success) document.getElementById('modal').style.display='none'; setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); }).catch(function() { setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); });
+      callAPI('submit_department', data, true).then(r => { if(r.success) document.getElementById('modal').style.display='none'; setTimeout(() => { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); }).catch(() => { setTimeout(() => { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); });
     };
   }
 
   function renderAppealForm(container) {
     var saved = loadAutoFillData('appeal');
-    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Имя</label><input id="firstName" value="' + (saved.firstName || '') + '" required></div><div class="form-group"><label>Фамилия</label><input id="lastName" value="' + (saved.lastName || '') + '" required></div><div class="form-group"><label>Статик</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Вид наказания</label><input id="reprimandType" value="' + (saved.reprimandType || '') + '" required></div><div class="form-group"><label>Кем выдано</label><input id="issuedBy" value="' + (saved.issuedBy || '') + '" required></div><div class="form-group"><label>Когда выдано</label><input type="date" id="issuedDate" value="' + (saved.issuedDate || '') + '" required></div><div class="form-group"><label>Причина из выговора</label><textarea id="reasonGiven" rows="2" required>' + (saved.reasonGiven || '') + '</textarea></div><div class="form-group"><label>Описание ситуации</label><textarea id="description" rows="3" required>' + (saved.description || '') + '</textarea></div><div class="form-group"><label>Вложения (скриншоты)</label><input type="file" id="attachments" multiple accept="image/*"></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
+    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Имя</label><input id="firstName" value="' + (saved.firstName || '') + '" required></div><div class="form-group"><label>Фамилия</label><input id="lastName" value="' + (saved.lastName || '') + '" required></div><div class="form-group"><label>Статик</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Вид наказания</label><input id="reprimandType" value="' + (saved.reprimandType || '') + '" required></div><div class="form-group"><label>Кем выдано</label><input id="issuedBy" value="' + (saved.issuedBy || '') + '" required></div><div class="form-group"><label>Когда выдано</label><input type="date" id="issuedDate" value="' + (saved.issuedDate || '') + '" required></div><div class="form-group"><label>Причина из выговора</label><textarea id="reasonGiven" rows="2" required>' + (saved.reasonGiven || '') + '</textarea></div><div class="form-group"><label>Описание</label><textarea id="description" rows="3" required>' + (saved.description || '') + '</textarea></div><div class="form-group"><label>Вложения</label><input type="file" id="attachments" multiple accept="image/*"></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
     var attachments = [];
     var fileInput = container.querySelector('#attachments');
-    fileInput.onchange = function(e) { attachments = Array.from(e.target.files); createFilePreview(container, attachments, 'attachments'); };
-    container.querySelector('#formEl').onsubmit = function(e) {
+    fileInput.onchange = e => { attachments = Array.from(e.target.files); createFilePreview(container, attachments, 'attachments'); };
+    container.querySelector('#formEl').onsubmit = e => {
       e.preventDefault();
       var btn = document.getElementById('submitBtn');
       if (btn.disabled) return;
       btn.disabled = true;
       btn.textContent = 'Отправка...';
-      var data = { firstName:document.getElementById('firstName').value, lastName:document.getElementById('lastName').value, staticc:document.getElementById('staticc').value, reprimandType:document.getElementById('reprimandType').value, issuedBy:document.getElementById('issuedBy').value, issuedDate:document.getElementById('issuedDate').value, reasonGiven:document.getElementById('reasonGiven').value, description:document.getElementById('description').value, attachments: attachments };
+      var data = { firstName:document.getElementById('firstName').value, lastName:document.getElementById('lastName').value, staticc:document.getElementById('staticc').value, reprimandType:document.getElementById('reprimandType').value, issuedBy:document.getElementById('issuedBy').value, issuedDate:document.getElementById('issuedDate').value, reasonGiven:document.getElementById('reasonGiven').value, description:document.getElementById('description').value, attachments };
       saveAutoFillData(data, 'appeal');
-      callAPI('submit_appeal', data, true).then(function(r){ if(r.success) document.getElementById('modal').style.display='none'; setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); }).catch(function() { setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); });
+      callAPI('submit_appeal', data, true).then(r => { if(r.success) document.getElementById('modal').style.display='none'; setTimeout(() => { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); }).catch(() => { setTimeout(() => { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); });
     };
   }
 
   function renderWorkoffForm(container) {
     var saved = loadAutoFillData('workoff');
-    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Имя</label><input id="firstName" value="' + (saved.firstName || '') + '" required></div><div class="form-group"><label>Фамилия</label><input id="lastName" value="' + (saved.lastName || '') + '" required></div><div class="form-group"><label>Статик</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Ранг</label><select id="rank"><option>1-4</option><option>5-8</option><option>9-11</option><option>13</option></select></div><div class="form-group"><label>За что выговор</label><textarea id="reason" rows="2" required>' + (saved.reason || '') + '</textarea></div><div class="form-group"><label>Тип наказания</label><select id="punishmentType"><option>Устный выговор</option><option>Строгий выговор</option></select></div><div class="form-group"><label>Док-ва (скриншот/фото)</label><input type="file" id="attachments" multiple accept="image/*,application/pdf"></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
+    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Имя</label><input id="firstName" value="' + (saved.firstName || '') + '" required></div><div class="form-group"><label>Фамилия</label><input id="lastName" value="' + (saved.lastName || '') + '" required></div><div class="form-group"><label>Статик</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Ранг</label><select id="rank"><option>1-4</option><option>5-8</option><option>9-11</option><option>13</option></select></div><div class="form-group"><label>За что выговор</label><textarea id="reason" rows="2" required>' + (saved.reason || '') + '</textarea></div><div class="form-group"><label>Тип наказания</label><select id="punishmentType"><option>Устный выговор</option><option>Строгий выговор</option></select></div><div class="form-group"><label>Док-ва (скриншот)</label><input type="file" id="attachments" multiple accept="image/*,application/pdf"></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
     if (saved.rank) document.getElementById('rank').value = saved.rank;
     if (saved.punishmentType) document.getElementById('punishmentType').value = saved.punishmentType;
     var attachments = [];
     var fileInput = container.querySelector('#attachments');
-    fileInput.onchange = function(e) { attachments = Array.from(e.target.files); createFilePreview(container, attachments, 'attachments'); };
-    container.querySelector('#formEl').onsubmit = function(e) {
+    fileInput.onchange = e => { attachments = Array.from(e.target.files); createFilePreview(container, attachments, 'attachments'); };
+    container.querySelector('#formEl').onsubmit = e => {
       e.preventDefault();
       var btn = document.getElementById('submitBtn');
       if (btn.disabled) return;
       btn.disabled = true;
       btn.textContent = 'Отправка...';
-      var data = { firstName:document.getElementById('firstName').value, lastName:document.getElementById('lastName').value, staticc:document.getElementById('staticc').value, rank:document.getElementById('rank').value, reason:document.getElementById('reason').value, punishmentType:document.getElementById('punishmentType').value, attachments: attachments };
+      var data = { firstName:document.getElementById('firstName').value, lastName:document.getElementById('lastName').value, staticc:document.getElementById('staticc').value, rank:document.getElementById('rank').value, reason:document.getElementById('reason').value, punishmentType:document.getElementById('punishmentType').value, attachments };
       saveAutoFillData(data, 'workoff');
-      callAPI('submit_workoff', data, true).then(function(r){ if(r.success) document.getElementById('modal').style.display='none'; setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); }).catch(function() { setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); });
+      callAPI('submit_workoff', data, true).then(r => { if(r.success) document.getElementById('modal').style.display='none'; setTimeout(() => { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); }).catch(() => { setTimeout(() => { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); });
     };
   }
 
   function renderPromotionForm(container) {
     var saved = loadAutoFillData('promotion');
-    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Имя</label><input id="firstName" value="' + (saved.firstName || '') + '" required></div><div class="form-group"><label>Фамилия</label><input id="lastName" value="' + (saved.lastName || '') + '" required></div><div class="form-group"><label>Статик</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Текущий ранг</label><input id="currentRank" value="' + (saved.currentRank || '') + '" required></div><div class="form-group"><label>Целевой ранг</label><input id="targetRank" value="' + (saved.targetRank || '') + '" required></div><div class="form-group"><label>Баллы</label><input type="number" id="points" value="' + (saved.points || '') + '" required></div><div class="form-group"><label>Док-ва баллов</label><textarea id="proof" rows="2" required>' + (saved.proof || '') + '</textarea></div><div class="form-group"><label>Отдел</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department"></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
+    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Имя</label><input id="firstName" value="' + (saved.firstName || '') + '" required></div><div class="form-group"><label>Фамилия</label><input id="lastName" value="' + (saved.lastName || '') + '" required></div><div class="form-group"><label>Статик</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Текущий ранг</label><input id="currentRank" value="' + (saved.currentRank || '') + '" required></div><div class="form-group"><label>Целевой ранг</label><input id="targetRank" value="' + (saved.targetRank || '') + '" required></div><div class="form-group"><label>Баллы</label><input type="number" id="points" value="' + (saved.points || '') + '" required></div><div class="form-group"><label>Док-ва</label><textarea id="proof" rows="2" required>' + (saved.proof || '') + '</textarea></div><div class="form-group"><label>Отдел</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department"></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
     var btns = container.querySelector('#deptBtns');
-    DEPARTMENTS.forEach(function(d) { var btn = document.createElement('div'); btn.className = 'role-btn'; btn.textContent = d; if (saved.department === d) btn.classList.add('selected'); btn.onclick = function() { btns.querySelectorAll('.role-btn').forEach(function(b){ b.classList.remove('selected'); }); btn.classList.add('selected'); document.getElementById('department').value = d; }; btns.appendChild(btn); });
+    DEPARTMENTS.forEach(d => { var btn = document.createElement('div'); btn.className = 'role-btn'; btn.textContent = d; if (saved.department === d) btn.classList.add('selected'); btn.onclick = function() { btns.querySelectorAll('.role-btn').forEach(b => b.classList.remove('selected')); btn.classList.add('selected'); document.getElementById('department').value = d; }; btns.appendChild(btn); });
     if (saved.department) document.getElementById('department').value = saved.department;
-    container.querySelector('#formEl').onsubmit = function(e) {
+    container.querySelector('#formEl').onsubmit = e => {
       e.preventDefault();
       var btn = document.getElementById('submitBtn');
       if (btn.disabled) return;
@@ -457,7 +382,7 @@
       var data = { firstName:document.getElementById('firstName').value, lastName:document.getElementById('lastName').value, staticc:document.getElementById('staticc').value, currentRank:document.getElementById('currentRank').value, targetRank:document.getElementById('targetRank').value, points:document.getElementById('points').value, proof:document.getElementById('proof').value, department:document.getElementById('department').value };
       if(!data.department){ showError(container,'Выберите отдел'); btn.disabled = false; btn.textContent = 'Отправить'; return; }
       saveAutoFillData(data, 'promotion');
-      callAPI('submit_promotion', data, false).then(function(r){ if(r.success) document.getElementById('modal').style.display='none'; setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); }).catch(function() { setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); });
+      callAPI('submit_promotion', data, false).then(r => { if(r.success) document.getElementById('modal').style.display='none'; setTimeout(() => { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); }).catch(() => { setTimeout(() => { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); });
     };
   }
 
@@ -465,9 +390,9 @@
     var saved = loadAutoFillData(type);
     container.innerHTML = '<form id="formEl"><div class="form-group"><label>Отдел</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department"></div><div class="form-group"><label>Причина</label><textarea id="reason" rows="2" required>' + (saved.reason || '') + '</textarea></div><div class="form-group"><label>С даты</label><input type="datetime-local" id="fromDate" value="' + (saved.fromDate || '') + '" required></div><div class="form-group"><label>По дату</label><input type="datetime-local" id="toDate" value="' + (saved.toDate || '') + '" required></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
     var btns = container.querySelector('#deptBtns');
-    DEPARTMENTS.forEach(function(d) { var btn = document.createElement('div'); btn.className = 'role-btn'; btn.textContent = d; if (saved.department === d) btn.classList.add('selected'); btn.onclick = function() { btns.querySelectorAll('.role-btn').forEach(function(b){ b.classList.remove('selected'); }); btn.classList.add('selected'); document.getElementById('department').value = d; }; btns.appendChild(btn); });
+    DEPARTMENTS.forEach(d => { var btn = document.createElement('div'); btn.className = 'role-btn'; btn.textContent = d; if (saved.department === d) btn.classList.add('selected'); btn.onclick = function() { btns.querySelectorAll('.role-btn').forEach(b => b.classList.remove('selected')); btn.classList.add('selected'); document.getElementById('department').value = d; }; btns.appendChild(btn); });
     if (saved.department) document.getElementById('department').value = saved.department;
-    container.querySelector('#formEl').onsubmit = function(e) {
+    container.querySelector('#formEl').onsubmit = e => {
       e.preventDefault();
       var btn = document.getElementById('submitBtn');
       if (btn.disabled) return;
@@ -477,7 +402,7 @@
       if(!data.department){ showError(container,'Выберите отдел'); btn.disabled = false; btn.textContent = 'Отправить'; return; }
       saveAutoFillData(data, type);
       var action = type === 'отпуск' ? 'submit_leave' : 'submit_rest';
-      callAPI(action, data, false).then(function(r){ if(r.success) document.getElementById('modal').style.display='none'; setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); }).catch(function() { setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); });
+      callAPI(action, data, false).then(r => { if(r.success) document.getElementById('modal').style.display='none'; setTimeout(() => { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); }).catch(() => { setTimeout(() => { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); });
     };
   }
 
@@ -485,9 +410,9 @@
     var saved = loadAutoFillData('spec-request');
     container.innerHTML = '<form id="formEl"><div class="form-group"><label>Имя</label><input id="firstName" value="' + (saved.firstName || '') + '" required></div><div class="form-group"><label>Фамилия</label><input id="lastName" value="' + (saved.lastName || '') + '" required></div><div class="form-group"><label>Статик</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Ранг</label><input id="rank" value="' + (saved.rank || '') + '" required></div><div class="form-group"><label>Отдел</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department"></div><div class="form-group"><label>Оружие</label><input id="weapon" value="' + (saved.weapon || '') + '" required></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
     var btns = container.querySelector('#deptBtns');
-    DEPARTMENTS.forEach(function(d) { var btn = document.createElement('div'); btn.className = 'role-btn'; btn.textContent = d; if (saved.department === d) btn.classList.add('selected'); btn.onclick = function() { btns.querySelectorAll('.role-btn').forEach(function(b){ b.classList.remove('selected'); }); btn.classList.add('selected'); document.getElementById('department').value = d; }; btns.appendChild(btn); });
+    DEPARTMENTS.forEach(d => { var btn = document.createElement('div'); btn.className = 'role-btn'; btn.textContent = d; if (saved.department === d) btn.classList.add('selected'); btn.onclick = function() { btns.querySelectorAll('.role-btn').forEach(b => b.classList.remove('selected')); btn.classList.add('selected'); document.getElementById('department').value = d; }; btns.appendChild(btn); });
     if (saved.department) document.getElementById('department').value = saved.department;
-    container.querySelector('#formEl').onsubmit = function(e) {
+    container.querySelector('#formEl').onsubmit = e => {
       e.preventDefault();
       var btn = document.getElementById('submitBtn');
       if (btn.disabled) return;
@@ -496,29 +421,29 @@
       var data = { firstName:document.getElementById('firstName').value, lastName:document.getElementById('lastName').value, staticc:document.getElementById('staticc').value, rank:document.getElementById('rank').value, department:document.getElementById('department').value, weapon:document.getElementById('weapon').value };
       if(!data.department){ showError(container,'Выберите отдел'); btn.disabled = false; btn.textContent = 'Отправить'; return; }
       saveAutoFillData(data, 'spec-request');
-      callAPI('submit_spec_request', data, false).then(function(r){ if(r.success) document.getElementById('modal').style.display='none'; setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); }).catch(function() { setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); });
+      callAPI('submit_spec_request', data, false).then(r => { if(r.success) document.getElementById('modal').style.display='none'; setTimeout(() => { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); }).catch(() => { setTimeout(() => { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); });
     };
   }
 
   function renderSpecReceiveForm(container) {
     var saved = loadAutoFillData('spec-receive');
-    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Имя</label><input id="firstName" value="' + (saved.firstName || '') + '" required></div><div class="form-group"><label>Фамилия</label><input id="lastName" value="' + (saved.lastName || '') + '" required></div><div class="form-group"><label>Статик</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Ранг</label><input id="rank" value="' + (saved.rank || '') + '" required></div><div class="form-group"><label>Отдел</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department"></div><div class="form-group"><label>Оружие</label><input id="weapon" value="' + (saved.weapon || '') + '" required></div><div class="form-group"><label>Номер</label><input id="weaponNumber" value="' + (saved.weaponNumber || '') + '" required></div><div class="form-group"><label>Кто выдал</label><input id="issuedBy" value="' + (saved.issuedBy || '') + '" required></div><div class="form-group"><label>Скрин из инвентаря</label><input type="file" id="attachments" multiple accept="image/*"></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
+    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Имя</label><input id="firstName" value="' + (saved.firstName || '') + '" required></div><div class="form-group"><label>Фамилия</label><input id="lastName" value="' + (saved.lastName || '') + '" required></div><div class="form-group"><label>Статик</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Ранг</label><input id="rank" value="' + (saved.rank || '') + '" required></div><div class="form-group"><label>Отдел</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department"></div><div class="form-group"><label>Оружие</label><input id="weapon" value="' + (saved.weapon || '') + '" required></div><div class="form-group"><label>Номер</label><input id="weaponNumber" value="' + (saved.weaponNumber || '') + '" required></div><div class="form-group"><label>Кто выдал</label><input id="issuedBy" value="' + (saved.issuedBy || '') + '" required></div><div class="form-group"><label>Скрин инвентаря</label><input type="file" id="attachments" multiple accept="image/*"></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
     var btns = container.querySelector('#deptBtns');
-    DEPARTMENTS.forEach(function(d) { var btn = document.createElement('div'); btn.className = 'role-btn'; btn.textContent = d; if (saved.department === d) btn.classList.add('selected'); btn.onclick = function() { btns.querySelectorAll('.role-btn').forEach(function(b){ b.classList.remove('selected'); }); btn.classList.add('selected'); document.getElementById('department').value = d; }; btns.appendChild(btn); });
+    DEPARTMENTS.forEach(d => { var btn = document.createElement('div'); btn.className = 'role-btn'; btn.textContent = d; if (saved.department === d) btn.classList.add('selected'); btn.onclick = function() { btns.querySelectorAll('.role-btn').forEach(b => b.classList.remove('selected')); btn.classList.add('selected'); document.getElementById('department').value = d; }; btns.appendChild(btn); });
     if (saved.department) document.getElementById('department').value = saved.department;
     var attachments = [];
     var fileInput = container.querySelector('#attachments');
-    fileInput.onchange = function(e) { attachments = Array.from(e.target.files); createFilePreview(container, attachments, 'attachments'); };
-    container.querySelector('#formEl').onsubmit = function(e) {
+    fileInput.onchange = e => { attachments = Array.from(e.target.files); createFilePreview(container, attachments, 'attachments'); };
+    container.querySelector('#formEl').onsubmit = e => {
       e.preventDefault();
       var btn = document.getElementById('submitBtn');
       if (btn.disabled) return;
       btn.disabled = true;
       btn.textContent = 'Отправка...';
-      var data = { firstName:document.getElementById('firstName').value, lastName:document.getElementById('lastName').value, staticc:document.getElementById('staticc').value, rank:document.getElementById('rank').value, department:document.getElementById('department').value, weapon:document.getElementById('weapon').value, weaponNumber:document.getElementById('weaponNumber').value, issuedBy:document.getElementById('issuedBy').value, attachments: attachments };
+      var data = { firstName:document.getElementById('firstName').value, lastName:document.getElementById('lastName').value, staticc:document.getElementById('staticc').value, rank:document.getElementById('rank').value, department:document.getElementById('department').value, weapon:document.getElementById('weapon').value, weaponNumber:document.getElementById('weaponNumber').value, issuedBy:document.getElementById('issuedBy').value, attachments };
       if(!data.department){ showError(container,'Выберите отдел'); btn.disabled = false; btn.textContent = 'Отправить'; return; }
       saveAutoFillData(data, 'spec-receive');
-      callAPI('submit_spec_receive', data, true).then(function(r){ if(r.success) document.getElementById('modal').style.display='none'; setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); }).catch(function() { setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); });
+      callAPI('submit_spec_receive', data, true).then(r => { if(r.success) document.getElementById('modal').style.display='none'; setTimeout(() => { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); }).catch(() => { setTimeout(() => { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); });
     };
   }
 
@@ -526,62 +451,77 @@
     var saved = loadAutoFillData('resignation');
     container.innerHTML = '<form id="formEl"><div class="form-group"><label>Имя</label><input id="firstName" value="' + (saved.firstName || '') + '" required></div><div class="form-group"><label>Фамилия</label><input id="lastName" value="' + (saved.lastName || '') + '" required></div><div class="form-group"><label>Static ID</label><input id="staticId" value="' + (saved.staticId || '') + '" required></div><div class="form-group"><label>Отдел</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department"></div><div class="form-group"><label>Планшет</label><input id="tablet" value="' + (saved.tablet || '') + '" required></div><div class="form-group"><label>Инвентарь</label><input id="inventory" value="' + (saved.inventory || '') + '" required></div><div class="form-group"><label>Вложения (скриншоты)</label><input type="file" id="attachments" multiple accept="image/*"></div><div class="form-group"><label>Причина</label><textarea id="reason" rows="3" required>' + (saved.reason || '') + '</textarea></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
     var btns = container.querySelector('#deptBtns');
-    DEPARTMENTS.forEach(function(d) { var btn = document.createElement('div'); btn.className = 'role-btn'; btn.textContent = d; if (saved.department === d) btn.classList.add('selected'); btn.onclick = function() { btns.querySelectorAll('.role-btn').forEach(function(b){ b.classList.remove('selected'); }); btn.classList.add('selected'); document.getElementById('department').value = d; }; btns.appendChild(btn); });
+    DEPARTMENTS.forEach(d => { var btn = document.createElement('div'); btn.className = 'role-btn'; btn.textContent = d; if (saved.department === d) btn.classList.add('selected'); btn.onclick = function() { btns.querySelectorAll('.role-btn').forEach(b => b.classList.remove('selected')); btn.classList.add('selected'); document.getElementById('department').value = d; }; btns.appendChild(btn); });
     if (saved.department) document.getElementById('department').value = saved.department;
     var attachments = [];
     var fileInput = container.querySelector('#attachments');
-    fileInput.onchange = function(e) { attachments = Array.from(e.target.files); createFilePreview(container, attachments, 'attachments'); };
-    container.querySelector('#formEl').onsubmit = function(e) {
+    fileInput.onchange = e => { attachments = Array.from(e.target.files); createFilePreview(container, attachments, 'attachments'); };
+    container.querySelector('#formEl').onsubmit = e => {
       e.preventDefault();
       var btn = document.getElementById('submitBtn');
       if (btn.disabled) return;
       btn.disabled = true;
       btn.textContent = 'Отправка...';
-      var data = { firstName:document.getElementById('firstName').value, lastName:document.getElementById('lastName').value, staticId:document.getElementById('staticId').value, department:document.getElementById('department').value, tablet:document.getElementById('tablet').value, inventory:document.getElementById('inventory').value, reason:document.getElementById('reason').value, attachments: attachments };
+      var data = { firstName:document.getElementById('firstName').value, lastName:document.getElementById('lastName').value, staticId:document.getElementById('staticId').value, department:document.getElementById('department').value, tablet:document.getElementById('tablet').value, inventory:document.getElementById('inventory').value, reason:document.getElementById('reason').value, attachments };
       if(!data.department){ showError(container,'Выберите отдел'); btn.disabled = false; btn.textContent = 'Отправить'; return; }
       saveAutoFillData(data, 'resignation');
-      callAPI('submit_resignation', data, true).then(function(r){ if(r.success) document.getElementById('modal').style.display='none'; setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); }).catch(function() { setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); });
+      callAPI('submit_resignation', data, true).then(r => { if(r.success) document.getElementById('modal').style.display='none'; setTimeout(() => { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); }).catch(() => { setTimeout(() => { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); });
     };
   }
 
-  document.getElementById('adminClose').onclick = function() { document.getElementById('adminPanel').style.display = 'none'; };
-  document.getElementById('saveBlacklistBtn').onclick = function() {
-    var ids = document.getElementById('blacklistInput').value.split(/[,\n]/).map(function(s){ return s.trim(); }).filter(function(s){ return s; });
-    blacklist = ids;
-    localStorage.setItem('lscsd_blacklist', JSON.stringify(blacklist));
-    showNotification('Чёрный список обновлён!', 'success');
-    if (currentUser && blacklist.includes(currentUser.id)) { localStorage.removeItem('lscsd_user'); showNotification('Вы в чёрном списке!', 'error'); setTimeout(function(){ location.reload(); },2000); }
-  };
-  
-  document.getElementById('tempBlockBtn').onclick = function() {
-    var ids = document.getElementById('tempBlockInput').value.split(/[,\n]/).map(function(s){ return s.trim(); }).filter(function(s){ return s; });
-    ids.forEach(function(id) { tempBlocked[id] = Date.now() + 15*60*1000; });
-    localStorage.setItem('lscsd_tempBlocked', JSON.stringify(tempBlocked));
-    showNotification('Пользователи заблокированы на 15 минут!', 'success');
-    if (currentUser && ids.includes(currentUser.id)) { showNotification('Вы заблокированы!', 'error'); setTimeout(function(){ location.reload(); },2000); }
-  };
-  
-  document.getElementById('unblockBtn').onclick = function() {
-    var ids = document.getElementById('tempBlockInput').value.split(/[,\n]/).map(function(s){ return s.trim(); }).filter(function(s){ return s; });
-    ids.forEach(function(id) { delete tempBlocked[id]; });
-    localStorage.setItem('lscsd_tempBlocked', JSON.stringify(tempBlocked));
-    showNotification('Пользователи разблокированы!', 'success');
-    document.getElementById('tempBlockInput').value = '';
-    if (currentUser && ids.includes(currentUser.id)) window.location.reload();
-  };
-  
-  var bugModal = document.getElementById('bugModal');
-  document.getElementById('reportBugBtn').onclick = function() { if(currentUser) bugModal.style.display = 'flex'; else showNotification('Авторизуйтесь', 'warning'); };
-  document.getElementById('closeBugBtn').onclick = function() { bugModal.style.display = 'none'; };
-  document.getElementById('sendBugBtn').onclick = function() {
-    var bugType = document.getElementById('bugType').value;
-    var bugDesc = document.getElementById('bugDescription').value;
-    if(!bugDesc) { showNotification('Опишите проблему', 'warning'); return; }
-    sendBugReport(bugType, bugDesc);
-    bugModal.style.display = 'none';
-    document.getElementById('bugDescription').value = '';
-  };
-  
+  function renderHistory() {
+    var container = document.getElementById('historyList');
+    if (!container) return;
+    var searchTerm = document.getElementById('historySearch')?.value.toLowerCase() || '';
+    var filtered = userHistory.filter(h => {
+      var typeName = typeNamesMap[h.type] || h.type;
+      return typeName.toLowerCase().indexOf(searchTerm) !== -1 || JSON.stringify(h.data).toLowerCase().indexOf(searchTerm) !== -1;
+    });
+    container.innerHTML = '';
+    filtered.forEach(h => {
+      var div = document.createElement('div');
+      div.className = 'history-item';
+      var typeName = typeNamesMap[h.type] || h.type;
+      var details = '';
+      if (h.data.department) details += 'Отдел: ' + h.data.department + ' | ';
+      if (h.data.firstName && h.data.lastName) details += 'От: ' + h.data.firstName + ' ' + h.data.lastName;
+      else if (h.data.weapon) details += 'Оружие: ' + h.data.weapon;
+      else if (h.data.reason) details += 'Причина: ' + (h.data.reason.length > 50 ? h.data.reason.substring(0,50)+'...' : h.data.reason);
+      div.innerHTML = '<div class="time" style="color:#9ca3af; font-size:11px;">' + h.time + '</div><div class="type" style="color:#d4af37; font-weight:600;">' + typeName + '</div><div class="details" style="color:#e8e8e8; font-size:12px; margin-top:4px;">' + details + '</div>';
+      container.appendChild(div);
+    });
+    if (filtered.length === 0) container.innerHTML = '<div style="text-align:center;padding:20px;color:#6b6f78;">Нет заявок</div>';
+  }
+
+  function renderStats() {
+    var stats = {total: userHistory.length, byType: {}};
+    userHistory.forEach(h => {
+      var displayType = typeNamesMap[h.type] || h.type;
+      stats.byType[displayType] = (stats.byType[displayType] || 0) + 1;
+    });
+    var container = document.getElementById('statsGrid');
+    if (container) {
+      container.innerHTML = '<div class="stat-card"><div class="stat-number" style="color:#d4af37; font-size:2rem;">' + stats.total + '</div><div class="stat-label">Всего заявок</div></div>';
+      var sortedTypes = Object.keys(stats.byType).sort();
+      for (var i = 0; i < sortedTypes.length; i++) {
+        var type = sortedTypes[i];
+        container.innerHTML += '<div class="stat-card"><div class="stat-number" style="color:#d4af37; font-size:1.5rem;">' + stats.byType[type] + '</div><div class="stat-label">' + type + '</div></div>';
+      }
+    }
+    var ctx = document.getElementById('statsChart')?.getContext('2d');
+    if (ctx && window.statsChart) window.statsChart.destroy();
+    if (ctx && Object.keys(stats.byType).length > 0) {
+      window.statsChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: { labels: Object.keys(stats.byType), datasets: [{ data: Object.values(stats.byType), backgroundColor: ['#d4af37', '#5865F2', '#6bcf7f', '#ff6b6b', '#ffa500', '#4a90d9', '#9b59b6'] }] },
+        options: { responsive: true, plugins: { legend: { labels: { color: '#e8e8e8' } } } }
+      });
+    } else if (ctx) {
+      window.statsChart = new Chart(ctx, { type: 'doughnut', data: { labels: ['Нет данных'], datasets: [{ data: [1], backgroundColor: ['#d4af37'] }] }, options: { responsive: true } });
+    }
+  }
+
+  // Preloader
   var progress = 0;
   var progressBar = document.getElementById('preloaderProgress');
   var interval = setInterval(function() {
@@ -590,22 +530,34 @@
     if (progressBar) progressBar.style.width = progress + '%';
     if (progress >= 100) {
       clearInterval(interval);
-      setTimeout(function() {
+      setTimeout(() => {
         var preloader = document.getElementById('preloader');
-        var app = document.getElementById('app');
         if (preloader) {
           preloader.style.opacity = '0';
-          setTimeout(function() {
+          setTimeout(() => {
             preloader.style.display = 'none';
+            var app = document.getElementById('app');
             if (app) {
               app.style.display = 'flex';
-              setTimeout(function() { app.style.opacity = '1'; }, 50);
+              setTimeout(() => app.style.opacity = '1', 50);
             }
           }, 500);
         }
       }, 1000);
     }
   }, 70);
-  
+
+  var bugModal = document.getElementById('bugModal');
+  document.getElementById('reportBugBtn').onclick = () => { if(currentUser) bugModal.style.display = 'flex'; else showNotification('Авторизуйтесь', 'warning'); };
+  document.getElementById('closeBugBtn').onclick = () => bugModal.style.display = 'none';
+  document.getElementById('sendBugBtn').onclick = () => {
+    var bugType = document.getElementById('bugType').value;
+    var bugDesc = document.getElementById('bugDescription').value;
+    if(!bugDesc) { showNotification('Опишите проблему', 'warning'); return; }
+    sendBugReport(bugType, bugDesc);
+    bugModal.style.display = 'none';
+    document.getElementById('bugDescription').value = '';
+  };
+
   checkAuth();
 })();
