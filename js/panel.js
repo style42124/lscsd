@@ -6,14 +6,6 @@
   let allApplications = [];
   let currentFilter = 'all';
 
-  setTimeout(() => {
-    const preloader = document.getElementById('preloader');
-    if (preloader && preloader.style.display !== 'none') {
-      preloader.style.display = 'none';
-      document.getElementById('app').style.display = 'flex';
-    }
-  }, 2500);
-
   function showNotification(msg, type) {
     const div = document.createElement('div');
     div.className = 'notification';
