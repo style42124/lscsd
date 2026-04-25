@@ -9,22 +9,22 @@
   var progress = 0;
   var progressBar = document.getElementById('preloaderProgress');
   if (progressBar) {
-    var interval = setInterval(function() {
+    var interval = setInterval(() => {
       progress += Math.floor(Math.random() * 8) + 4;
       if (progress > 100) progress = 100;
       if (progressBar) progressBar.style.width = progress + '%';
       if (progress >= 100) {
         clearInterval(interval);
-        setTimeout(function() {
+        setTimeout(() => {
           var preloader = document.getElementById('preloader');
           if (preloader) {
             preloader.style.opacity = '0';
-            setTimeout(function() {
+            setTimeout(() => {
               preloader.style.display = 'none';
               var app = document.getElementById('app');
               if (app) {
                 app.style.display = 'flex';
-                setTimeout(function() { app.style.opacity = '1'; }, 50);
+                setTimeout(() => app.style.opacity = '1', 50);
               }
             }, 500);
           }
@@ -33,12 +33,12 @@
     }, 70);
   }
   
-  function showNotification(message, type, title) {
+  function showNotification(msg, type) {
     var div = document.createElement('div');
     div.className = 'notification ' + (type || 'info');
-    div.innerHTML = '<div class="notification-title">' + (type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️') + ' ' + (title || (type === 'success' ? 'Успешно' : type === 'error' ? 'Ошибка' : 'Внимание')) + '</div><div class="notification-message">' + message + '</div>';
+    div.innerHTML = '<div class="notification-title">' + (type==='success'?'✅':'⚠️') + '</div><div>' + msg + '</div>';
     document.body.appendChild(div);
-    setTimeout(function() { if(div) div.remove(); }, 3000);
+    setTimeout(() => div.remove(), 3000);
   }
   
   function loadUserRole() {
@@ -46,7 +46,7 @@
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'get_user_role', data: { userId: currentUser.id } })
-    }).then(function(r) { return r.json(); }).then(function(res) {
+    }).then(r => r.json()).then(res => {
       if (res.success) {
         currentUserRole = res.role;
         var badge = document.getElementById('userRoleBadge');
@@ -62,7 +62,7 @@
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'get_all_users_roles' })
-    }).then(function(r) { return r.json(); }).then(function(res) {
+    }).then(r => r.json()).then(res => {
       if (res.success) {
         allUsers = res.users;
         renderUsers();
@@ -74,15 +74,8 @@
     return fetch(PROXY_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        action: 'get_applications', 
-        data: { 
-          userId: currentUser.id, 
-          userRole: currentUserRole ? currentUserRole.level : 1, 
-          userDept: currentUserRole ? (currentUserRole.department || '') : '' 
-        } 
-      })
-    }).then(function(r) { return r.json(); }).then(function(res) {
+      body: JSON.stringify({ action: 'get_applications', data: { userId: currentUser.id, userRole: currentUserRole ? currentUserRole.level : 1, userDept: currentUserRole ? (currentUserRole.department || '') : '' } })
+    }).then(r => r.json()).then(res => {
       if (res.success) {
         allApplications = res.applications || [];
         renderApplications();
@@ -90,25 +83,16 @@
     });
   }
   
-  function setUserRole(targetUserId, level, department, roleName) {
-    var levelNames = {1:'Младший состав',2:'Dep.Head',3:'Head',4:'Curator',5:'Assist Sheriff',6:'SK/Dep.SK',7:'UnderSheriff',8:'Sheriff',9:'Разработчик'};
+  function performAction(action, targetUserId, extra = {}) {
+    var data = { targetUserId, executorId: currentUser.id };
+    Object.assign(data, extra);
     return fetch(PROXY_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        action: 'set_user_role', 
-        data: { 
-          targetUserId: targetUserId, 
-          level: level, 
-          department: department, 
-          roleName: roleName || levelNames[level], 
-          executorId: currentUser.id, 
-          executorRole: currentUserRole ? currentUserRole.level : 1 
-        } 
-      })
-    }).then(function(r) { return r.json(); }).then(function(res) {
+      body: JSON.stringify({ action, data })
+    }).then(r => r.json()).then(res => {
       if (res.success) {
-        showNotification('Роль назначена!', 'success');
+        showNotification('Операция выполнена!', 'success');
         loadAllUsers();
         loadApplications();
       } else {
@@ -117,167 +101,149 @@
     });
   }
   
+  function setUserRole(targetUserId, level, department, roleName) {
+    var levelNames = {1:'Младший состав',2:'Dep.Head',3:'Head',4:'Curator',5:'Assist Sheriff',6:'SK/Dep.SK',7:'UnderSheriff',8:'Sheriff',9:'Разработчик'};
+    return performAction('set_user_role', targetUserId, { level, department, roleName: roleName || levelNames[level] });
+  }
+  
+  function banUser(targetUserId) { return performAction('ban_user', targetUserId); }
+  function unbanUser(targetUserId) { return performAction('unban_user', targetUserId); }
+  function tempBanUser(targetUserId, hours = 1) { return performAction('temp_ban_user', targetUserId, { hours }); }
+  function excludeFromDuty(targetUserId) { return performAction('exclude_from_duty', targetUserId); }
+  function includeToDuty(targetUserId) { return performAction('include_to_duty', targetUserId); }
+  
   function reviewApplication(appId, status, comment, appData, appType) {
     return fetch(PROXY_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        action: 'review_application', 
-        data: { 
-          applicationId: appId, 
-          status: status, 
-          comment: comment, 
-          reviewer: currentUser.id, 
-          reviewerRole: currentUserRole ? currentUserRole.name : '', 
-          applicationType: appType, 
-          applicationData: appData 
-        } 
-      })
-    }).then(function(r) { return r.json(); }).then(function(res) {
-      if (res.success) {
-        showNotification('Решение отправлено!', 'success');
-        loadApplications();
-      } else {
-        showNotification('Ошибка', 'error');
-      }
+      body: JSON.stringify({ action: 'review_application', data: { applicationId: appId, status, comment, reviewer: currentUser.id, reviewerRole: currentUserRole ? currentUserRole.name : '', applicationType: appType, applicationData: appData } })
+    }).then(r => r.json()).then(res => {
+      if (res.success) showNotification('Решение отправлено!', 'success');
+      else showNotification('Ошибка', 'error');
+      return res;
     });
   }
   
   function renderUsers() {
     var container = document.getElementById('usersGrid');
-    var searchTerm = document.getElementById('userSearch') ? document.getElementById('userSearch').value.toLowerCase() : '';
+    var searchTerm = document.getElementById('userSearch')?.value.toLowerCase() || '';
     if (!container) return;
-    container.innerHTML = '';
     var roleLevels = {1:'Младший состав',2:'Dep.Head',3:'Head',4:'Curator',5:'Assist Sheriff',6:'SK/Dep.SK',7:'UnderSheriff',8:'Sheriff',9:'Разработчик'};
-    var usersList = Object.keys(allUsers).map(function(id) { return { id: id, role: allUsers[id] }; });
+    var usersList = Object.keys(allUsers).map(id => ({ id, role: allUsers[id] }));
     if (currentUserRole && currentUserRole.level < 7) {
-      usersList = usersList.filter(function(u) { return u.role.level <= currentUserRole.level; });
+      usersList = usersList.filter(u => u.role.level <= currentUserRole.level);
     }
-    usersList = usersList.filter(function(u) { 
-      return u.id.toLowerCase().indexOf(searchTerm) !== -1 || (u.role.name || '').toLowerCase().indexOf(searchTerm) !== -1; 
-    });
-    usersList.forEach(function(user) {
+    usersList = usersList.filter(u => u.id.toLowerCase().indexOf(searchTerm) !== -1 || (u.role.name || '').toLowerCase().indexOf(searchTerm) !== -1);
+    container.innerHTML = '';
+    usersList.forEach(user => {
       var card = document.createElement('div');
       card.className = 'user-card';
       var roleClass = 'role-' + (user.role.level || 1);
-      card.innerHTML = 
-        '<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">' +
-          '<div class="badge-icon"><i class="fab fa-discord"></i></div>' +
-          '<div><strong style="color:#fff;">' + user.id + '</strong><br><span class="user-role-tag ' + roleClass + '">' + (roleLevels[user.role.level] || 'Младший состав') + '</span>' +
-          (user.role.department ? '<span style="margin-left:5px; color:#d4af37;">(' + user.role.department + ')</span>' : '') + '</div>' +
-        '</div>';
-      if (currentUserRole && (currentUserRole.level >= 7 || currentUserRole.level === 9) && user.id !== currentUser.id) {
-        var btn = document.createElement('button');
-        btn.innerHTML = '<i class="fas fa-edit"></i> Назначить роль';
-        btn.style.cssText = 'background:#d4af37;border:none;padding:6px 12px;border-radius:20px;cursor:pointer;width:100%;margin-top:10px;color:#0f121a;font-weight:bold;';
-        btn.onclick = (function(uid, urole) { return function() { openRoleModal(uid, urole); }; })(user.id, user.role);
-        card.appendChild(btn);
-      }
+      card.innerHTML = `
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="badge-icon"><i class="fab fa-discord"></i></div>
+          <div><strong style="color:#fff;">${user.id}</strong><br><span class="user-role-tag ${roleClass}">${roleLevels[user.role.level] || 'Младший состав'}</span>${user.role.department ? `<span style="margin-left:5px; color:#d4af37;">(${user.role.department})</span>` : ''}</div>
+          <div class="user-actions"><button class="cog-btn" data-id="${user.id}"><i class="fas fa-cog"></i></button><div class="user-menu" id="menu-${user.id}" style="display:none;"></div></div>
+        </div>
+      `;
       container.appendChild(card);
+      var cogBtn = card.querySelector('.cog-btn');
+      var menu = card.querySelector('.user-menu');
+      cogBtn.onclick = (e) => {
+        e.stopPropagation();
+        var isVisible = menu.style.display === 'block';
+        document.querySelectorAll('.user-menu').forEach(m => m.style.display = 'none');
+        menu.style.display = isVisible ? 'none' : 'block';
+        if (!isVisible) {
+          menu.innerHTML = `
+            <button class="ban-btn" data-id="${user.id}">🔨 Забанить</button>
+            <button class="unban-btn" data-id="${user.id}">🔓 Разбанить</button>
+            <button class="tempban-btn" data-id="${user.id}">⏱ Временный бан (1 час)</button>
+            <div><select class="rank-select" data-id="${user.id}"><option value="1">Младший состав</option><option value="2">Dep.Head</option><option value="3">Head</option><option value="4">Curator</option><option value="5">Assist Sheriff</option><option value="6">SK/Dep.SK</option><option value="7">UnderSheriff</option><option value="8">Sheriff</option><option value="9">Разработчик</option></select><button class="rank-apply" data-id="${user.id}">Назначить ранг</button></div>
+            <div><select class="dept-select" data-id="${user.id}"><option value="">Без отдела</option><option value="SAI">SAI</option><option value="GU">GU</option><option value="AF">AF</option><option value="IAD">IAD</option><option value="SEB">SEB</option><option value="K9">K-9</option><option value="DID">DID</option><option value="MED">MED</option><option value="SPD">SPD</option><option value="HS">High Staff</option></select><button class="dept-apply" data-id="${user.id}">Назначить отдел</button></div>
+            <button class="exclude-btn" data-id="${user.id}">🚫 Исключить от обязанностей</button>
+            <button class="include-btn" data-id="${user.id}">✅ Включить в обязанности</button>
+          `;
+          menu.querySelector('.ban-btn')?.addEventListener('click', () => banUser(user.id));
+          menu.querySelector('.unban-btn')?.addEventListener('click', () => unbanUser(user.id));
+          menu.querySelector('.tempban-btn')?.addEventListener('click', () => tempBanUser(user.id, 1));
+          menu.querySelector('.rank-apply')?.addEventListener('click', () => {
+            var level = parseInt(menu.querySelector('.rank-select').value);
+            setUserRole(user.id, level, user.role.department);
+          });
+          menu.querySelector('.dept-apply')?.addEventListener('click', () => {
+            var dept = menu.querySelector('.dept-select').value || null;
+            setUserRole(user.id, user.role.level, dept);
+          });
+          menu.querySelector('.exclude-btn')?.addEventListener('click', () => excludeFromDuty(user.id));
+          menu.querySelector('.include-btn')?.addEventListener('click', () => includeToDuty(user.id));
+        }
+      };
     });
+    document.addEventListener('click', () => document.querySelectorAll('.user-menu').forEach(m => m.style.display = 'none'));
   }
   
   function renderApplications() {
     var container = document.getElementById('applicationsList');
     if (!container) return;
     var filtered = allApplications;
-    if (currentFilter === 'pending') filtered = filtered.filter(function(a) { return a.data.status === 'pending'; });
-    if (currentFilter === 'approved') filtered = filtered.filter(function(a) { return a.data.status === 'approved'; });
-    if (currentFilter === 'rejected') filtered = filtered.filter(function(a) { return a.data.status === 'rejected'; });
+    if (currentFilter === 'pending') filtered = filtered.filter(a => a.data.status === 'pending');
+    if (currentFilter === 'approved') filtered = filtered.filter(a => a.data.status === 'approved');
+    if (currentFilter === 'rejected') filtered = filtered.filter(a => a.data.status === 'rejected');
     container.innerHTML = '';
-    if (filtered.length === 0) {
-      container.innerHTML = '<div style="text-align:center;padding:30px;color:#6b6f78;">Нет заявок</div>';
-      return;
-    }
+    if (filtered.length === 0) { container.innerHTML = '<div style="text-align:center;padding:30px;">Нет заявок</div>'; return; }
     var typeNames = {submit_department:'Заявка в отдел',submit_promotion:'Повышение',submit_appeal:'Обжалование',submit_workoff:'Отработка',submit_leave:'Отпуск',submit_rest:'Отдых',submit_spec_request:'Спецвооружение запрос',submit_spec_receive:'Спецвооружение получение',submit_resignation:'Увольнение'};
-    filtered.forEach(function(app) {
+    filtered.forEach(app => {
       var item = document.createElement('div');
       var statusClass = 'app-status-' + (app.data.status || 'pending');
       item.className = 'app-item ' + statusClass;
       var statusText = app.data.status === 'pending' ? '⏳ На рассмотрении' : (app.data.status === 'approved' ? '✅ Одобрена' : '❌ Отклонена');
-      item.innerHTML = 
-        '<div style="display:flex;justify-content:space-between;align-items:center;">' +
-          '<span class="type" style="color:#e8e8e8;">' + (typeNames[app.data.type] || app.data.type) + '</span>' +
-          '<span style="font-size:11px; color:#9ca3af;">#' + app.id + '</span>' +
-        '</div>' +
-        '<div style="font-size:12px; color:#d4af37; margin:5px 0;">От: ' + (app.data.username || app.data.userId) + '</div>' +
-        '<div style="font-size:11px; color:#e8e8e8;">' + statusText + '</div>' +
-        '<div style="font-size:11px; color:#6b6f78;">' + (app.data.created_at || '') + '</div>';
+      item.innerHTML = `
+        <div style="display:flex;justify-content:space-between;"><span style="color:#e8e8e8;">${typeNames[app.data.type] || app.data.type}</span><span style="font-size:11px;">#${app.id}</span></div>
+        <div style="font-size:12px; color:#d4af37;">От: ${app.data.username || app.data.userId}</div>
+        <div style="font-size:11px;">${statusText}</div>
+        <div style="font-size:11px; color:#6b6f78;">${app.data.created_at || ''}</div>
+      `;
       if (app.data.status === 'pending') {
-        var canReview = false;
-        if (currentUserRole && currentUserRole.level >= 2) canReview = true;
-        if (currentUserRole && currentUserRole.specialAccess && currentUserRole.specialAccess.includes(app.data.type)) canReview = true;
-        if (canReview) {
-          var reviewBtn = document.createElement('button');
-          reviewBtn.innerHTML = '<i class="fas fa-gavel"></i> Рассмотреть';
-          reviewBtn.style.cssText = 'background:#d4af37;border:none;padding:5px 12px;border-radius:20px;cursor:pointer;margin-top:8px;width:100%;color:#0f121a;font-weight:bold;';
-          reviewBtn.onclick = (function(aid, adata) { return function() { openReviewModal(aid, adata); }; })(app.id, app.data);
-          item.appendChild(reviewBtn);
-        }
+        var reviewBtn = document.createElement('button');
+        reviewBtn.innerHTML = 'Рассмотреть';
+        reviewBtn.style.cssText = 'background:#d4af37;border:none;padding:5px 12px;border-radius:20px;margin-top:8px;cursor:pointer;';
+        reviewBtn.onclick = () => openReviewModal(app.id, app.data);
+        item.appendChild(reviewBtn);
       }
       container.appendChild(item);
     });
   }
   
-  function openRoleModal(userId, currentRole) {
-    var modal = document.getElementById('roleModal');
-    if (!modal) return;
-    var targetSpan = document.getElementById('roleTargetName');
-    if (targetSpan) targetSpan.innerText = 'Пользователь: ' + userId;
-    var levelSelect = document.getElementById('roleLevelSelect');
-    if (levelSelect) levelSelect.value = currentRole ? currentRole.level : 1;
-    var deptSelect = document.getElementById('roleDeptSelect');
-    if (deptSelect) deptSelect.value = currentRole ? (currentRole.department || '') : '';
-    modal.style.display = 'flex';
-    var saveBtn = document.getElementById('saveRoleBtn');
-    var closeBtn = document.getElementById('closeRoleBtn');
-    if (saveBtn) {
-      saveBtn.onclick = function() {
-        var level = parseInt(document.getElementById('roleLevelSelect').value);
-        var dept = document.getElementById('roleDeptSelect').value || null;
-        setUserRole(userId, level, dept);
-        modal.style.display = 'none';
-      };
-    }
-    if (closeBtn) {
-      closeBtn.onclick = function() { modal.style.display = 'none'; };
-    }
-  }
-  
   function openReviewModal(appId, appData) {
-    var modal = document.getElementById('reviewModal');
-    if (!modal) return;
     var typeNames = {submit_department:'Заявка в отдел',submit_promotion:'Повышение',submit_appeal:'Обжалование',submit_workoff:'Отработка',submit_leave:'Отпуск',submit_rest:'Отдых',submit_spec_request:'Спецвооружение запрос',submit_spec_receive:'Спецвооружение получение',submit_resignation:'Увольнение'};
-    var appDataDiv = document.getElementById('reviewAppData');
-    if (appDataDiv) {
-      appDataDiv.innerHTML = 
-        '<p><strong style="color:#e8e8e8;">Тип:</strong> <span style="color:#d4af37;">' + (typeNames[appData.type] || appData.type) + '</span></p>' +
-        '<p><strong style="color:#e8e8e8;">Заявитель:</strong> <span style="color:#fff;">' + (appData.username || appData.userId) + '</span></p>' +
-        '<p><strong style="color:#e8e8e8;">Дата:</strong> <span style="color:#9ca3af;">' + (appData.created_at || '') + '</span></p>';
-    }
-    var statusSelect = document.getElementById('reviewStatus');
-    if (statusSelect) statusSelect.value = 'approved';
-    var commentArea = document.getElementById('reviewComment');
-    if (commentArea) commentArea.value = '';
-    modal.style.display = 'flex';
-    var submitBtn = document.getElementById('submitReviewBtn');
-    var closeBtn = document.getElementById('closeReviewBtn');
-    if (submitBtn) {
-      submitBtn.onclick = function() {
-        var status = document.getElementById('reviewStatus').value;
-        var comment = document.getElementById('reviewComment').value;
-        reviewApplication(appId, status, comment, appData, typeNames[appData.type] || appData.type);
-        modal.style.display = 'none';
-      };
-    }
-    if (closeBtn) {
-      closeBtn.onclick = function() { modal.style.display = 'none'; };
-    }
+    var modalHtml = `
+      <div class="review-modal" id="reviewModal" style="display:flex;"><div class="review-content">
+        <h3 style="color:#d4af37;">Рассмотрение заявки</h3>
+        <p><strong>Тип:</strong> ${typeNames[appData.type] || appData.type}</p>
+        <p><strong>Заявитель:</strong> ${appData.username || appData.userId}</p>
+        <p><strong>Дата:</strong> ${appData.created_at || ''}</p>
+        <select id="reviewStatus"><option value="approved">✅ Одобрить</option><option value="rejected">❌ Отклонить</option></select>
+        <textarea id="reviewComment" rows="3" placeholder="Комментарий..."></textarea>
+        <div style="display:flex;gap:10px;margin-top:15px;"><button id="submitReviewBtn" class="btn-primary">Отправить решение</button><button id="closeReviewBtn" class="btn-danger">Отмена</button></div>
+      </div></div>
+    `;
+    var modalDiv = document.createElement('div');
+    modalDiv.innerHTML = modalHtml;
+    document.body.appendChild(modalDiv);
+    var modal = modalDiv.firstElementChild;
+    document.getElementById('submitReviewBtn').onclick = () => {
+      var status = document.getElementById('reviewStatus').value;
+      var comment = document.getElementById('reviewComment').value;
+      reviewApplication(appId, status, comment, appData, typeNames[appData.type] || appData.type).then(() => {
+        modal.remove();
+        loadApplications();
+      });
+    };
+    document.getElementById('closeReviewBtn').onclick = () => modal.remove();
   }
   
-  document.getElementById('backToMainBtn').onclick = function() {
-    window.location.href = '/lscsd/';
-  };
+  document.getElementById('backToMainBtn').onclick = () => window.location.href = '/lscsd/';
   
   function handleAuthCallback() {
     var hash = window.location.hash.substring(1);
@@ -286,11 +252,11 @@
       var token = params.get('access_token');
       if (token) {
         fetch('https://discord.com/api/users/@me', { headers: { Authorization: 'Bearer '+token } })
-          .then(function(r) { return r.json(); }).then(function(user) {
+          .then(r => r.json()).then(user => {
             localStorage.setItem('lscsd_user', JSON.stringify({ id:user.id, username:user.username, avatar:user.avatar ? 'https://cdn.discordapp.com/avatars/'+user.id+'/'+user.avatar+'.png' : '' }));
             window.location.hash = '';
             location.reload();
-          }).catch(function(){ showNotification('Ошибка авторизации', 'error'); });
+          }).catch(() => showNotification('Ошибка авторизации', 'error'));
       }
     }
   }
@@ -299,63 +265,44 @@
     var user = localStorage.getItem('lscsd_user');
     if (user) {
       currentUser = JSON.parse(user);
-      var authContainer = document.getElementById('authContainer');
-      var mainContainer = document.getElementById('mainContainer');
-      if (authContainer) authContainer.style.display = 'none';
-      if (mainContainer) mainContainer.style.display = 'block';
-      var navName = document.getElementById('navName');
-      if (navName) navName.innerText = currentUser.username;
-      var navAvatar = document.getElementById('navAvatar');
-      if (navAvatar && currentUser.avatar) navAvatar.src = currentUser.avatar;
-      loadUserRole().then(function() {
-        if (currentUserRole && currentUserRole.level < 2 && currentUserRole.level !== 6) {
-          if (mainContainer) {
-            mainContainer.innerHTML = '<div style="text-align:center;padding:50px;"><h2 style="color:#d4af37;">Доступ запрещён</h2><p style="color:#e8e8e8;">У вас недостаточно прав для доступа к панели управления.</p><button onclick="window.location.href=\'/lscsd/\'" class="btn-primary" style="background:#d4af37;border:none;padding:10px 20px;border-radius:30px;cursor:pointer;margin-top:20px;">Вернуться на главную</button></div>';
-          }
+      document.getElementById('authContainer').style.display = 'none';
+      document.getElementById('mainContainer').style.display = 'block';
+      document.getElementById('navName').innerText = currentUser.username;
+      if (currentUser.avatar) document.getElementById('navAvatar').src = currentUser.avatar;
+      loadUserRole().then(() => {
+        if (currentUserRole && (currentUserRole.level < 7 && currentUserRole.level !== 9)) {
+          document.getElementById('mainContainer').innerHTML = '<div style="text-align:center;padding:50px;"><h2 style="color:#d4af37;">Доступ запрещён</h2><button onclick="window.location.href=\'/lscsd/\'" class="btn-primary">Вернуться</button></div>';
           return;
         }
         loadAllUsers();
         loadApplications();
       });
     } else {
-      var authContainer = document.getElementById('authContainer');
-      var mainContainer = document.getElementById('mainContainer');
-      if (authContainer) authContainer.style.display = 'flex';
-      if (mainContainer) mainContainer.style.display = 'none';
+      document.getElementById('authContainer').style.display = 'flex';
+      document.getElementById('mainContainer').style.display = 'none';
       handleAuthCallback();
     }
   }
   
-  var authBtn = document.getElementById('authBtn');
-  if (authBtn) {
-    authBtn.onclick = function() {
-      var REDIRECT_URI = 'https://style42124.github.io/lscsd/panel.html';
-      window.location.href = 'https://discord.com/api/oauth2/authorize?client_id=1494686473520287774&redirect_uri='+encodeURIComponent(REDIRECT_URI)+'&response_type=token&scope=identify';
-    };
-  }
-  
-  var userSearch = document.getElementById('userSearch');
-  if (userSearch) {
-    userSearch.addEventListener('input', function() { renderUsers(); });
-  }
+  document.getElementById('authBtn').onclick = () => window.location.href = 'https://discord.com/api/oauth2/authorize?client_id=1494686473520287774&redirect_uri='+encodeURIComponent('https://style42124.github.io/lscsd/panel.html')+'&response_type=token&scope=identify';
+  document.getElementById('userSearch')?.addEventListener('input', () => renderUsers());
   
   var tabBtns = document.querySelectorAll('.tab-btn');
-  tabBtns.forEach(function(btn) {
+  tabBtns.forEach(btn => {
     btn.onclick = function() {
-      tabBtns.forEach(function(b) { b.classList.remove('active'); });
+      tabBtns.forEach(b => b.classList.remove('active'));
       this.classList.add('active');
-      document.querySelectorAll('.tab-content').forEach(function(tab) { tab.classList.remove('active'); });
-      var targetTab = document.getElementById(this.dataset.tab + '-tab');
-      if (targetTab) targetTab.classList.add('active');
+      document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+      document.getElementById(this.dataset.tab + '-tab').classList.add('active');
       if (this.dataset.tab === 'users') renderUsers();
       if (this.dataset.tab === 'applications') renderApplications();
     };
   });
   
   var filterBtns = document.querySelectorAll('.filter-btn');
-  filterBtns.forEach(function(btn) {
+  filterBtns.forEach(btn => {
     btn.onclick = function() {
-      filterBtns.forEach(function(b) { b.classList.remove('active'); });
+      filterBtns.forEach(b => b.classList.remove('active'));
       this.classList.add('active');
       currentFilter = this.dataset.filter;
       renderApplications();
