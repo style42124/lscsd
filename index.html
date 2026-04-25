@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="css/style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
+<style>
     /* быстрые исправления */
     .file-preview { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
     .file-preview-item { position: relative; width: 80px; height: 80px; border: 1px solid #d4af37; border-radius: 10px; overflow: hidden; cursor: pointer; }
@@ -20,9 +20,50 @@
     .role-btn.selected { background: #d4af37; color: #0f121a; }
     .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
     .notification { position: fixed; top: 20px; right: 20px; z-index: 9999; }
+  
+    .modal-content {
+      background: linear-gradient(145deg, #1a1f2a, #0f121a) !important;
+      border: 1px solid #d4af37 !important;
+    }
+    
+    .modal-header {
+      border-bottom: 1px solid rgba(212, 175, 55, 0.3) !important;
+      background: transparent !important;
+    }
+    
+    .modal-body {
+      background: transparent !important;
+    }
+    
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      background: #0f121a !important;
+      border: 1px solid rgba(212, 175, 55, 0.3) !important;
+      color: #e8e8e8 !important;
+    }
+    
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      border-color: #d4af37 !important;
+      outline: none !important;
+    }
+    
+    .form-group label {
+      color: #d4af37 !important;
+    }
+    
+    input, select, textarea {
+      background-color: #0f121a !important;
+      border-color: #d4af37 !important;
+      color: #e8e8e8 !important;
+    }
+    
+    .modal {
+      background: rgba(0, 0, 0, 0.95) !important;
+    }
   </style>
-</head>
-<body>
 
 <div class="preloader" id="preloader">
   <div class="badge-container">
