@@ -389,27 +389,51 @@
     if (filtered.length === 0) container.innerHTML = '<div style="text-align:center;padding:20px;">Нет заявок</div>';
   }
 
-  function renderStats() {
-    const stats = { total: userHistory.length, byType: {} };
-    userHistory.forEach(h => {
-      const t = typeNamesMap[h.type] || h.type;
-      stats.byType[t] = (stats.byType[t] || 0) + 1;
+    function renderStats() {
+    var stats = {total: userHistory.length, byType: {}};
+    var typeNames = {
+      'submit_department': 'Заявка в отдел',
+      'submit_promotion': 'Повышение',
+      'submit_appeal': 'Обжалование',
+      'submit_workoff': 'Отработка',
+      'submit_leave': 'Отпуск',
+      'submit_rest': 'Отдых',
+      'submit_spec_request': 'Спецвооружение',
+      'submit_spec_receive': 'Получение спец',
+      'submit_resignation': 'Увольнение'
+    };
+    userHistory.forEach(function(h) {
+      var displayType = typeNames[h.type] || h.type;
+      stats.byType[displayType] = (stats.byType[displayType] || 0) + 1;
     });
-    const container = document.getElementById('statsGrid');
+    var container = document.getElementById('statsGrid');
     if (container) {
-      container.innerHTML = `<div class="stat-card"><div class="stat-number">${stats.total}</div><div class="stat-label">Всего заявок</div></div>`;
-      Object.keys(stats.byType).forEach(type => {
-        container.innerHTML += `<div class="stat-card"><div class="stat-number">${stats.byType[type]}</div><div class="stat-label">${type}</div></div>`;
-      });
+      container.innerHTML = '<div class="stat-card"><div class="stat-number" style="color:#d4af37; font-size:2rem; font-weight:800;">' + stats.total + '</div><div class="stat-label" style="color:#9ca3af;">Всего заявок</div></div>';
+      var sortedTypes = Object.keys(stats.byType).sort();
+      for (var i = 0; i < sortedTypes.length; i++) {
+        var type = sortedTypes[i];
+        container.innerHTML += '<div class="stat-card"><div class="stat-number" style="color:#d4af37; font-size:1.5rem; font-weight:700;">' + stats.byType[type] + '</div><div class="stat-label" style="color:#9ca3af;">' + type + '</div></div>';
+      }
     }
-    const ctx = document.getElementById('statsChart')?.getContext('2d');
-    if (ctx && window.statsChart) window.statsChart.destroy();
-    if (ctx && Object.keys(stats.byType).length) {
-      window.statsChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: { labels: Object.keys(stats.byType), datasets: [{ data: Object.values(stats.byType), backgroundColor: ['#d4af37','#5865F2','#6bcf7f','#ff6b6b','#ffa500','#4a90d9','#9b59b6'] }] },
-        options: { responsive: true, plugins: { legend: { labels: { color: '#e8e8e8' } } } }
-      });
+    var ctx = document.getElementById('statsChart')?.getContext('2d');
+    if (ctx) {
+      // Проверяем, существует ли уже график, и уничтожаем его, если да
+      if (window.statsChart && typeof window.statsChart.destroy === 'function') {
+        window.statsChart.destroy();
+      }
+      if (Object.keys(stats.byType).length > 0) {
+        window.statsChart = new Chart(ctx, {
+          type: 'doughnut',
+          data: { labels: Object.keys(stats.byType), datasets: [{ data: Object.values(stats.byType), backgroundColor: ['#d4af37', '#5865F2', '#6bcf7f', '#ff6b6b', '#ffa500', '#4a90d9', '#9b59b6', '#e84393', '#00cec9'] }] },
+          options: { responsive: true, plugins: { legend: { labels: { color: '#e8e8e8' } } } }
+        });
+      } else {
+        window.statsChart = new Chart(ctx, {
+          type: 'doughnut',
+          data: { labels: ['Нет данных'], datasets: [{ data: [1], backgroundColor: ['#d4af37'] }] },
+          options: { responsive: true, plugins: { legend: { labels: { color: '#e8e8e8' } } } }
+        });
+      }
     }
   }
 
