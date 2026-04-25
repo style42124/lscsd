@@ -6,7 +6,7 @@
   let allApplications = [];
   let currentFilter = 'all';
 
-  // Preloader
+  // Preloader (оставляем как есть)
   let progress = 0;
   const progressBar = document.getElementById('preloaderProgress');
   const interval = setInterval(() => {
@@ -28,7 +28,6 @@
       }, 500);
     }
   }, 80);
-  // Аварийное скрытие
   setTimeout(() => {
     const preloader = document.getElementById('preloader');
     if (preloader && preloader.style.display !== 'none') {
@@ -60,20 +59,18 @@
     });
   }
 
+  // ЗАГРУЖАЕМ ВСЕХ ПОЛЬЗОВАТЕЛЕЙ (без фильтра по уровню)
   function loadAllUsers() {
-    if (currentUserRole && currentUserRole.level >= 2) {
-      return fetch(PROXY_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'get_all_users_roles' })
-      }).then(r => r.json()).then(res => {
-        if (res.success) {
-          allUsers = res.users;
-          renderUsers();
-        }
-      });
-    }
-    return Promise.resolve();
+    return fetch(PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'get_all_users_roles' })
+    }).then(r => r.json()).then(res => {
+      if (res.success) {
+        allUsers = res.users;
+        renderUsers();
+      }
+    });
   }
 
   function loadApplications() {
@@ -105,7 +102,7 @@
     }).then(r => r.json()).then(res => {
       if (res.success) {
         showNotification('✅ Операция выполнена!', 'success');
-        loadAllUsers();
+        loadAllUsers();   // обновим список
         loadApplications();
       } else {
         showNotification(res.error || '❌ Ошибка', 'error');
@@ -147,6 +144,7 @@
     });
   }
 
+  // Модальное окно управления пользователем (шестерёнка)
   function openUserModal(userId, userRole) {
     const modalDiv = document.createElement('div');
     modalDiv.className = 'modal-overlay';
@@ -197,15 +195,22 @@
     document.getElementById('userModalCloseBtn').onclick = () => modalDiv.remove();
   }
 
+  // ОТОБРАЖЕНИЕ ВСЕХ ПОЛЬЗОВАТЕЛЕЙ (без фильтрации по уровню)
   function renderUsers() {
     const container = document.getElementById('usersGrid');
     const searchTerm = document.getElementById('userSearch')?.value.toLowerCase() || '';
     if (!container) return;
+
     const roleLevels = {1:'Младший состав',2:'Dep.Head',3:'Head',4:'Curator',5:'Assist Sheriff',6:'SK/Dep.SK',7:'UnderSheriff',8:'Sheriff',9:'Разработчик'};
+    // Преобразуем объект в массив
     let usersList = Object.keys(allUsers).map(id => ({ id, role: allUsers[id] }));
+    // Поиск по ID
     usersList = usersList.filter(u => u.id.toLowerCase().includes(searchTerm));
     container.innerHTML = '';
+
+    // Кнопка управления (шестерёнка) доступна только если текущий пользователь имеет уровень >=7
     const canManage = (currentUserRole && (currentUserRole.level >= 7 || currentUserRole.level === 9));
+
     for (const user of usersList) {
       const card = document.createElement('div');
       card.className = 'user-card';
@@ -214,12 +219,12 @@
         <div class="user-info">
           <div class="badge-icon"><i class="fab fa-discord"></i></div>
           <div class="user-details">
-            <strong>${user.id}</strong><br>
+            <strong>${escapeHtml(user.id)}</strong><br>
             <span class="user-role-tag ${roleClass}">${roleLevels[user.role.level] || 'Младший состав'}</span>
-            ${user.role.department ? `<span style="margin-left:8px; color:#d4af37;">(${user.role.department})</span>` : ''}
+            ${user.role.department ? `<span style="margin-left:8px; color:#d4af37;">(${escapeHtml(user.role.department)})</span>` : ''}
           </div>
         </div>
-        ${canManage ? `<div class="user-actions"><button class="cog-btn" data-id="${user.id}"><i class="fas fa-cog"></i></button></div>` : ''}
+        ${canManage ? `<div class="user-actions"><button class="cog-btn" data-id="${escapeHtml(user.id)}"><i class="fas fa-cog"></i></button></div>` : ''}
       `;
       container.appendChild(card);
       if (canManage) {
@@ -227,6 +232,7 @@
         cogBtn.onclick = () => openUserModal(user.id, user.role);
       }
     }
+    if (usersList.length === 0) container.innerHTML = '<div style="text-align:center; padding:20px;">Нет пользователей</div>';
   }
 
   function renderApplications() {
@@ -257,7 +263,7 @@
           <span style="font-weight:600;">${typeNames[app.data.type] || app.data.type}</span>
           <span style="font-size:12px; opacity:0.7;">#${app.id}</span>
         </div>
-        <div style="font-size:13px; margin:5px 0;">От: ${app.data.username || app.data.userId}</div>
+        <div style="font-size:13px; margin:5px 0;">От: ${escapeHtml(app.data.username || app.data.userId)}</div>
         <div style="font-size:12px;">${statusText}</div>
         <div style="font-size:11px; opacity:0.6;">${app.data.created_at || ''}</div>
       `;
@@ -293,7 +299,7 @@
       <div class="modal-card">
         <h3><i class="fas fa-gavel"></i> Рассмотрение заявки</h3>
         <p><strong>Тип:</strong> ${typeNames[appData.type] || appData.type}</p>
-        <p><strong>Заявитель:</strong> ${appData.username || appData.userId}</p>
+        <p><strong>Заявитель:</strong> ${escapeHtml(appData.username || appData.userId)}</p>
         <p><strong>Дата:</strong> ${appData.created_at || ''}</p>
         <select id="reviewStatus"><option value="approved">✅ Одобрить</option><option value="rejected">❌ Отклонить</option></select>
         <textarea id="reviewComment" rows="3" placeholder="Комментарий..."></textarea>
@@ -310,6 +316,16 @@
       });
     };
     document.getElementById('closeReviewBtn').onclick = () => modalDiv.remove();
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, function(m) {
+      if (m === '&') return '&amp;';
+      if (m === '<') return '&lt;';
+      if (m === '>') return '&gt;';
+      return m;
+    });
   }
 
   function handleAuthCallback() {
@@ -337,7 +353,7 @@
       document.getElementById('navName').innerText = currentUser.username;
       if (currentUser.avatar) document.getElementById('navAvatar').src = currentUser.avatar;
       loadUserRole().then(() => {
-        loadAllUsers();
+        loadAllUsers();       // Загружаем всех пользователей
         loadApplications();
       });
     } else {
