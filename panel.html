@@ -7,10 +7,8 @@
   <link rel="icon" type="image/png" href="/lscsd/file.png">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- Подключаем ваш основной CSS -->
   <link rel="stylesheet" href="css/style.css">
   <style>
-    /* Только специфичные для панели стили (дополняют основной CSS) */
     .users-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -140,6 +138,14 @@
       background: #d4af37;
       color: #0f121a;
     }
+    /* Анимация модалки */
+    @keyframes modalPop {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .modal-card {
+      animation: modalPop 0.2s ease;
+    }
   </style>
 </head>
 <body>
@@ -151,18 +157,18 @@
 
 <div class="app" id="app" style="display: none;">
   <nav class="navbar">
-    <div class="nav-brand" id="navBrand">
+    <div class="nav-brand">
       <div class="nav-logo"></div>
       <div>
         <span class="nav-title-main">LSCSD PANEL</span>
-        <div class="nav-title-sub">УПРАВЛЕНИЕ ПЕРСОНАЛОМ</div>
+        <span class="nav-title-sub">УПРАВЛЕНИЕ ПЕРСОНАЛОМ</span>
       </div>
     </div>
     <div class="nav-user">
       <img id="navAvatar" class="nav-avatar">
       <span id="navName"></span>
       <span id="userRoleBadge" style="background:#d4af37; color:#0f121a; padding:2px 8px; border-radius:20px; font-size:12px;"></span>
-      <button class="back-btn" id="backToMainBtn" style="background:#d4af37; border:none; padding:5px 12px; border-radius:20px; cursor:pointer; color:#0f121a; margin-left:10px;"><i class="fas fa-home"></i> На главную</button>
+      <button id="backToMainBtn" style="background:#d4af37; border:none; padding:5px 12px; border-radius:20px; margin-left:10px; cursor:pointer; color:#0f121a;"><i class="fas fa-home"></i> На главную</button>
     </div>
   </nav>
 
