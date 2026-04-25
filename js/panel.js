@@ -6,7 +6,7 @@
   let allApplications = [];
   let currentFilter = 'all';
 
-  // Preloader
+  // Preloader (аналогичный index.html)
   let progress = 0;
   const progressBar = document.getElementById('preloaderProgress');
   const interval = setInterval(() => {
@@ -68,10 +68,8 @@
       if (res.success) {
         allUsers = res.users;
         renderUsers();
-      } else {
-        console.error('get_all_users_roles error', res);
       }
-    }).catch(err => console.error('fetch error', err));
+    });
   }
 
   function loadApplications() {
@@ -150,7 +148,7 @@
     modalDiv.className = 'modal-overlay';
     modalDiv.innerHTML = `
       <div class="modal-card">
-        <h3><i class="fas fa-user-cog"></i> Управление: ${userId}</h3>
+        <h3><i class="fas fa-user-cog"></i> Управление: ${escapeHtml(userId)}</h3>
         <div class="flex-buttons">
           <button id="userBanBtn" class="btn-primary">🔨 Забанить</button>
           <button id="userUnbanBtn" class="btn-primary">🔓 Разбанить</button>
@@ -350,7 +348,7 @@
       document.getElementById('navName').innerText = currentUser.username;
       if (currentUser.avatar) document.getElementById('navAvatar').src = currentUser.avatar;
       loadUserRole().then(() => {
-        loadAllUsers();      // загружаем всех пользователей
+        loadAllUsers();
         loadApplications();
       });
     } else {
