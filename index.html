@@ -9,61 +9,102 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="css/style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<style>
-    /* быстрые исправления */
+  <style>
+    /* быстрые исправления + градиенты */
     .file-preview { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
-    .file-preview-item { position: relative; width: 80px; height: 80px; border: 1px solid #d4af37; border-radius: 10px; overflow: hidden; cursor: pointer; }
+    .file-preview-item { position: relative; width: 80px; height: 80px; border: 1px solid #d4af37; border-radius: 10px; overflow: hidden; cursor: pointer; background: linear-gradient(135deg, #0f121a, #0a0e14); }
     .file-preview-item img { width: 100%; height: 100%; object-fit: cover; }
-    .remove-file { position: absolute; top: -8px; right: -8px; width: 20px; height: 20px; background: #ff6b6b; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; }
+    .remove-file { position: absolute; top: -8px; right: -8px; width: 20px; height: 20px; background: linear-gradient(135deg, #ff6b6b, #ff4444); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; color: white; }
     .role-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
-    .role-btn { background: #0f121a; border: 1px solid rgba(212,175,55,0.3); border-radius: 30px; padding: 6px 15px; cursor: pointer; transition: 0.2s; }
-    .role-btn.selected { background: #d4af37; color: #0f121a; }
+    .role-btn { background: linear-gradient(135deg, #0f121a, #0a0e14); border: 1px solid rgba(212,175,55,0.3); border-radius: 30px; padding: 6px 15px; cursor: pointer; transition: all 0.3s; color: #e8e8e8; }
+    .role-btn.selected { background: linear-gradient(135deg, #d4af37, #b8962a); color: #0f121a; border-color: #fff; box-shadow: 0 0 15px rgba(212,175,55,0.5); }
+    .role-btn:hover { transform: scale(1.02); background: linear-gradient(135deg, #b8962a, #9a7a20); }
     .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
-    .notification { position: fixed; top: 20px; right: 20px; z-index: 9999; }
-  
-    .modal-content {
-      background: linear-gradient(145deg, #1a1f2a, #0f121a) !important;
-      border: 1px solid #d4af37 !important;
-    }
+    .notification { position: fixed; top: 20px; right: 20px; z-index: 9999; background: linear-gradient(135deg, #1a1f2a, #0f121a); border-left: 4px solid #d4af37; border-radius: 12px; padding: 12px 20px; min-width: 260px; color: #e8e8e8; box-shadow: 0 5px 25px rgba(0,0,0,0.3); }
     
+    /* Градиенты для модальных окон */
+    .modal-content {
+      background: linear-gradient(145deg, #1a1f2a, #0a0e14, #0f121a) !important;
+      border: 1px solid #d4af37 !important;
+      position: relative;
+      overflow: hidden;
+    }
+    .modal-content::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(212,175,55,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
     .modal-header {
       border-bottom: 1px solid rgba(212, 175, 55, 0.3) !important;
       background: transparent !important;
     }
-    
     .modal-body {
       background: transparent !important;
     }
-    
-    .form-group input,
-    .form-group select,
-    .form-group textarea {
-      background: #0f121a !important;
+    .form-group input, .form-group select, .form-group textarea {
+      background: linear-gradient(135deg, #0f121a, #0a0e14) !important;
       border: 1px solid rgba(212, 175, 55, 0.3) !important;
       color: #e8e8e8 !important;
+      transition: all 0.3s;
     }
-    
-    .form-group input:focus,
-    .form-group select:focus,
-    .form-group textarea:focus {
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
       border-color: #d4af37 !important;
+      box-shadow: 0 0 15px rgba(212,175,55,0.2);
       outline: none !important;
     }
-    
     .form-group label {
       color: #d4af37 !important;
+      font-weight: 500;
     }
-    
     input, select, textarea {
-      background-color: #0f121a !important;
+      background: linear-gradient(135deg, #0f121a, #0a0e14) !important;
       border-color: #d4af37 !important;
       color: #e8e8e8 !important;
     }
-    
     .modal {
       background: rgba(0, 0, 0, 0.95) !important;
     }
+    
+    /* Градиент для карточек */
+    .card {
+      background: linear-gradient(145deg, rgba(20,25,35,0.8), rgba(15,18,26,0.9)) !important;
+      backdrop-filter: blur(15px);
+      transition: all 0.4s;
+    }
+    .card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 15px 35px rgba(212,175,55,0.15);
+      background: linear-gradient(145deg, rgba(30,35,45,0.9), rgba(20,25,35,0.95)) !important;
+    }
+    
+    /* Градиент для кнопок */
+    .auth-btn, .btn-submit {
+      background: linear-gradient(135deg, #5865F2, #4752c4, #3a45a0) !important;
+      transition: all 0.3s;
+    }
+    .auth-btn:hover, .btn-submit:hover {
+      background: linear-gradient(135deg, #4752c4, #3a45a0, #2e3880) !important;
+      transform: scale(1.02);
+      box-shadow: 0 5px 25px rgba(88,101,242,0.4);
+    }
+    
+    /* Градиент для вкладок */
+    .tab-btn {
+      background: linear-gradient(135deg, rgba(20,25,35,0.7), rgba(15,18,26,0.8));
+      transition: all 0.3s;
+    }
+    .tab-btn.active {
+      background: linear-gradient(135deg, #d4af37, #b8962a);
+      color: #0f121a;
+    }
   </style>
+</head>
+<body>
 
 <div class="preloader" id="preloader">
   <div class="badge-container">
