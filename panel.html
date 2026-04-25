@@ -7,9 +7,10 @@
   <link rel="icon" type="image/png" href="/lscsd/file.png">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Подключаем ваш основной CSS -->
   <link rel="stylesheet" href="css/style.css">
   <style>
-    /* только специфика панели */
+    /* Только специфичные для панели стили (дополняют основной CSS) */
     .users-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -18,7 +19,6 @@
     }
     .user-card {
       background: rgba(20,25,35,0.7);
-      backdrop-filter: blur(10px);
       border-radius: 24px;
       padding: 18px;
       border: 1px solid rgba(212,175,55,0.2);
@@ -55,54 +55,10 @@
       font-weight: 600;
       margin-top: 6px;
     }
-    .role-1 { background: #2c3e50; color: #fff; }
-    .role-2, .role-3, .role-4, .role-5 { background: #16a085; color: #fff; }
-    .role-6 { background: #8e44ad; color: #fff; }
-    .role-7, .role-8, .role-9 { background: #c0392b; color: #fff; }
-    .user-actions button {
-      background: none;
-      border: none;
-      color: #d4af37;
-      font-size: 1.3rem;
-      cursor: pointer;
-      transition: 0.2s;
-    }
-    .user-actions button:hover {
-      color: #f5e7a3;
-      transform: scale(1.1);
-    }
-    .search-box {
-      max-width: 400px;
-      margin: 0 auto 30px;
-    }
-    .search-box input {
-      width: 100%;
-      padding: 12px 20px;
-      background: #0f121a;
-      border: 1px solid rgba(212,175,55,0.3);
-      border-radius: 50px;
-      color: #e8e8e8;
-    }
-    .filters {
-      display: flex;
-      gap: 12px;
-      justify-content: center;
-      margin-bottom: 25px;
-      flex-wrap: wrap;
-    }
-    .filter-btn {
-      background: rgba(20,25,35,0.7);
-      border: 1px solid rgba(212,175,55,0.3);
-      border-radius: 30px;
-      padding: 8px 20px;
-      cursor: pointer;
-      color: #e8e8e8;
-      transition: 0.2s;
-    }
-    .filter-btn.active {
-      background: #d4af37;
-      color: #0f121a;
-    }
+    .role-1 { background: #2c3e50; }
+    .role-2, .role-3, .role-4, .role-5 { background: #16a085; }
+    .role-6 { background: #8e44ad; }
+    .role-7, .role-8, .role-9 { background: #c0392b; }
     .app-list {
       max-height: 550px;
       overflow-y: auto;
@@ -115,9 +71,6 @@
       border-left: 4px solid #d4af37;
       cursor: pointer;
       transition: 0.2s;
-    }
-    .app-item:hover {
-      background: rgba(212,175,55,0.1);
     }
     .app-status-pending { border-left-color: #ffa500; }
     .app-status-approved { border-left-color: #6bcf7f; }
@@ -142,11 +95,6 @@
       width: 90%;
       padding: 30px;
       border: 1px solid #d4af37;
-      animation: modalPop 0.2s;
-    }
-    @keyframes modalPop {
-      from { opacity: 0; transform: scale(0.95); }
-      to { opacity: 1; transform: scale(1); }
     }
     .flex-buttons {
       display: flex;
@@ -157,103 +105,102 @@
     .btn-primary {
       background: #d4af37;
       border: none;
-      padding: 10px 20px;
+      padding: 8px 16px;
       border-radius: 30px;
       font-weight: bold;
       cursor: pointer;
       color: #0f121a;
-      transition: 0.2s;
-    }
-    .btn-primary:hover {
-      transform: scale(1.02);
     }
     .btn-cancel {
       background: #ff6b6b;
       border: none;
-      padding: 10px 20px;
+      padding: 8px 16px;
       border-radius: 30px;
       font-weight: bold;
       cursor: pointer;
       color: white;
     }
-    .notification {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: #1a1f2a;
-      border-left: 4px solid #d4af37;
-      border-radius: 12px;
-      padding: 12px 20px;
-      min-width: 260px;
-      z-index: 9999;
-      animation: slideInRight 0.3s, fadeOut 0.3s 2.7s forwards;
+    .filters {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 25px;
+      flex-wrap: wrap;
     }
-    @keyframes slideInRight {
-      from { transform: translateX(400px); opacity: 0; }
-      to { transform: translateX(0); opacity: 1; }
+    .filter-btn {
+      background: rgba(20,25,35,0.7);
+      border: 1px solid rgba(212,175,55,0.3);
+      border-radius: 30px;
+      padding: 8px 20px;
+      cursor: pointer;
+      color: #e8e8e8;
+      transition: 0.2s;
     }
-    @keyframes fadeOut {
-      to { opacity: 0; visibility: hidden; }
+    .filter-btn.active {
+      background: #d4af37;
+      color: #0f121a;
     }
   </style>
 </head>
 <body>
-  <div class="preloader" id="preloader">
-    <div class="badge-container">
-      <div class="siren-glow"><div class="siren-glow-light"></div><div class="siren-glow-light"></div></div>
-      <div class="badge-star"></div><div class="badge-inner"></div>
-      <div class="badge-text">LSCSD<br><span>PANEL ADMIN</span></div>
-    </div>
-    <div class="preloader-logo">УПРАВЛЕНИЕ</div>
-    <div class="preloader-text">Загрузка панели...</div>
-    <div class="preloader-progress"><div class="preloader-progress-bar" id="preloaderProgress"></div></div>
-  </div>
 
-  <div class="app" id="app" style="display: none;">
-    <nav class="navbar">
-      <div class="nav-brand">
-        <div class="nav-logo"></div>
-        <div><span class="nav-title-main">LSCSD PANEL</span><span class="nav-title-sub">УПРАВЛЕНИЕ ПЕРСОНАЛОМ</span></div>
-      </div>
-      <div class="nav-user">
-        <img id="navAvatar" class="nav-avatar"><span id="navName"></span>
-        <span id="userRoleBadge" style="background:#d4af37; color:#0f121a; padding:2px 8px; border-radius:20px; font-size:12px;"></span>
-        <button class="back-btn" id="backToMainBtn"><i class="fas fa-home"></i> На главную</button>
-      </div>
-    </nav>
+<div class="preloader" id="preloader">
+  <div class="preloader-logo">LSCSD PANEL</div>
+  <div class="preloader-progress"><div class="preloader-progress-bar" id="preloaderProgress"></div></div>
+</div>
 
-    <div class="auth-container" id="authContainer">
-      <div class="auth-card">
-        <div class="auth-icon"><i class="fab fa-discord"></i></div>
-        <h1 class="auth-title">Панель управления</h1>
-        <button class="auth-btn" id="authBtn">Войти через Discord</button>
+<div class="app" id="app" style="display: none;">
+  <nav class="navbar">
+    <div class="nav-brand" id="navBrand">
+      <div class="nav-logo"></div>
+      <div>
+        <span class="nav-title-main">LSCSD PANEL</span>
+        <div class="nav-title-sub">УПРАВЛЕНИЕ ПЕРСОНАЛОМ</div>
       </div>
     </div>
+    <div class="nav-user">
+      <img id="navAvatar" class="nav-avatar">
+      <span id="navName"></span>
+      <span id="userRoleBadge" style="background:#d4af37; color:#0f121a; padding:2px 8px; border-radius:20px; font-size:12px;"></span>
+      <button class="back-btn" id="backToMainBtn" style="background:#d4af37; border:none; padding:5px 12px; border-radius:20px; cursor:pointer; color:#0f121a; margin-left:10px;"><i class="fas fa-home"></i> На главную</button>
+    </div>
+  </nav>
 
-    <div class="main-container" id="mainContainer" style="display: none;">
-      <div class="dashboard-header">
-        <h1 class="dashboard-title"><i class="fas fa-users-cog"></i> Управление отделом</h1>
-      </div>
-      <div class="tabs">
-        <button class="tab-btn active" data-tab="users">👥 Сотрудники</button>
-        <button class="tab-btn" data-tab="applications">📋 Заявки</button>
-      </div>
-      <div id="users-tab" class="tab-content active">
-        <div class="search-box"><input type="text" id="userSearch" placeholder="🔍 Поиск по ID..."></div>
-        <div class="users-grid" id="usersGrid"></div>
-      </div>
-      <div id="applications-tab" class="tab-content">
-        <div class="filters">
-          <button class="filter-btn active" data-filter="all">Все</button>
-          <button class="filter-btn" data-filter="pending">На рассмотрении</button>
-          <button class="filter-btn" data-filter="approved">Одобренные</button>
-          <button class="filter-btn" data-filter="rejected">Отклоненные</button>
-        </div>
-        <div class="app-list" id="applicationsList"></div>
-      </div>
+  <div class="auth-container" id="authContainer">
+    <div class="auth-card">
+      <div class="auth-icon"><i class="fab fa-discord"></i></div>
+      <h1 class="auth-title">Панель управления</h1>
+      <button class="auth-btn" id="authBtn">Войти через Discord</button>
     </div>
   </div>
 
-  <script src="js/panel.js"></script>
+  <div class="main-container" id="mainContainer" style="display: none;">
+    <div class="dashboard-header">
+      <h1 class="dashboard-title"><i class="fas fa-users-cog"></i> Управление отделом</h1>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="users">👥 Сотрудники</button>
+      <button class="tab-btn" data-tab="applications">📋 Заявки</button>
+    </div>
+
+    <div id="users-tab" class="tab-content active">
+      <div class="search-box"><input type="text" id="userSearch" placeholder="🔍 Поиск по ID..."></div>
+      <div class="users-grid" id="usersGrid"></div>
+    </div>
+
+    <div id="applications-tab" class="tab-content">
+      <div class="filters">
+        <button class="filter-btn active" data-filter="all">Все</button>
+        <button class="filter-btn" data-filter="pending">На рассмотрении</button>
+        <button class="filter-btn" data-filter="approved">Одобренные</button>
+        <button class="filter-btn" data-filter="rejected">Отклоненные</button>
+      </div>
+      <div class="app-list" id="applicationsList"></div>
+    </div>
+  </div>
+</div>
+
+<script src="js/panel.js"></script>
 </body>
 </html>
