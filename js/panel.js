@@ -5,6 +5,7 @@
   let allUsers = {};
   let allApplications = [];
   let currentFilter = 'all';
+  let currentTargetUser = null;
 
   // Preloader
   let progress = 0;
@@ -16,12 +17,18 @@
     if (progress >= 100) {
       clearInterval(interval);
       setTimeout(() => {
-        document.getElementById('preloader').style.opacity = '0';
-        setTimeout(() => {
-          document.getElementById('preloader').style.display = 'none';
-          document.getElementById('app').style.display = 'flex';
-          setTimeout(() => document.getElementById('app').style.opacity = '1', 50);
-        }, 500);
+        const preloader = document.getElementById('preloader');
+        if (preloader) {
+          preloader.style.opacity = '0';
+          setTimeout(() => {
+            preloader.style.display = 'none';
+            const app = document.getElementById('app');
+            if (app) {
+              app.style.display = 'flex';
+              setTimeout(() => app.style.opacity = '1', 50);
+            }
+          }, 500);
+        }
       }, 1000);
     }
   }, 70);
@@ -42,7 +49,8 @@
     }).then(r => r.json()).then(res => {
       if (res.success) {
         currentUserRole = res.role;
-        document.getElementById('userRoleBadge').innerText = currentUserRole.name || 'Младший состав';
+        const badge = document.getElementById('userRoleBadge');
+        if (badge) badge.innerText = currentUserRole.name || 'Младший состав';
         return currentUserRole;
       }
       return null;
@@ -133,81 +141,86 @@
     });
   }
 
+  function openUserModal(userId, userRole) {
+    currentTargetUser = { id: userId, role: userRole };
+    const modalDiv = document.createElement('div');
+    modalDiv.className = 'user-modal';
+    modalDiv.innerHTML = `
+      <div class="user-content">
+        <h3 style="color:#d4af37;">Управление пользователем: ${userId}</h3>
+        <div class="flex-buttons" style="flex-wrap:wrap;">
+          <button id="userBanBtn" class="btn-primary">🔨 Забанить</button>
+          <button id="userUnbanBtn" class="btn-primary">🔓 Разбанить</button>
+          <button id="userTempBanBtn" class="btn-primary">⏱ Бан на 1 час</button>
+          <button id="userExcludeBtn" class="btn-primary">🚫 Исключить из обязанностей</button>
+          <button id="userIncludeBtn" class="btn-primary">✅ Включить в обязанности</button>
+        </div>
+        <select id="userRankSelect">
+          <option value="1">Младший состав</option><option value="2">Dep.Head</option><option value="3">Head</option>
+          <option value="4">Curator</option><option value="5">Assist Sheriff</option><option value="6">SK/Dep.SK</option>
+          <option value="7">UnderSheriff</option><option value="8">Sheriff</option><option value="9">Разработчик</option>
+        </select>
+        <button id="userSetRankBtn" class="btn-primary">Назначить ранг</button>
+        <select id="userDeptSelect">
+          <option value="">Без отдела</option><option value="SAI">SAI</option><option value="GU">GU</option>
+          <option value="AF">AF</option><option value="IAD">IAD</option><option value="SEB">SEB</option>
+          <option value="K9">K-9</option><option value="DID">DID</option><option value="MED">MED</option>
+          <option value="SPD">SPD</option><option value="HS">High Staff</option>
+        </select>
+        <button id="userSetDeptBtn" class="btn-primary">Назначить отдел</button>
+        <div class="flex-buttons"><button id="userModalCloseBtn" class="btn-cancel">Закрыть</button></div>
+      </div>
+    `;
+    document.body.appendChild(modalDiv);
+    document.getElementById('userRankSelect').value = userRole.level || 1;
+    document.getElementById('userDeptSelect').value = userRole.department || '';
+    document.getElementById('userBanBtn').onclick = () => { banUser(userId); modalDiv.remove(); };
+    document.getElementById('userUnbanBtn').onclick = () => { unbanUser(userId); modalDiv.remove(); };
+    document.getElementById('userTempBanBtn').onclick = () => { tempBanUser(userId, 1); modalDiv.remove(); };
+    document.getElementById('userExcludeBtn').onclick = () => { excludeFromDuty(userId); modalDiv.remove(); };
+    document.getElementById('userIncludeBtn').onclick = () => { includeToDuty(userId); modalDiv.remove(); };
+    document.getElementById('userSetRankBtn').onclick = () => {
+      const level = parseInt(document.getElementById('userRankSelect').value);
+      setUserRole(userId, level, userRole.department);
+      modalDiv.remove();
+    };
+    document.getElementById('userSetDeptBtn').onclick = () => {
+      const dept = document.getElementById('userDeptSelect').value || null;
+      setUserRole(userId, userRole.level, dept);
+      modalDiv.remove();
+    };
+    document.getElementById('userModalCloseBtn').onclick = () => modalDiv.remove();
+  }
+
   function renderUsers() {
     const container = document.getElementById('usersGrid');
     const searchTerm = document.getElementById('userSearch')?.value.toLowerCase() || '';
     if (!container) return;
     const roleLevels = {1:'Младший состав',2:'Dep.Head',3:'Head',4:'Curator',5:'Assist Sheriff',6:'SK/Dep.SK',7:'UnderSheriff',8:'Sheriff',9:'Разработчик'};
     let usersList = Object.keys(allUsers).map(id => ({ id, role: allUsers[id] }));
-    if (currentUserRole && currentUserRole.level < 7) {
+    if (currentUserRole && currentUserRole.level < 7 && currentUserRole.level !== 9) {
       usersList = usersList.filter(u => u.role.level <= currentUserRole.level);
     }
-    usersList = usersList.filter(u => u.id.toLowerCase().includes(searchTerm) || (u.role.name || '').toLowerCase().includes(searchTerm));
+    usersList = usersList.filter(u => u.id.toLowerCase().includes(searchTerm));
     container.innerHTML = '';
     for (const user of usersList) {
       const card = document.createElement('div');
       card.className = 'user-card';
       const roleClass = 'role-' + (user.role.level || 1);
       card.innerHTML = `
-        <div style="display:flex;align-items:center;gap:12px;">
+        <div class="user-info">
           <div class="badge-icon"><i class="fab fa-discord"></i></div>
           <div><strong style="color:#fff;">${user.id}</strong><br>
             <span class="user-role-tag ${roleClass}">${roleLevels[user.role.level] || 'Младший состав'}</span>
             ${user.role.department ? `<span style="margin-left:5px;color:#d4af37;">(${user.role.department})</span>` : ''}
           </div>
-          <div class="user-actions"><button class="cog-btn" data-id="${user.id}"><i class="fas fa-cog"></i></button>
-            <div class="user-menu" id="menu-${user.id}" style="display:none;"></div>
-          </div>
         </div>
+        <div class="user-actions"><button class="cog-btn" data-id="${user.id}"><i class="fas fa-cog"></i></button></div>
       `;
       container.appendChild(card);
       const cogBtn = card.querySelector('.cog-btn');
-      const menu = card.querySelector('.user-menu');
-      cogBtn.onclick = (e) => {
-        e.stopPropagation();
-        const isVisible = menu.style.display === 'block';
-        document.querySelectorAll('.user-menu').forEach(m => m.style.display = 'none');
-        menu.style.display = isVisible ? 'none' : 'block';
-        if (!isVisible) {
-          menu.innerHTML = `
-            <button class="ban-btn" data-id="${user.id}">🔨 Забанить</button>
-            <button class="unban-btn" data-id="${user.id}">🔓 Разбанить</button>
-            <button class="tempban-btn" data-id="${user.id}">⏱ Временный бан (1 час)</button>
-            <select class="rank-select" data-id="${user.id}">
-              <option value="1">Младший состав</option><option value="2">Dep.Head</option><option value="3">Head</option>
-              <option value="4">Curator</option><option value="5">Assist Sheriff</option><option value="6">SK/Dep.SK</option>
-              <option value="7">UnderSheriff</option><option value="8">Sheriff</option><option value="9">Разработчик</option>
-            </select>
-            <button class="rank-apply" data-id="${user.id}">Назначить ранг</button>
-            <select class="dept-select" data-id="${user.id}">
-              <option value="">Без отдела</option><option value="SAI">SAI</option><option value="GU">GU</option>
-              <option value="AF">AF</option><option value="IAD">IAD</option><option value="SEB">SEB</option>
-              <option value="K9">K-9</option><option value="DID">DID</option><option value="MED">MED</option>
-              <option value="SPD">SPD</option><option value="HS">High Staff</option>
-            </select>
-            <button class="dept-apply" data-id="${user.id}">Назначить отдел</button>
-            <button class="exclude-btn" data-id="${user.id}">🚫 Исключить от обязанностей</button>
-            <button class="include-btn" data-id="${user.id}">✅ Включить в обязанности</button>
-          `;
-          menu.querySelector('.ban-btn')?.addEventListener('click', () => banUser(user.id));
-          menu.querySelector('.unban-btn')?.addEventListener('click', () => unbanUser(user.id));
-          menu.querySelector('.tempban-btn')?.addEventListener('click', () => tempBanUser(user.id, 1));
-          menu.querySelector('.rank-apply')?.addEventListener('click', () => {
-            const level = parseInt(menu.querySelector('.rank-select').value);
-            setUserRole(user.id, level, user.role.department);
-          });
-          menu.querySelector('.dept-apply')?.addEventListener('click', () => {
-            const dept = menu.querySelector('.dept-select').value || null;
-            setUserRole(user.id, user.role.level, dept);
-          });
-          menu.querySelector('.exclude-btn')?.addEventListener('click', () => excludeFromDuty(user.id));
-          menu.querySelector('.include-btn')?.addEventListener('click', () => includeToDuty(user.id));
-        }
-      };
+      cogBtn.onclick = () => openUserModal(user.id, user.role);
     }
-    document.addEventListener('click', () => {
-      document.querySelectorAll('.user-menu').forEach(m => m.style.display = 'none');
-    });
   }
 
   function renderApplications() {
@@ -267,7 +280,7 @@
         <p><strong>Дата:</strong> ${appData.created_at || ''}</p>
         <select id="reviewStatus"><option value="approved">✅ Одобрить</option><option value="rejected">❌ Отклонить</option></select>
         <textarea id="reviewComment" rows="3" placeholder="Комментарий..."></textarea>
-        <div style="display:flex;gap:10px;margin-top:15px;"><button id="submitReviewBtn" class="btn-primary">Отправить решение</button><button id="closeReviewBtn" class="btn-primary" style="background:#ff6b6b;">Отмена</button></div>
+        <div style="display:flex;gap:10px;margin-top:15px;"><button id="submitReviewBtn" class="btn-primary">Отправить решение</button><button id="closeReviewBtn" class="btn-cancel">Отмена</button></div>
       </div>
     `;
     document.body.appendChild(modalDiv);
