@@ -21,7 +21,7 @@
       color: #e8e8e8;
     }
 
-    /* PRELOADER */
+    /* PRELOADER - АНИМАЦИЯ 2 СЕКУНДЫ */
     .preloader {
       position: fixed;
       top: 0;
@@ -34,7 +34,12 @@
       justify-content: center;
       align-items: center;
       flex-direction: column;
-      transition: opacity 0.5s;
+      animation: fadeOutLoader 2s ease-in-out forwards;
+    }
+    @keyframes fadeOutLoader {
+      0% { opacity: 1; visibility: visible; }
+      80% { opacity: 1; }
+      100% { opacity: 0; visibility: hidden; display: none; }
     }
     .preloader-logo {
       font-size: 1.8rem;
@@ -44,27 +49,37 @@
       -webkit-background-clip: text;
       background-clip: text;
       color: transparent;
-      margin-bottom: 20px;
+      animation: pulse 1s infinite;
+    }
+    @keyframes pulse {
+      0% { opacity: 0.6; transform: scale(0.98); }
+      50% { opacity: 1; transform: scale(1.02); }
+      100% { opacity: 0.6; transform: scale(0.98); }
     }
     .preloader-progress {
       width: 240px;
       height: 2px;
       background: rgba(212, 175, 55, 0.2);
       border-radius: 10px;
+      margin-top: 20px;
       overflow: hidden;
     }
     .preloader-progress-bar {
-      width: 0%;
+      width: 100%;
       height: 100%;
       background: linear-gradient(90deg, #d4af37, #f5e7a3);
-      transition: width 0.1s linear;
+      animation: loadProgress 1.5s ease;
+    }
+    @keyframes loadProgress {
+      from { width: 0%; }
+      to { width: 100%; }
     }
 
     /* NAVBAR */
     .navbar {
       background: rgba(13, 17, 23, 0.95);
       backdrop-filter: blur(20px);
-      border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+      border-bottom: 1px solid rgba(212, 175, 55, 0.3);
       padding: 12px 35px;
       display: flex;
       justify-content: space-between;
@@ -99,15 +114,15 @@
     .nav-user {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 15px;
       background: rgba(30, 35, 45, 0.9);
-      padding: 5px 16px;
+      padding: 5px 20px;
       border-radius: 40px;
       border: 1px solid rgba(212, 175, 55, 0.3);
     }
     .nav-avatar {
-      width: 30px;
-      height: 30px;
+      width: 32px;
+      height: 32px;
       border-radius: 50%;
       border: 2px solid #d4af37;
     }
@@ -124,7 +139,10 @@
       cursor: pointer;
       color: #0f121a;
       font-weight: bold;
-      margin-left: 10px;
+      transition: 0.2s;
+    }
+    .back-btn:hover {
+      transform: scale(1.02);
     }
 
     /* AUTH */
@@ -138,7 +156,7 @@
     .auth-card {
       background: rgba(20, 25, 35, 0.95);
       backdrop-filter: blur(20px);
-      border: 1px solid rgba(212, 175, 55, 0.3);
+      border: 1px solid rgba(212, 175, 55, 0.4);
       border-radius: 35px;
       padding: 40px;
       text-align: center;
@@ -195,6 +213,7 @@
       padding: 10px 25px;
       cursor: pointer;
       color: #e8e8e8;
+      transition: 0.2s;
     }
     .tab-btn.active {
       background: #d4af37;
@@ -232,9 +251,11 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      transition: all 0.3s;
     }
     .user-card:hover {
       border-color: #d4af37;
+      transform: translateY(-2px);
     }
     .user-info {
       display: flex;
@@ -270,13 +291,17 @@
     .role-1 { background: #2c3e50; color: white; }
     .role-2, .role-3, .role-4, .role-5 { background: #16a085; color: white; }
     .role-6 { background: #8e44ad; color: white; }
-    .role-7, .role-8, .role-9 { background: #c0392b; color: white; }
+    .role-7, .role-8, .role-9 { background: linear-gradient(135deg, #2c2c2c, #1a1a1a); color: #d4af37; border: 1px solid #d4af37; }
     .user-actions button {
       background: none;
       border: none;
       color: #d4af37;
       font-size: 1.2rem;
       cursor: pointer;
+      transition: 0.2s;
+    }
+    .user-actions button:hover {
+      transform: scale(1.1);
     }
     .app-list {
       max-height: 500px;
@@ -289,6 +314,10 @@
       margin-bottom: 10px;
       border-left: 3px solid #d4af37;
       cursor: pointer;
+      transition: 0.2s;
+    }
+    .app-item:hover {
+      background: rgba(212, 175, 55, 0.1);
     }
     .app-status-pending { border-left-color: #ffa500; }
     .app-status-approved { border-left-color: #6bcf7f; }
@@ -307,6 +336,7 @@
       padding: 8px 16px;
       cursor: pointer;
       color: #e8e8e8;
+      transition: 0.2s;
     }
     .filter-btn.active {
       background: #d4af37;
@@ -352,6 +382,10 @@
       margin: 5px;
       font-weight: bold;
       color: #0f121a;
+      transition: 0.2s;
+    }
+    .btn-primary:hover {
+      transform: scale(1.02);
     }
     .btn-danger {
       background: #ff6b6b;
@@ -402,14 +436,21 @@
 
 <div class="preloader" id="preloader">
   <div class="preloader-logo">LSCSD PANEL</div>
-  <div class="preloader-progress"><div class="preloader-progress-bar" id="preloaderProgress"></div></div>
+  <div class="preloader-progress"><div class="preloader-progress-bar"></div></div>
 </div>
 
 <div class="app" id="app" style="display: none;">
   <nav class="navbar">
-    <div class="nav-brand"><div class="nav-logo"></div><div><span class="nav-title-main">LSCSD PANEL</span><span class="nav-title-sub">УПРАВЛЕНИЕ ПЕРСОНАЛОМ</span></div></div>
+    <div class="nav-brand">
+      <div class="nav-logo"></div>
+      <div>
+        <span class="nav-title-main">LSCSD PANEL</span>
+        <span class="nav-title-sub">УПРАВЛЕНИЕ ПЕРСОНАЛОМ</span>
+      </div>
+    </div>
     <div class="nav-user" id="navUser">
-      <img id="navAvatar" class="nav-avatar"><span id="navName"></span>
+      <img id="navAvatar" class="nav-avatar">
+      <span id="navName"></span>
       <span id="userRoleBadge" style="background:#d4af37;color:#0f121a;padding:2px 8px;border-radius:20px;font-size:12px;"></span>
       <button class="back-btn" id="backToMainBtn"><i class="fas fa-home"></i> На главную</button>
     </div>
@@ -431,7 +472,7 @@
       <button class="tab-btn" data-tab="applications">📋 Заявки</button>
     </div>
     <div id="users-tab" class="tab-content active">
-      <div class="search-box"><input type="text" id="userSearch" placeholder="🔍 Поиск по ID..."></div>
+      <div class="search-box"><input type="text" id="userSearch" placeholder="🔍 Поиск по ID или имени..."></div>
       <div class="users-grid" id="usersGrid"></div>
     </div>
     <div id="applications-tab" class="tab-content">
@@ -499,14 +540,14 @@
     let allApplications = [];
     let currentFilter = 'all';
 
-    // Гарантированное скрытие прелоадера через 3 секунды
+    // Прелоадер сам скроется через CSS, но на всякий случай принудительно скрываем через 2.5 сек
     setTimeout(() => {
       const preloader = document.getElementById('preloader');
       if (preloader && preloader.style.display !== 'none') {
         preloader.style.display = 'none';
         document.getElementById('app').style.display = 'flex';
       }
-    }, 3000);
+    }, 2500);
 
     function showNotification(msg, type) {
       const div = document.createElement('div');
@@ -627,39 +668,41 @@
       });
     }
 
-    async function fetchDiscordAvatar(userId) {
+    async function fetchDiscordUser(userId) {
       try {
         const response = await fetch(`https://discord.com/api/v9/users/${userId}`, {
           headers: { 'Content-Type': 'application/json' }
         });
         const data = await response.json();
-        if (data.avatar) {
-          return `https://cdn.discordapp.com/avatars/${userId}/${data.avatar}.png`;
-        }
-      } catch(e) {}
-      return null;
+        return { username: data.username, avatar: data.avatar };
+      } catch(e) {
+        return { username: userId, avatar: null };
+      }
     }
 
-    function renderUsers() {
+    async function renderUsers() {
       const container = document.getElementById('usersGrid');
       const searchTerm = document.getElementById('userSearch')?.value.toLowerCase() || '';
       if (!container) return;
       const roleLevels = {1:'Младший состав',2:'Dep.Head',3:'Head',4:'Curator',5:'Assist Sheriff',6:'SK/Dep.SK',7:'UnderSheriff',8:'Sheriff',9:'Разработчик'};
       let usersList = Object.keys(allUsers).map(id => ({ id, role: allUsers[id] }));
-      usersList = usersList.filter(u => u.id.toLowerCase().includes(searchTerm));
+      usersList = usersList.filter(u => u.id.toLowerCase().includes(searchTerm) || (u.role.username || '').toLowerCase().includes(searchTerm));
       container.innerHTML = '';
       const canManage = (currentUserRole && (currentUserRole.level >= 7 || currentUserRole.level === 9));
       
       for (const user of usersList) {
+        const userData = await fetchDiscordUser(user.id);
+        const username = userData.username || user.id;
+        const avatarUrl = userData.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${userData.avatar}.png` : '';
         const roleClass = 'role-' + (user.role.level || 1);
-        const avatarUrl = user.role.avatar || '';
         const card = document.createElement('div');
         card.className = 'user-card';
         card.innerHTML = `
           <div class="user-info">
-            ${avatarUrl ? `<img class="user-avatar-small" src="${escapeHtml(avatarUrl)}">` : `<div class="badge-icon"><i class="fab fa-discord"></i></div>`}
+            ${avatarUrl ? `<img class="user-avatar-small" src="${escapeHtml(avatarUrl)}" onerror="this.src=''">` : `<div class="badge-icon"><i class="fab fa-discord"></i></div>`}
             <div>
-              <strong>${escapeHtml(user.id)}</strong><br>
+              <strong>${escapeHtml(username)}</strong><br>
+              <span style="font-size:11px; color:#9ca3af;">ID: ${escapeHtml(user.id)}</span><br>
               <span class="user-role-tag ${roleClass}">${roleLevels[user.role.level] || 'Младший состав'}</span>
               ${user.role.department ? `<span style="margin-left:8px; color:#d4af37;">(${escapeHtml(user.role.department)})</span>` : ''}
             </div>
@@ -704,46 +747,21 @@
       const saveRoleBtn = document.getElementById('saveRoleBtn');
       const closeBtn = document.getElementById('closeRoleBtn');
       
-      const newBanHandler = () => {
+      banWithReasonBtn.onclick = () => {
         const reason = document.getElementById('banReason').value.trim();
-        if (!reason) {
-          showNotification('Укажите причину бана', 'error');
-          return;
-        }
-        banUser(userId, reason).then(() => {
-          modal.style.display = 'none';
-        });
+        if (!reason) { showNotification('Укажите причину бана', 'error'); return; }
+        banUser(userId, reason).then(() => modal.style.display = 'none');
       };
-      const newUnbanHandler = () => {
-        unbanUser(userId).then(() => {
-          modal.style.display = 'none';
-        });
-      };
-      const newTempBanHandler = () => {
-        tempBanUser(userId, 1);
-        modal.style.display = 'none';
-      };
-      const newExcludeHandler = () => {
-        excludeFromDuty(userId);
-        modal.style.display = 'none';
-      };
-      const newIncludeHandler = () => {
-        includeToDuty(userId);
-        modal.style.display = 'none';
-      };
-      const newSaveRoleHandler = () => {
+      unbanBtn.onclick = () => { unbanUser(userId).then(() => modal.style.display = 'none'); };
+      tempBanBtn.onclick = () => { tempBanUser(userId, 1); modal.style.display = 'none'; };
+      excludeBtn.onclick = () => { excludeFromDuty(userId); modal.style.display = 'none'; };
+      includeBtn.onclick = () => { includeToDuty(userId); modal.style.display = 'none'; };
+      saveRoleBtn.onclick = () => {
         const level = parseInt(document.getElementById('roleLevelSelect').value);
         const dept = document.getElementById('roleDeptSelect').value || null;
         setUserRole(userId, level, dept);
         modal.style.display = 'none';
       };
-      
-      banWithReasonBtn.onclick = newBanHandler;
-      unbanBtn.onclick = newUnbanHandler;
-      tempBanBtn.onclick = newTempBanHandler;
-      excludeBtn.onclick = newExcludeHandler;
-      includeBtn.onclick = newIncludeHandler;
-      saveRoleBtn.onclick = newSaveRoleHandler;
       closeBtn.onclick = () => modal.style.display = 'none';
     }
 
@@ -786,6 +804,7 @@
           if (role.level >= 7) canReview = true;
           else if (role.level === 6 && (typeNames[app.data.type] === 'Спецвооружение запрос' || typeNames[app.data.type] === 'Получение спец')) canReview = true;
           else if (role.level >= 2 && role.level <= 5 && !isAppealWorkoff && app.data.department === role.department) canReview = true;
+          else if (isAppealWorkoff && role.department === 'IAD') canReview = true;
           if (canReview) {
             const reviewBtn = document.createElement('button');
             reviewBtn.textContent = 'Рассмотреть';
@@ -816,22 +835,15 @@
       modal.style.display = 'flex';
       const submitBtn = document.getElementById('submitReviewBtn');
       const closeBtn = document.getElementById('closeReviewBtn');
-      const statusSelect = document.getElementById('reviewStatus');
-      const commentArea = document.getElementById('reviewComment');
-      
-      const newSubmitHandler = () => {
-        const status = statusSelect.value;
-        const comment = commentArea.value;
+      submitBtn.onclick = () => {
+        const status = document.getElementById('reviewStatus').value;
+        const comment = document.getElementById('reviewComment').value;
         reviewApplication(appId, status, comment, appData, typeNames[appData.type] || appData.type).then(() => {
           modal.style.display = 'none';
           loadApplications();
         });
       };
-      const newCloseHandler = () => {
-        modal.style.display = 'none';
-      };
-      submitBtn.onclick = newSubmitHandler;
-      closeBtn.onclick = newCloseHandler;
+      closeBtn.onclick = () => modal.style.display = 'none';
     }
 
     function handleAuthCallback() {
