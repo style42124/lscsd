@@ -6,7 +6,7 @@
   let allApplications = [];
   let currentFilter = 'all';
 
-  // Preloader (оставляем как есть)
+  // Preloader (оставляем без изменений)
   let progress = 0;
   const progressBar = document.getElementById('preloaderProgress');
   const interval = setInterval(() => {
@@ -59,7 +59,6 @@
     });
   }
 
-  // ЗАГРУЖАЕМ ВСЕХ ПОЛЬЗОВАТЕЛЕЙ (без фильтра по уровню)
   function loadAllUsers() {
     return fetch(PROXY_URL, {
       method: 'POST',
@@ -102,7 +101,7 @@
     }).then(r => r.json()).then(res => {
       if (res.success) {
         showNotification('✅ Операция выполнена!', 'success');
-        loadAllUsers();   // обновим список
+        loadAllUsers();
         loadApplications();
       } else {
         showNotification(res.error || '❌ Ошибка', 'error');
@@ -144,7 +143,6 @@
     });
   }
 
-  // Модальное окно управления пользователем (шестерёнка)
   function openUserModal(userId, userRole) {
     const modalDiv = document.createElement('div');
     modalDiv.className = 'modal-overlay';
@@ -195,20 +193,16 @@
     document.getElementById('userModalCloseBtn').onclick = () => modalDiv.remove();
   }
 
-  // ОТОБРАЖЕНИЕ ВСЕХ ПОЛЬЗОВАТЕЛЕЙ (без фильтрации по уровню)
   function renderUsers() {
     const container = document.getElementById('usersGrid');
     const searchTerm = document.getElementById('userSearch')?.value.toLowerCase() || '';
     if (!container) return;
 
     const roleLevels = {1:'Младший состав',2:'Dep.Head',3:'Head',4:'Curator',5:'Assist Sheriff',6:'SK/Dep.SK',7:'UnderSheriff',8:'Sheriff',9:'Разработчик'};
-    // Преобразуем объект в массив
     let usersList = Object.keys(allUsers).map(id => ({ id, role: allUsers[id] }));
-    // Поиск по ID
     usersList = usersList.filter(u => u.id.toLowerCase().includes(searchTerm));
     container.innerHTML = '';
 
-    // Кнопка управления (шестерёнка) доступна только если текущий пользователь имеет уровень >=7
     const canManage = (currentUserRole && (currentUserRole.level >= 7 || currentUserRole.level === 9));
 
     for (const user of usersList) {
@@ -335,7 +329,8 @@
       const token = params.get('access_token');
       if (token) {
         fetch('https://discord.com/api/users/@me', { headers: { Authorization: `Bearer ${token}` } })
-          .then(r => r.json()).then(user => {
+          .then(r => r.json())
+          .then(user => {
             localStorage.setItem('lscsd_user', JSON.stringify({ id: user.id, username: user.username, avatar: user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png` : '' }));
             window.location.hash = '';
             location.reload();
@@ -353,7 +348,7 @@
       document.getElementById('navName').innerText = currentUser.username;
       if (currentUser.avatar) document.getElementById('navAvatar').src = currentUser.avatar;
       loadUserRole().then(() => {
-        loadAllUsers();       // Загружаем всех пользователей
+        loadAllUsers();      // <- загружаем всех
         loadApplications();
       });
     } else {
