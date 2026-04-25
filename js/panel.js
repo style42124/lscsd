@@ -5,7 +5,6 @@
   let allUsers = {};
   let allApplications = [];
   let currentFilter = 'all';
-  let currentTargetUser = null;
 
   // Preloader
   let progress = 0;
@@ -58,16 +57,19 @@
   }
 
   function loadAllUsers() {
-    return fetch(PROXY_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'get_all_users_roles' })
-    }).then(r => r.json()).then(res => {
-      if (res.success) {
-        allUsers = res.users;
-        renderUsers();
-      }
-    });
+    if (currentUserRole && (currentUserRole.level >= 7 || currentUserRole.level === 9)) {
+      return fetch(PROXY_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'get_all_users_roles' })
+      }).then(r => r.json()).then(res => {
+        if (res.success) {
+          allUsers = res.users;
+          renderUsers();
+        }
+      });
+    }
+    return Promise.resolve();
   }
 
   function loadApplications() {
@@ -142,7 +144,6 @@
   }
 
   function openUserModal(userId, userRole) {
-    currentTargetUser = { id: userId, role: userRole };
     const modalDiv = document.createElement('div');
     modalDiv.className = 'user-modal';
     modalDiv.innerHTML = `
@@ -198,9 +199,6 @@
     if (!container) return;
     const roleLevels = {1:'Младший состав',2:'Dep.Head',3:'Head',4:'Curator',5:'Assist Sheriff',6:'SK/Dep.SK',7:'UnderSheriff',8:'Sheriff',9:'Разработчик'};
     let usersList = Object.keys(allUsers).map(id => ({ id, role: allUsers[id] }));
-    if (currentUserRole && currentUserRole.level < 7 && currentUserRole.level !== 9) {
-      usersList = usersList.filter(u => u.role.level <= currentUserRole.level);
-    }
     usersList = usersList.filter(u => u.id.toLowerCase().includes(searchTerm));
     container.innerHTML = '';
     for (const user of usersList) {
@@ -215,11 +213,13 @@
             ${user.role.department ? `<span style="margin-left:5px;color:#d4af37;">(${user.role.department})</span>` : ''}
           </div>
         </div>
-        <div class="user-actions"><button class="cog-btn" data-id="${user.id}"><i class="fas fa-cog"></i></button></div>
+        ${(currentUserRole && (currentUserRole.level >= 7 || currentUserRole.level === 9)) ? `<div class="user-actions"><button class="cog-btn" data-id="${user.id}"><i class="fas fa-cog"></i></button></div>` : ''}
       `;
       container.appendChild(card);
-      const cogBtn = card.querySelector('.cog-btn');
-      cogBtn.onclick = () => openUserModal(user.id, user.role);
+      if (currentUserRole && (currentUserRole.level >= 7 || currentUserRole.level === 9)) {
+        const cogBtn = card.querySelector('.cog-btn');
+        cogBtn.onclick = () => openUserModal(user.id, user.role);
+      }
     }
   }
 
@@ -253,11 +253,21 @@
         <div style="font-size:11px; color:#6b6f78;">${app.data.created_at || ''}</div>
       `;
       if (app.data.status === 'pending') {
-        const reviewBtn = document.createElement('button');
-        reviewBtn.textContent = 'Рассмотреть';
-        reviewBtn.style.cssText = 'background:#d4af37;border:none;padding:5px 12px;border-radius:20px;margin-top:8px;cursor:pointer;';
-        reviewBtn.onclick = () => openReviewModal(app.id, app.data);
-        item.appendChild(reviewBtn);
+        let canReview = false;
+        const role = currentUserRole;
+        const isAppealWorkoff = (typeNames[app.data.type] === 'Обжалование' || typeNames[app.data.type] === 'Отработка');
+        if (role.level >= 7) canReview = true;
+        else if (role.level === 6 && (typeNames[app.data.type] === 'Спецвооружение запрос' || typeNames[app.data.type] === 'Спецвооружение получение')) canReview = true;
+        else if (role.level >= 2 && role.level <= 5) {
+          if (app.data.department === role.department && !isAppealWorkoff) canReview = true;
+        }
+        if (canReview) {
+          const reviewBtn = document.createElement('button');
+          reviewBtn.textContent = 'Рассмотреть';
+          reviewBtn.style.cssText = 'background:#d4af37;border:none;padding:5px 12px;border-radius:20px;margin-top:8px;cursor:pointer;';
+          reviewBtn.onclick = () => openReviewModal(app.id, app.data);
+          item.appendChild(reviewBtn);
+        }
       }
       container.appendChild(item);
     }
@@ -324,10 +334,6 @@
       document.getElementById('navName').innerText = currentUser.username;
       if (currentUser.avatar) document.getElementById('navAvatar').src = currentUser.avatar;
       loadUserRole().then(() => {
-        if (currentUserRole && (currentUserRole.level < 7 && currentUserRole.level !== 9)) {
-          document.getElementById('mainContainer').innerHTML = '<div style="text-align:center;padding:50px;"><h2>Доступ запрещён</h2><button onclick="window.location.href=\'/lscsd/\'" class="btn-primary">Вернуться</button></div>';
-          return;
-        }
         loadAllUsers();
         loadApplications();
       });
