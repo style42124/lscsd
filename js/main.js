@@ -50,8 +50,8 @@
 
   function showNotification(msg, type) {
     var div = document.createElement('div');
-    div.className = 'notification ' + (type || 'info');
-    div.innerHTML = '<div style="background:#1a1f2a; border-left:4px solid ' + (type==='success'?'#6bcf7f':'#ff6b6b') + '; padding:12px 20px; border-radius:8px; color:#fff; min-width:260px;">' + msg + '</div>';
+    div.className = 'notification';
+    div.innerHTML = '<i class="fas fa-' + (type === 'success' ? 'check-circle' : 'exclamation-triangle') + '"></i> ' + msg;
     document.body.appendChild(div);
     setTimeout(function() { div.remove(); }, 3000);
   }
@@ -116,7 +116,7 @@
     renderStats();
   }
 
-    function callAPI(action, formData, hasFile) {
+  function callAPI(action, formData, hasFile) {
     return new Promise(function(resolve, reject) {
       if (isSending) { showNotification('Подождите...', 'warning'); reject(); return; }
       if (currentUser && isTempBlocked(currentUser.id)) { showNotification('Вы заблокированы на 15 минут!', 'error'); reject(); return; }
@@ -327,10 +327,10 @@
     }
   }
 
-  // ========== ФОРМА ЗАЯВКА В ОТДЕЛ ==========
+  // ========== ФОРМА ЗАЯВКА В ОТДЕЛ (только никнейм) ==========
   function renderDepartmentForm(container) {
     var saved = loadAutoFillData('department');
-    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Имя</label><input id="firstName" value="' + (saved.firstName || '') + '" required></div><div class="form-group"><label>Фамилия</label><input id="lastName" value="' + (saved.lastName || '') + '" required></div><div class="form-group"><label>Статик</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Ранг</label><input id="rank" value="' + (saved.rank || '') + '" required></div><div class="form-group"><label>Отдел</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department" value="' + (saved.department || '') + '"></div><div class="form-group"><label>Причина</label><textarea id="reason" rows="3" required>' + (saved.reason || '') + '</textarea></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
+    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Никнейм</label><input id="nickname" value="' + (saved.nickname || '') + '" required></div><div class="form-group"><label>Статик</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Ранг</label><input id="rank" value="' + (saved.rank || '') + '" required></div><div class="form-group"><label>Текущий отдел</label><input id="currentDept" value="' + (saved.currentDept || '') + '" placeholder="Ваш текущий отдел" required></div><div class="form-group"><label>Отдел, куда подаете заявку</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department" value="' + (saved.department || '') + '"></div><div class="form-group"><label>Причина</label><textarea id="reason" rows="3" required>' + (saved.reason || '') + '</textarea></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
     var btnsDiv = container.querySelector('#deptBtns');
     DEPARTMENTS.forEach(function(d) {
       var btn = document.createElement('div');
@@ -350,9 +350,9 @@
       if (btn.disabled) return;
       btn.disabled = true;
       btn.textContent = 'Отправка...';
-      var data = { firstName:document.getElementById('firstName').value, lastName:document.getElementById('lastName').value, staticc:document.getElementById('staticc').value, rank:document.getElementById('rank').value, department:document.getElementById('department').value, reason:document.getElementById('reason').value };
+      var data = { nickname:document.getElementById('nickname').value, staticc:document.getElementById('staticc').value, rank:document.getElementById('rank').value, currentDept:document.getElementById('currentDept').value, department:document.getElementById('department').value, reason:document.getElementById('reason').value };
       if(!data.department){ showError(container,'Выберите отдел'); btn.disabled = false; btn.textContent = 'Отправить'; return; }
-      saveAutoFillData({ firstName:data.firstName, lastName:data.lastName, staticc:data.staticc, rank:data.rank, department:data.department, reason:data.reason }, 'department');
+      saveAutoFillData({ nickname:data.nickname, staticc:data.staticc, rank:data.rank, currentDept:data.currentDept, department:data.department, reason:data.reason }, 'department');
       callAPI('submit_department', data, false).then(function(r){ if(r.success) document.getElementById('modal').style.display='none'; setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); }).catch(function() { setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); });
     };
   }
@@ -360,7 +360,7 @@
   // ========== ФОРМА ОБЖАЛОВАНИЕ ==========
   function renderAppealForm(container) {
     var saved = loadAutoFillData('appeal');
-    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Имя</label><input id="firstName" value="' + (saved.firstName || '') + '" required></div><div class="form-group"><label>Фамилия</label><input id="lastName" value="' + (saved.lastName || '') + '" required></div><div class="form-group"><label>Статик</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Вид наказания</label><input id="reprimandType" value="' + (saved.reprimandType || '') + '" required></div><div class="form-group"><label>Кем выдано</label><input id="issuedBy" value="' + (saved.issuedBy || '') + '" required></div><div class="form-group"><label>Когда выдано</label><input type="date" id="issuedDate" value="' + (saved.issuedDate || '') + '" required></div><div class="form-group"><label>Причина из выговора</label><textarea id="reasonGiven" rows="2" required>' + (saved.reasonGiven || '') + '</textarea></div><div class="form-group"><label>Описание ситуации</label><textarea id="description" rows="3" required>' + (saved.description || '') + '</textarea></div><div class="form-group"><label>Вложения (скриншоты)</label><input type="file" id="attachments" multiple accept="image/*"></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
+    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Никнейм</label><input id="nickname" value="' + (saved.nickname || '') + '" required></div><div class="form-group"><label>Статик</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Вид наказания</label><input id="reprimandType" value="' + (saved.reprimandType || '') + '" required></div><div class="form-group"><label>Кем выдано</label><input id="issuedBy" value="' + (saved.issuedBy || '') + '" required></div><div class="form-group"><label>Когда выдано</label><input type="date" id="issuedDate" value="' + (saved.issuedDate || '') + '" required></div><div class="form-group"><label>Причина из выговора</label><textarea id="reasonGiven" rows="2" required>' + (saved.reasonGiven || '') + '</textarea></div><div class="form-group"><label>Описание ситуации</label><textarea id="description" rows="3" required>' + (saved.description || '') + '</textarea></div><div class="form-group"><label>Вложения (скриншоты)</label><input type="file" id="attachments" multiple accept="image/*"></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
     var attachments = [];
     var fileInput = container.querySelector('#attachments');
     fileInput.onchange = function(e) { attachments = Array.from(e.target.files); createFilePreview(container, attachments, 'attachments'); };
@@ -370,7 +370,7 @@
       if (btn.disabled) return;
       btn.disabled = true;
       btn.textContent = 'Отправка...';
-      var data = { firstName:document.getElementById('firstName').value, lastName:document.getElementById('lastName').value, staticc:document.getElementById('staticc').value, reprimandType:document.getElementById('reprimandType').value, issuedBy:document.getElementById('issuedBy').value, issuedDate:document.getElementById('issuedDate').value, reasonGiven:document.getElementById('reasonGiven').value, description:document.getElementById('description').value, attachments: attachments };
+      var data = { nickname:document.getElementById('nickname').value, staticc:document.getElementById('staticc').value, reprimandType:document.getElementById('reprimandType').value, issuedBy:document.getElementById('issuedBy').value, issuedDate:document.getElementById('issuedDate').value, reasonGiven:document.getElementById('reasonGiven').value, description:document.getElementById('description').value, attachments: attachments };
       saveAutoFillData(data, 'appeal');
       callAPI('submit_appeal', data, true).then(function(r){ if(r.success) document.getElementById('modal').style.display='none'; setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); }).catch(function() { setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); });
     };
@@ -379,7 +379,7 @@
   // ========== ФОРМА ОТРАБОТКА ==========
   function renderWorkoffForm(container) {
     var saved = loadAutoFillData('workoff');
-    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Имя</label><input id="firstName" value="' + (saved.firstName || '') + '" required></div><div class="form-group"><label>Фамилия</label><input id="lastName" value="' + (saved.lastName || '') + '" required></div><div class="form-group"><label>Статик</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Ранг</label><select id="rank"><option>1-4</option><option>5-8</option><option>9-11</option><option>13</option></select></div><div class="form-group"><label>За что выговор</label><textarea id="reason" rows="2" required>' + (saved.reason || '') + '</textarea></div><div class="form-group"><label>Тип наказания</label><select id="punishmentType"><option>Устный выговор</option><option>Строгий выговор</option></select></div><div class="form-group"><label>Док-ва (скриншот/фото)</label><input type="file" id="attachments" multiple accept="image/*,application/pdf"></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
+    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Никнейм</label><input id="nickname" value="' + (saved.nickname || '') + '" required></div><div class="form-group"><label>Статик</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Ранг</label><select id="rank"><option>1-4</option><option>5-8</option><option>9-11</option><option>13</option></select></div><div class="form-group"><label>За что выговор</label><textarea id="reason" rows="2" required>' + (saved.reason || '') + '</textarea></div><div class="form-group"><label>Тип наказания</label><select id="punishmentType"><option>Устный выговор</option><option>Строгий выговор</option></select></div><div class="form-group"><label>Док-ва (скриншот/фото)</label><input type="file" id="attachments" multiple accept="image/*,application/pdf"></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
     if (saved.rank) document.getElementById('rank').value = saved.rank;
     if (saved.punishmentType) document.getElementById('punishmentType').value = saved.punishmentType;
     var attachments = [];
@@ -391,16 +391,16 @@
       if (btn.disabled) return;
       btn.disabled = true;
       btn.textContent = 'Отправка...';
-      var data = { firstName:document.getElementById('firstName').value, lastName:document.getElementById('lastName').value, staticc:document.getElementById('staticc').value, rank:document.getElementById('rank').value, reason:document.getElementById('reason').value, punishmentType:document.getElementById('punishmentType').value, attachments: attachments };
+      var data = { nickname:document.getElementById('nickname').value, staticc:document.getElementById('staticc').value, rank:document.getElementById('rank').value, reason:document.getElementById('reason').value, punishmentType:document.getElementById('punishmentType').value, attachments: attachments };
       saveAutoFillData(data, 'workoff');
       callAPI('submit_workoff', data, true).then(function(r){ if(r.success) document.getElementById('modal').style.display='none'; setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); }).catch(function() { setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); });
     };
   }
 
-  // ========== ФОРМА ПОВЫШЕНИЕ ==========
+  // ========== ФОРМА ПОВЫШЕНИЕ (только никнейм) ==========
   function renderPromotionForm(container) {
     var saved = loadAutoFillData('promotion');
-    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Имя</label><input id="firstName" value="' + (saved.firstName || '') + '" required></div><div class="form-group"><label>Фамилия</label><input id="lastName" value="' + (saved.lastName || '') + '" required></div><div class="form-group"><label>Статик</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Текущий ранг</label><input id="currentRank" value="' + (saved.currentRank || '') + '" required></div><div class="form-group"><label>Целевой ранг</label><input id="targetRank" value="' + (saved.targetRank || '') + '" required></div><div class="form-group"><label>Баллы</label><input type="number" id="points" value="' + (saved.points || '') + '" required></div><div class="form-group"><label>Док-ва баллов</label><textarea id="proof" rows="2" required>' + (saved.proof || '') + '</textarea></div><div class="form-group"><label>Отдел</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department"></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
+    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Никнейм</label><input id="nickname" value="' + (saved.nickname || '') + '" required></div><div class="form-group"><label>Статик</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Текущий ранг</label><input id="currentRank" value="' + (saved.currentRank || '') + '" required></div><div class="form-group"><label>Целевой ранг</label><input id="targetRank" value="' + (saved.targetRank || '') + '" required></div><div class="form-group"><label>Баллы</label><input type="number" id="points" value="' + (saved.points || '') + '" required></div><div class="form-group"><label>Док-ва баллов</label><textarea id="proof" rows="2" required>' + (saved.proof || '') + '</textarea></div><div class="form-group"><label>Отдел, куда подаете заявку</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department"></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
     var btnsDiv = container.querySelector('#deptBtns');
     DEPARTMENTS.forEach(function(d) {
       var btn = document.createElement('div');
@@ -421,7 +421,7 @@
       if (btn.disabled) return;
       btn.disabled = true;
       btn.textContent = 'Отправка...';
-      var data = { firstName:document.getElementById('firstName').value, lastName:document.getElementById('lastName').value, staticc:document.getElementById('staticc').value, currentRank:document.getElementById('currentRank').value, targetRank:document.getElementById('targetRank').value, points:document.getElementById('points').value, proof:document.getElementById('proof').value, department:document.getElementById('department').value };
+      var data = { nickname:document.getElementById('nickname').value, staticc:document.getElementById('staticc').value, currentRank:document.getElementById('currentRank').value, targetRank:document.getElementById('targetRank').value, points:document.getElementById('points').value, proof:document.getElementById('proof').value, department:document.getElementById('department').value };
       if(!data.department){ showError(container,'Выберите отдел'); btn.disabled = false; btn.textContent = 'Отправить'; return; }
       saveAutoFillData(data, 'promotion');
       callAPI('submit_promotion', data, false).then(function(r){ if(r.success) document.getElementById('modal').style.display='none'; setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); }).catch(function() { setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); });
@@ -463,7 +463,7 @@
   // ========== ФОРМА СПЕЦВООРУЖЕНИЕ (ЗАЯВКА) ==========
   function renderSpecRequestForm(container) {
     var saved = loadAutoFillData('spec-request');
-    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Имя</label><input id="firstName" value="' + (saved.firstName || '') + '" required></div><div class="form-group"><label>Фамилия</label><input id="lastName" value="' + (saved.lastName || '') + '" required></div><div class="form-group"><label>Статик</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Ранг</label><input id="rank" value="' + (saved.rank || '') + '" required></div><div class="form-group"><label>Отдел</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department"></div><div class="form-group"><label>Оружие</label><input id="weapon" value="' + (saved.weapon || '') + '" required></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
+    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Никнейм</label><input id="nickname" value="' + (saved.nickname || '') + '" required></div><div class="form-group"><label>Статик</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Ранг</label><input id="rank" value="' + (saved.rank || '') + '" required></div><div class="form-group"><label>Отдел</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department"></div><div class="form-group"><label>Оружие</label><input id="weapon" value="' + (saved.weapon || '') + '" required></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
     var btnsDiv = container.querySelector('#deptBtns');
     DEPARTMENTS.forEach(function(d) {
       var btn = document.createElement('div');
@@ -484,7 +484,7 @@
       if (btn.disabled) return;
       btn.disabled = true;
       btn.textContent = 'Отправка...';
-      var data = { firstName:document.getElementById('firstName').value, lastName:document.getElementById('lastName').value, staticc:document.getElementById('staticc').value, rank:document.getElementById('rank').value, department:document.getElementById('department').value, weapon:document.getElementById('weapon').value };
+      var data = { nickname:document.getElementById('nickname').value, staticc:document.getElementById('staticc').value, rank:document.getElementById('rank').value, department:document.getElementById('department').value, weapon:document.getElementById('weapon').value };
       if(!data.department){ showError(container,'Выберите отдел'); btn.disabled = false; btn.textContent = 'Отправить'; return; }
       saveAutoFillData(data, 'spec-request');
       callAPI('submit_spec_request', data, false).then(function(r){ if(r.success) document.getElementById('modal').style.display='none'; setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); }).catch(function() { setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); });
@@ -494,7 +494,7 @@
   // ========== ФОРМА СПЕЦВООРУЖЕНИЕ (ПОЛУЧЕНИЕ) ==========
   function renderSpecReceiveForm(container) {
     var saved = loadAutoFillData('spec-receive');
-    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Имя</label><input id="firstName" value="' + (saved.firstName || '') + '" required></div><div class="form-group"><label>Фамилия</label><input id="lastName" value="' + (saved.lastName || '') + '" required></div><div class="form-group"><label>Статик</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Ранг</label><input id="rank" value="' + (saved.rank || '') + '" required></div><div class="form-group"><label>Отдел</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department"></div><div class="form-group"><label>Оружие</label><input id="weapon" value="' + (saved.weapon || '') + '" required></div><div class="form-group"><label>Номер</label><input id="weaponNumber" value="' + (saved.weaponNumber || '') + '" required></div><div class="form-group"><label>Кто выдал</label><input id="issuedBy" value="' + (saved.issuedBy || '') + '" required></div><div class="form-group"><label>Скрин из инвентаря</label><input type="file" id="attachments" multiple accept="image/*"></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
+    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Никнейм</label><input id="nickname" value="' + (saved.nickname || '') + '" required></div><div class="form-group"><label>Статик</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Ранг</label><input id="rank" value="' + (saved.rank || '') + '" required></div><div class="form-group"><label>Отдел</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department"></div><div class="form-group"><label>Оружие</label><input id="weapon" value="' + (saved.weapon || '') + '" required></div><div class="form-group"><label>Номер</label><input id="weaponNumber" value="' + (saved.weaponNumber || '') + '" required></div><div class="form-group"><label>Кто выдал</label><input id="issuedBy" value="' + (saved.issuedBy || '') + '" required></div><div class="form-group"><label>Скрин из инвентаря</label><input type="file" id="attachments" multiple accept="image/*"></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
     var btnsDiv = container.querySelector('#deptBtns');
     DEPARTMENTS.forEach(function(d) {
       var btn = document.createElement('div');
@@ -518,7 +518,7 @@
       if (btn.disabled) return;
       btn.disabled = true;
       btn.textContent = 'Отправка...';
-      var data = { firstName:document.getElementById('firstName').value, lastName:document.getElementById('lastName').value, staticc:document.getElementById('staticc').value, rank:document.getElementById('rank').value, department:document.getElementById('department').value, weapon:document.getElementById('weapon').value, weaponNumber:document.getElementById('weaponNumber').value, issuedBy:document.getElementById('issuedBy').value, attachments: attachments };
+      var data = { nickname:document.getElementById('nickname').value, staticc:document.getElementById('staticc').value, rank:document.getElementById('rank').value, department:document.getElementById('department').value, weapon:document.getElementById('weapon').value, weaponNumber:document.getElementById('weaponNumber').value, issuedBy:document.getElementById('issuedBy').value, attachments: attachments };
       if(!data.department){ showError(container,'Выберите отдел'); btn.disabled = false; btn.textContent = 'Отправить'; return; }
       saveAutoFillData(data, 'spec-receive');
       callAPI('submit_spec_receive', data, true).then(function(r){ if(r.success) document.getElementById('modal').style.display='none'; setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); }).catch(function() { setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); });
@@ -528,7 +528,7 @@
   // ========== ФОРМА УВОЛЬНЕНИЕ ==========
   function renderResignationForm(container) {
     var saved = loadAutoFillData('resignation');
-    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Имя</label><input id="firstName" value="' + (saved.firstName || '') + '" required></div><div class="form-group"><label>Фамилия</label><input id="lastName" value="' + (saved.lastName || '') + '" required></div><div class="form-group"><label>Static ID</label><input id="staticId" value="' + (saved.staticId || '') + '" required></div><div class="form-group"><label>Отдел</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department"></div><div class="form-group"><label>Планшет</label><input id="tablet" value="' + (saved.tablet || '') + '" required></div><div class="form-group"><label>Инвентарь</label><input id="inventory" value="' + (saved.inventory || '') + '" required></div><div class="form-group"><label>Вложения (скриншоты)</label><input type="file" id="attachments" multiple accept="image/*"></div><div class="form-group"><label>Причина</label><textarea id="reason" rows="3" required>' + (saved.reason || '') + '</textarea></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
+    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Никнейм</label><input id="nickname" value="' + (saved.nickname || '') + '" required></div><div class="form-group"><label>Static ID</label><input id="staticId" value="' + (saved.staticId || '') + '" required></div><div class="form-group"><label>Отдел</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department"></div><div class="form-group"><label>Планшет</label><input id="tablet" value="' + (saved.tablet || '') + '" required></div><div class="form-group"><label>Инвентарь</label><input id="inventory" value="' + (saved.inventory || '') + '" required></div><div class="form-group"><label>Вложения (скриншоты)</label><input type="file" id="attachments" multiple accept="image/*"></div><div class="form-group"><label>Причина</label><textarea id="reason" rows="3" required>' + (saved.reason || '') + '</textarea></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
     var btnsDiv = container.querySelector('#deptBtns');
     DEPARTMENTS.forEach(function(d) {
       var btn = document.createElement('div');
@@ -552,7 +552,7 @@
       if (btn.disabled) return;
       btn.disabled = true;
       btn.textContent = 'Отправка...';
-      var data = { firstName:document.getElementById('firstName').value, lastName:document.getElementById('lastName').value, staticId:document.getElementById('staticId').value, department:document.getElementById('department').value, tablet:document.getElementById('tablet').value, inventory:document.getElementById('inventory').value, reason:document.getElementById('reason').value, attachments: attachments };
+      var data = { nickname:document.getElementById('nickname').value, staticId:document.getElementById('staticId').value, department:document.getElementById('department').value, tablet:document.getElementById('tablet').value, inventory:document.getElementById('inventory').value, reason:document.getElementById('reason').value, attachments: attachments };
       if(!data.department){ showError(container,'Выберите отдел'); btn.disabled = false; btn.textContent = 'Отправить'; return; }
       saveAutoFillData(data, 'resignation');
       callAPI('submit_resignation', data, true).then(function(r){ if(r.success) document.getElementById('modal').style.display='none'; setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); }).catch(function() { setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); });
@@ -572,7 +572,8 @@
       var typeName = typeNamesMap[h.type] || h.type;
       var details = '';
       if (h.data.department) details += 'Отдел: ' + h.data.department + ' | ';
-      if (h.data.firstName && h.data.lastName) details += 'От: ' + h.data.firstName + ' ' + h.data.lastName;
+      if (h.data.nickname) details += 'От: ' + h.data.nickname;
+      else if (h.data.firstName && h.data.lastName) details += 'От: ' + h.data.firstName + ' ' + h.data.lastName;
       else if (h.data.weapon) details += 'Оружие: ' + h.data.weapon;
       else if (h.data.reason) details += 'Причина: ' + (h.data.reason.length > 50 ? h.data.reason.substring(0,50)+'...' : h.data.reason);
       var div = document.createElement('div');
