@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>LSCSD — Sheriff Department</title>
   <link rel="icon" type="image/png" href="/lscsd/file.png">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -19,9 +19,10 @@
     <div class="badge-text">LSCSD<br><span>SHERIFF DEPARTMENT</span></div>
     <div class="orbiting-particle particle1"></div><div class="orbiting-particle particle2"></div>
     <div class="orbiting-particle particle3"></div><div class="orbiting-particle particle4"></div>
+    <div class="police-light-bar"><div class="light-red"></div><div class="light-blue"></div><div class="light-red"></div><div class="light-blue"></div></div>
   </div>
   <div class="preloader-logo">LSCSD</div>
-  <div class="preloader-text">Верификация полномочий...</div>
+  <div class="preloader-text">Проверка доступа...</div>
   <div class="preloader-progress"><div class="preloader-progress-bar" id="preloaderProgress"></div></div>
 </div>
 
@@ -79,7 +80,7 @@
 
 <div class="bug-modal" id="bugModal">
   <div class="bug-content">
-    <h3 style="color:#d4af37;margin-bottom:10px;"><i class="fas fa-bug"></i> Сообщить о баге</h3>
+    <h3 style="color:#d4af37;"><i class="fas fa-bug"></i> Сообщить о баге</h3>
     <select id="bugType"><option>Графический баг</option><option>Ошибка отправки</option><option>Ошибка авторизации</option><option>Проблема с отображением</option><option>Другое</option></select>
     <textarea id="bugDescription" rows="3" placeholder="Опишите проблему..."></textarea>
     <button id="sendBugBtn" style="background:#d4af37;border:none;padding:10px;border-radius:20px;width:100%;cursor:pointer;">Отправить</button>
@@ -91,15 +92,6 @@
   <div class="modal-content">
     <div class="modal-header"><h2 id="modalTitle"></h2><button class="modal-close" id="modalClose">&times;</button></div>
     <div class="modal-body" id="modalBody"></div>
-  </div>
-</div>
-
-<div class="admin-panel" id="adminPanel">
-  <div class="admin-card">
-    <button class="admin-close" id="adminClose">&times;</button>
-    <h2><i class="fas fa-shield-alt"></i> Админ-панель</h2>
-    <div class="admin-section"><h3>Чёрный список (навсегда)</h3><textarea id="blacklistInput" placeholder="ID пользователей"></textarea><button id="saveBlacklistBtn" class="admin-save">Сохранить</button></div>
-    <div class="admin-section"><h3>Временная блокировка (15 мин)</h3><textarea id="tempBlockInput" placeholder="ID пользователей"></textarea><button id="tempBlockBtn" class="admin-save">Заблокировать</button><button id="unblockBtn" class="admin-save" style="margin-left:10px;">Разблокировать</button></div>
   </div>
 </div>
 
