@@ -145,31 +145,34 @@
 
   function openUserModal(userId, userRole) {
     const modalDiv = document.createElement('div');
-    modalDiv.className = 'modal-overlay';
+    modalDiv.className = 'review-modal';
+    modalDiv.style.display = 'flex';
     modalDiv.innerHTML = `
-      <div class="modal-card">
-        <h3><i class="fas fa-user-cog"></i> Управление: ${escapeHtml(userId)}</h3>
-        <div class="flex-buttons">
+      <div class="review-content">
+        <h3 style="color:#d4af37;"><i class="fas fa-user-cog"></i> Управление пользователем: ${userId}</h3>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin:10px 0;">
           <button id="userBanBtn" class="btn-primary">🔨 Забанить</button>
           <button id="userUnbanBtn" class="btn-primary">🔓 Разбанить</button>
           <button id="userTempBanBtn" class="btn-primary">⏱ Бан на 1 час</button>
           <button id="userExcludeBtn" class="btn-primary">🚫 Исключить</button>
           <button id="userIncludeBtn" class="btn-primary">✅ Включить</button>
         </div>
-        <select id="userRankSelect">
+        <select id="userRankSelect" class="role-select">
           <option value="1">Младший состав</option><option value="2">Dep.Head</option><option value="3">Head</option>
           <option value="4">Curator</option><option value="5">Assist Sheriff</option><option value="6">SK/Dep.SK</option>
           <option value="7">UnderSheriff</option><option value="8">Sheriff</option><option value="9">Разработчик</option>
         </select>
         <button id="userSetRankBtn" class="btn-primary">Назначить ранг</button>
-        <select id="userDeptSelect">
+        <select id="userDeptSelect" class="dept-select">
           <option value="">Без отдела</option><option value="SAI">SAI</option><option value="GU">GU</option>
           <option value="AF">AF</option><option value="IAD">IAD</option><option value="SEB">SEB</option>
           <option value="K9">K-9</option><option value="DID">DID</option><option value="MED">MED</option>
           <option value="SPD">SPD</option><option value="HS">High Staff</option>
         </select>
         <button id="userSetDeptBtn" class="btn-primary">Назначить отдел</button>
-        <div class="flex-buttons"><button id="userModalCloseBtn" class="btn-cancel">Закрыть</button></div>
+        <div style="display:flex; gap:10px; margin-top:20px;">
+          <button id="userModalCloseBtn" class="btn-danger">Закрыть</button>
+        </div>
       </div>
     `;
     document.body.appendChild(modalDiv);
@@ -210,15 +213,15 @@
       card.className = 'user-card';
       const roleClass = 'role-' + (user.role.level || 1);
       card.innerHTML = `
-        <div class="user-info">
+        <div style="display:flex; align-items:center; gap:12px;">
           <div class="badge-icon"><i class="fab fa-discord"></i></div>
-          <div class="user-details">
+          <div>
             <strong>${escapeHtml(user.id)}</strong><br>
             <span class="user-role-tag ${roleClass}">${roleLevels[user.role.level] || 'Младший состав'}</span>
             ${user.role.department ? `<span style="margin-left:8px; color:#d4af37;">(${escapeHtml(user.role.department)})</span>` : ''}
           </div>
         </div>
-        ${canManage ? `<div class="user-actions"><button class="cog-btn" data-id="${escapeHtml(user.id)}"><i class="fas fa-cog"></i></button></div>` : ''}
+        ${canManage ? `<div style="margin-top:10px; text-align:right;"><button class="cog-btn" data-id="${escapeHtml(user.id)}" style="background:none; border:none; color:#d4af37; font-size:1.2rem; cursor:pointer;"><i class="fas fa-cog"></i></button></div>` : ''}
       `;
       container.appendChild(card);
       if (canManage) {
@@ -253,13 +256,13 @@
       item.className = `app-item ${statusClass}`;
       const statusText = app.data.status === 'pending' ? '⏳ На рассмотрении' : (app.data.status === 'approved' ? '✅ Одобрена' : '❌ Отклонена');
       item.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div style="display:flex; justify-content:space-between;">
           <span style="font-weight:600;">${typeNames[app.data.type] || app.data.type}</span>
-          <span style="font-size:12px; opacity:0.7;">#${app.id}</span>
+          <span style="font-size:12px;">#${app.id}</span>
         </div>
         <div style="font-size:13px; margin:5px 0;">От: ${escapeHtml(app.data.username || app.data.userId)}</div>
-        <div style="font-size:12px;">${statusText}</div>
-        <div style="font-size:11px; opacity:0.6;">${app.data.created_at || ''}</div>
+        <div>${statusText}</div>
+        <div style="font-size:11px; opacity:0.7;">${app.data.created_at || ''}</div>
       `;
       if (app.data.status === 'pending') {
         let canReview = false;
@@ -271,7 +274,9 @@
         if (canReview) {
           const reviewBtn = document.createElement('button');
           reviewBtn.textContent = 'Рассмотреть';
-          reviewBtn.style.cssText = 'background:#d4af37; border:none; padding:5px 12px; border-radius:20px; margin-top:8px; cursor:pointer; font-weight:bold;';
+          reviewBtn.className = 'btn-primary';
+          reviewBtn.style.marginTop = '8px';
+          reviewBtn.style.width = '100%';
           reviewBtn.onclick = () => openReviewModal(app.id, app.data);
           item.appendChild(reviewBtn);
         }
@@ -288,16 +293,23 @@
       submit_resignation:'Увольнение'
     };
     const modalDiv = document.createElement('div');
-    modalDiv.className = 'modal-overlay';
+    modalDiv.className = 'review-modal';
+    modalDiv.style.display = 'flex';
     modalDiv.innerHTML = `
-      <div class="modal-card">
-        <h3><i class="fas fa-gavel"></i> Рассмотрение заявки</h3>
+      <div class="review-content">
+        <h3 style="color:#d4af37;"><i class="fas fa-gavel"></i> Рассмотрение заявки</h3>
         <p><strong>Тип:</strong> ${typeNames[appData.type] || appData.type}</p>
         <p><strong>Заявитель:</strong> ${escapeHtml(appData.username || appData.userId)}</p>
         <p><strong>Дата:</strong> ${appData.created_at || ''}</p>
-        <select id="reviewStatus"><option value="approved">✅ Одобрить</option><option value="rejected">❌ Отклонить</option></select>
+        <select id="reviewStatus" style="width:100%; padding:10px; margin:10px 0;">
+          <option value="approved">✅ Одобрить</option>
+          <option value="rejected">❌ Отклонить</option>
+        </select>
         <textarea id="reviewComment" rows="3" placeholder="Комментарий..."></textarea>
-        <div class="flex-buttons"><button id="submitReviewBtn" class="btn-primary">Отправить решение</button><button id="closeReviewBtn" class="btn-cancel">Отмена</button></div>
+        <div style="display:flex; gap:10px; margin-top:15px;">
+          <button id="submitReviewBtn" class="btn-primary">Отправить решение</button>
+          <button id="closeReviewBtn" class="btn-danger">Отмена</button>
+        </div>
       </div>
     `;
     document.body.appendChild(modalDiv);
@@ -329,8 +341,7 @@
       const token = params.get('access_token');
       if (token) {
         fetch('https://discord.com/api/users/@me', { headers: { Authorization: `Bearer ${token}` } })
-          .then(r => r.json())
-          .then(user => {
+          .then(r => r.json()).then(user => {
             localStorage.setItem('lscsd_user', JSON.stringify({ id: user.id, username: user.username, avatar: user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png` : '' }));
             window.location.hash = '';
             location.reload();
@@ -361,7 +372,12 @@
   document.getElementById('authBtn').onclick = () => {
     window.location.href = `https://discord.com/api/oauth2/authorize?client_id=1494686473520287774&redirect_uri=${encodeURIComponent('https://style42124.github.io/lscsd/panel.html')}&response_type=token&scope=identify`;
   };
-  document.getElementById('backToMainBtn').onclick = () => window.location.href = '/lscsd/';
+  
+  // Новая кнопка «На главную»
+  document.getElementById('backToMainBtn').onclick = () => {
+    window.location.href = '/lscsd/';
+  };
+
   document.getElementById('userSearch')?.addEventListener('input', () => renderUsers());
 
   const tabBtns = document.querySelectorAll('.tab-btn');
