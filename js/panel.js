@@ -6,7 +6,7 @@
   let allApplications = [];
   let currentFilter = 'all';
 
-  // Preloader (оставляем без изменений)
+  // Preloader
   let progress = 0;
   const progressBar = document.getElementById('preloaderProgress');
   const interval = setInterval(() => {
@@ -68,8 +68,10 @@
       if (res.success) {
         allUsers = res.users;
         renderUsers();
+      } else {
+        console.error('get_all_users_roles error', res);
       }
-    });
+    }).catch(err => console.error('fetch error', err));
   }
 
   function loadApplications() {
@@ -348,7 +350,7 @@
       document.getElementById('navName').innerText = currentUser.username;
       if (currentUser.avatar) document.getElementById('navAvatar').src = currentUser.avatar;
       loadUserRole().then(() => {
-        loadAllUsers();      // <- загружаем всех
+        loadAllUsers();      // загружаем всех пользователей
         loadApplications();
       });
     } else {
