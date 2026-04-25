@@ -106,44 +106,38 @@
     renderStats();
   }
 
-  function callAPI(action, formData, hasFile) {
-    return new Promise((resolve, reject) => {
-      if (isSending) { showNotification('Подождите...', 'warning'); reject(); return; }
-      if (currentUser && isTempBlocked(currentUser.id)) { showNotification('Вы заблокированы на 15 минут!', 'error'); reject(); return; }
-      if (currentUser && !checkRateLimit(currentUser.id)) {
-        tempBlocked[currentUser.id] = Date.now() + 15*60*1000;
-        localStorage.setItem('lscsd_tempBlocked', JSON.stringify(tempBlocked));
-        showNotification('Лимит заявок! Блокировка 15 мин.', 'error');
-        reject(); return;
-      }
-      isSending = true;
-      var dataToSend = { action, data: formData || {} };
-      if (currentUser) { dataToSend.data.userId = currentUser.id; dataToSend.data.username = currentUser.username; dataToSend.data.userRole = currentUserRole ? currentUserRole.level : 1; }
-      var options = { method:'POST', headers:{}, body:null };
-      if (hasFile) {
-        var fd = new FormData();
-        fd.append('action', action);
-        fd.append('data', JSON.stringify(dataToSend.data));
-        if (formData && formData.attachments) {
-          for (var i = 0; i < formData.attachments.length; i++) fd.append('attachments[]', formData.attachments[i]);
-        }
-        options.body = fd;
+  fetch(PROXY_URL, options)
+  .then(function(r) { 
+    console.log('Response status:', r.status);
+    return r.json(); 
+  })
+  .then(function(d) { 
+    isSending = false;
+    console.log('API response:', d);
+    if (d.success === true) {
+      showNotification('✅ Заявка отправлена!', 'success');
+      addToHistory(action, formData);
+      resolve(d);
+    } else {
+      // Если success === false или отсутствует, но заявка могла отправиться
+      // Проверяем, есть ли ошибка
+      if (d.error) {
+        showNotification('❌ Ошибка: ' + d.error, 'error');
+        reject(d);
       } else {
-        options.headers['Content-Type'] = 'application/json';
-        options.body = JSON.stringify(dataToSend);
-      }
-      fetch(PROXY_URL, options).then(r => r.json()).then(d => {
-        isSending = false;
-        if (d.success) {
-          showNotification('Заявка отправлена!', 'success');
-          addToHistory(action, formData);
-        } else {
-          showNotification('Заявка отправлена!', 'success');
-        }
+        // Если нет явной ошибки и нет success, считаем что заявка отправлена (для совместимости)
+        showNotification('✅ Заявка отправлена!', 'success');
+        addToHistory(action, formData);
         resolve(d);
-      }).catch(() => { isSending = false; showNotification('Заявка отправлена!', 'success');
-    });
-  }
+      }
+    }
+  })
+  .catch(function(err) { 
+    isSending = false;
+    console.error('Fetch error:', err);
+    showNotification('❌ Ошибка соединения с сервером', 'error');
+    reject(err); 
+  });
 
   function sendBugReport(bugType, bugDesc) {
     if (!currentUser) return;
