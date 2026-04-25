@@ -725,7 +725,58 @@
       }
       if (usersList.length === 0) container.innerHTML = '<div style="text-align:center; padding:20px;">Нет пользователей</div>';
     }
+  function openUserModal(userId, userRole) {
+    const modal = document.getElementById('roleModal');
+    if (!modal) return;
 
+    document.getElementById('roleTargetName').innerHTML = `<strong>${escapeHtml(userId)}</strong>`;
+    document.getElementById('roleLevelSelect').value = userRole.level || 1;
+    document.getElementById('roleDeptSelect').value = userRole.department || '';
+    
+    const banInfoDiv = document.getElementById('banInfoContainer');
+    if (userRole.is_banned && userRole.ban_details) {
+      const ban = userRole.ban_details;
+      banInfoDiv.innerHTML = `<div class="ban-info">
+        <strong>🔒 Пользователь забанен</strong><br>
+        Причина: ${escapeHtml(ban.reason)}<br>
+        Заблокировал: ${escapeHtml(ban.banned_by_name)}<br>
+        Дата: ${escapeHtml(ban.timestamp)}
+      </div>`;
+    } else {
+      banInfoDiv.innerHTML = '';
+    }
+    
+    modal.style.display = 'flex';
+    
+    const banWithReasonBtn = document.getElementById('banWithReasonBtn');
+    const unbanBtn = document.getElementById('unbanBtn');
+    const tempBanBtn = document.getElementById('tempBanBtn');
+    const excludeBtn = document.getElementById('excludeBtn');
+    const includeBtn = document.getElementById('includeBtn');
+    const saveRoleBtn = document.getElementById('saveRoleBtn');
+    const closeBtn = document.getElementById('closeRoleBtn');
+    
+    if (banWithReasonBtn) {
+      banWithReasonBtn.onclick = () => {
+        const reason = document.getElementById('banReason').value.trim();
+        if (!reason) { showNotification('Укажите причину бана', 'error'); return; }
+        banUser(userId, reason).then(() => modal.style.display = 'none');
+      };
+    }
+    if (unbanBtn) unbanBtn.onclick = () => { unbanUser(userId).then(() => modal.style.display = 'none'); };
+    if (tempBanBtn) tempBanBtn.onclick = () => { tempBanUser(userId, 1); modal.style.display = 'none'; };
+    if (excludeBtn) excludeBtn.onclick = () => { excludeFromDuty(userId); modal.style.display = 'none'; };
+    if (includeBtn) includeBtn.onclick = () => { includeToDuty(userId); modal.style.display = 'none'; };
+    if (saveRoleBtn) {
+      saveRoleBtn.onclick = () => {
+        const level = parseInt(document.getElementById('roleLevelSelect').value);
+        const dept = document.getElementById('roleDeptSelect').value || null;
+        setUserRole(userId, level, dept);
+        modal.style.display = 'none';
+      };
+    }
+    if (closeBtn) closeBtn.onclick = () => modal.style.display = 'none';
+  }
     function openUserModal(userId, userRole) {
       const modal = document.getElementById('roleModal');
       document.getElementById('roleTargetName').innerHTML = `<strong>${escapeHtml(userId)}</strong>`;
