@@ -10,7 +10,7 @@
   let progress = 0;
   const progressBar = document.getElementById('preloaderProgress');
   const interval = setInterval(() => {
-    progress += Math.floor(Math.random() * 8) + 4;
+    progress += Math.floor(Math.random() * 10) + 5;
     if (progress > 100) progress = 100;
     if (progressBar) progressBar.style.width = progress + '%';
     if (progress >= 100) {
@@ -22,20 +22,25 @@
           setTimeout(() => {
             preloader.style.display = 'none';
             const app = document.getElementById('app');
-            if (app) {
-              app.style.display = 'flex';
-              setTimeout(() => app.style.opacity = '1', 50);
-            }
+            if (app) app.style.display = 'flex';
           }, 500);
         }
-      }, 1000);
+      }, 500);
     }
-  }, 70);
+  }, 80);
+  // Аварийное скрытие
+  setTimeout(() => {
+    const preloader = document.getElementById('preloader');
+    if (preloader && preloader.style.display !== 'none') {
+      preloader.style.display = 'none';
+      document.getElementById('app').style.display = 'flex';
+    }
+  }, 5000);
 
   function showNotification(msg, type) {
     const div = document.createElement('div');
-    div.className = 'notification ' + (type || 'info');
-    div.innerHTML = `<div class="notification-title">${type === 'success' ? '✅' : '⚠️'}</div><div>${msg}</div>`;
+    div.className = 'notification';
+    div.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'}"></i> ${msg}`;
     document.body.appendChild(div);
     setTimeout(() => div.remove(), 3000);
   }
@@ -48,8 +53,7 @@
     }).then(r => r.json()).then(res => {
       if (res.success) {
         currentUserRole = res.role;
-        const badge = document.getElementById('userRoleBadge');
-        if (badge) badge.innerText = currentUserRole.name || 'Младший состав';
+        document.getElementById('userRoleBadge').innerText = currentUserRole.name || 'Младший состав';
         return currentUserRole;
       }
       return null;
@@ -57,21 +61,21 @@
   }
 
   function loadAllUsers() {
-  // Для уровней 2 и выше загружаем список (для отображения)
-  if (currentUserRole && currentUserRole.level >= 2) {
-    return fetch(PROXY_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'get_all_users_roles' })
-    }).then(r => r.json()).then(res => {
-      if (res.success) {
-        allUsers = res.users;
-        renderUsers();
-      }
-    });
+    if (currentUserRole && currentUserRole.level >= 2) {
+      return fetch(PROXY_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'get_all_users_roles' })
+      }).then(r => r.json()).then(res => {
+        if (res.success) {
+          allUsers = res.users;
+          renderUsers();
+        }
+      });
+    }
+    return Promise.resolve();
   }
-  return Promise.resolve();
-}
+
   function loadApplications() {
     return fetch(PROXY_URL, {
       method: 'POST',
@@ -100,11 +104,11 @@
       body: JSON.stringify({ action, data })
     }).then(r => r.json()).then(res => {
       if (res.success) {
-        showNotification('Операция выполнена!', 'success');
+        showNotification('✅ Операция выполнена!', 'success');
         loadAllUsers();
         loadApplications();
       } else {
-        showNotification(res.error || 'Ошибка', 'error');
+        showNotification(res.error || '❌ Ошибка', 'error');
       }
     });
   }
@@ -137,24 +141,24 @@
         }
       })
     }).then(r => r.json()).then(res => {
-      if (res.success) showNotification('Решение отправлено!', 'success');
-      else showNotification('Ошибка', 'error');
+      if (res.success) showNotification('✅ Решение отправлено!', 'success');
+      else showNotification('❌ Ошибка', 'error');
       return res;
     });
   }
 
   function openUserModal(userId, userRole) {
     const modalDiv = document.createElement('div');
-    modalDiv.className = 'user-modal';
+    modalDiv.className = 'modal-overlay';
     modalDiv.innerHTML = `
-      <div class="user-content">
-        <h3 style="color:#d4af37;">Управление пользователем: ${userId}</h3>
-        <div class="flex-buttons" style="flex-wrap:wrap;">
+      <div class="modal-card">
+        <h3><i class="fas fa-user-cog"></i> Управление: ${userId}</h3>
+        <div class="flex-buttons">
           <button id="userBanBtn" class="btn-primary">🔨 Забанить</button>
           <button id="userUnbanBtn" class="btn-primary">🔓 Разбанить</button>
           <button id="userTempBanBtn" class="btn-primary">⏱ Бан на 1 час</button>
-          <button id="userExcludeBtn" class="btn-primary">🚫 Исключить из обязанностей</button>
-          <button id="userIncludeBtn" class="btn-primary">✅ Включить в обязанности</button>
+          <button id="userExcludeBtn" class="btn-primary">🚫 Исключить</button>
+          <button id="userIncludeBtn" class="btn-primary">✅ Включить</button>
         </div>
         <select id="userRankSelect">
           <option value="1">Младший состав</option><option value="2">Dep.Head</option><option value="3">Head</option>
@@ -197,11 +201,11 @@
     const container = document.getElementById('usersGrid');
     const searchTerm = document.getElementById('userSearch')?.value.toLowerCase() || '';
     if (!container) return;
-    
     const roleLevels = {1:'Младший состав',2:'Dep.Head',3:'Head',4:'Curator',5:'Assist Sheriff',6:'SK/Dep.SK',7:'UnderSheriff',8:'Sheriff',9:'Разработчик'};
     let usersList = Object.keys(allUsers).map(id => ({ id, role: allUsers[id] }));
     usersList = usersList.filter(u => u.id.toLowerCase().includes(searchTerm));
     container.innerHTML = '';
+    const canManage = (currentUserRole && (currentUserRole.level >= 7 || currentUserRole.level === 9));
     for (const user of usersList) {
       const card = document.createElement('div');
       card.className = 'user-card';
@@ -209,15 +213,16 @@
       card.innerHTML = `
         <div class="user-info">
           <div class="badge-icon"><i class="fab fa-discord"></i></div>
-          <div><strong style="color:#fff;">${user.id}</strong><br>
+          <div class="user-details">
+            <strong>${user.id}</strong><br>
             <span class="user-role-tag ${roleClass}">${roleLevels[user.role.level] || 'Младший состав'}</span>
-            ${user.role.department ? `<span style="margin-left:5px;color:#d4af37;">(${user.role.department})</span>` : ''}
+            ${user.role.department ? `<span style="margin-left:8px; color:#d4af37;">(${user.role.department})</span>` : ''}
           </div>
         </div>
-        ${(currentUserRole && (currentUserRole.level >= 7 || currentUserRole.level === 9)) ? `<div class="user-actions"><button class="cog-btn" data-id="${user.id}"><i class="fas fa-cog"></i></button></div>` : ''}
+        ${canManage ? `<div class="user-actions"><button class="cog-btn" data-id="${user.id}"><i class="fas fa-cog"></i></button></div>` : ''}
       `;
       container.appendChild(card);
-      if (currentUserRole && (currentUserRole.level >= 7 || currentUserRole.level === 9)) {
+      if (canManage) {
         const cogBtn = card.querySelector('.cog-btn');
         cogBtn.onclick = () => openUserModal(user.id, user.role);
       }
@@ -233,14 +238,14 @@
     if (currentFilter === 'rejected') filtered = filtered.filter(a => a.data.status === 'rejected');
     container.innerHTML = '';
     if (filtered.length === 0) {
-      container.innerHTML = '<div style="text-align:center;padding:30px;">Нет заявок</div>';
+      container.innerHTML = '<div style="text-align:center; padding:40px;">Нет заявок</div>';
       return;
     }
     const typeNames = {
-      submit_department:'Заявка в отдел', submit_promotion:'Повышение', submit_appeal:'Обжалование',
-      submit_workoff:'Отработка', submit_leave:'Отпуск', submit_rest:'Отдых',
-      submit_spec_request:'Спецвооружение запрос', submit_spec_receive:'Спецвооружение получение',
-      submit_resignation:'Увольнение'
+      submit_department:'📋 Заявка в отдел', submit_promotion:'⭐ Повышение', submit_appeal:'⚖ Обжалование',
+      submit_workoff:'🛠 Отработка', submit_leave:'🏖 Отпуск', submit_rest:'🌴 Отдых',
+      submit_spec_request:'🔫 Спецвооружение запрос', submit_spec_receive:'📦 Получение спец',
+      submit_resignation:'📄 Увольнение'
     };
     for (const app of filtered) {
       const item = document.createElement('div');
@@ -248,24 +253,25 @@
       item.className = `app-item ${statusClass}`;
       const statusText = app.data.status === 'pending' ? '⏳ На рассмотрении' : (app.data.status === 'approved' ? '✅ Одобрена' : '❌ Отклонена');
       item.innerHTML = `
-        <div style="display:flex;justify-content:space-between;"><span style="color:#e8e8e8;">${typeNames[app.data.type] || app.data.type}</span><span style="font-size:11px;">#${app.id}</span></div>
-        <div style="font-size:12px; color:#d4af37;">От: ${app.data.username || app.data.userId}</div>
-        <div style="font-size:11px;">${statusText}</div>
-        <div style="font-size:11px; color:#6b6f78;">${app.data.created_at || ''}</div>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-weight:600;">${typeNames[app.data.type] || app.data.type}</span>
+          <span style="font-size:12px; opacity:0.7;">#${app.id}</span>
+        </div>
+        <div style="font-size:13px; margin:5px 0;">От: ${app.data.username || app.data.userId}</div>
+        <div style="font-size:12px;">${statusText}</div>
+        <div style="font-size:11px; opacity:0.6;">${app.data.created_at || ''}</div>
       `;
       if (app.data.status === 'pending') {
         let canReview = false;
         const role = currentUserRole;
         const isAppealWorkoff = (typeNames[app.data.type] === 'Обжалование' || typeNames[app.data.type] === 'Отработка');
         if (role.level >= 7) canReview = true;
-        else if (role.level === 6 && (typeNames[app.data.type] === 'Спецвооружение запрос' || typeNames[app.data.type] === 'Спецвооружение получение')) canReview = true;
-        else if (role.level >= 2 && role.level <= 5) {
-          if (app.data.department === role.department && !isAppealWorkoff) canReview = true;
-        }
+        else if (role.level === 6 && (typeNames[app.data.type] === 'Спецвооружение запрос' || typeNames[app.data.type] === 'Получение спец')) canReview = true;
+        else if (role.level >= 2 && role.level <= 5 && !isAppealWorkoff && app.data.department === role.department) canReview = true;
         if (canReview) {
           const reviewBtn = document.createElement('button');
           reviewBtn.textContent = 'Рассмотреть';
-          reviewBtn.style.cssText = 'background:#d4af37;border:none;padding:5px 12px;border-radius:20px;margin-top:8px;cursor:pointer;';
+          reviewBtn.style.cssText = 'background:#d4af37; border:none; padding:5px 12px; border-radius:20px; margin-top:8px; cursor:pointer; font-weight:bold;';
           reviewBtn.onclick = () => openReviewModal(app.id, app.data);
           item.appendChild(reviewBtn);
         }
@@ -282,16 +288,16 @@
       submit_resignation:'Увольнение'
     };
     const modalDiv = document.createElement('div');
-    modalDiv.className = 'review-modal';
+    modalDiv.className = 'modal-overlay';
     modalDiv.innerHTML = `
-      <div class="review-content">
-        <h3 style="color:#d4af37;">Рассмотрение заявки</h3>
+      <div class="modal-card">
+        <h3><i class="fas fa-gavel"></i> Рассмотрение заявки</h3>
         <p><strong>Тип:</strong> ${typeNames[appData.type] || appData.type}</p>
         <p><strong>Заявитель:</strong> ${appData.username || appData.userId}</p>
         <p><strong>Дата:</strong> ${appData.created_at || ''}</p>
         <select id="reviewStatus"><option value="approved">✅ Одобрить</option><option value="rejected">❌ Отклонить</option></select>
         <textarea id="reviewComment" rows="3" placeholder="Комментарий..."></textarea>
-        <div style="display:flex;gap:10px;margin-top:15px;"><button id="submitReviewBtn" class="btn-primary">Отправить решение</button><button id="closeReviewBtn" class="btn-cancel">Отмена</button></div>
+        <div class="flex-buttons"><button id="submitReviewBtn" class="btn-primary">Отправить решение</button><button id="closeReviewBtn" class="btn-cancel">Отмена</button></div>
       </div>
     `;
     document.body.appendChild(modalDiv);
@@ -314,11 +320,7 @@
       if (token) {
         fetch('https://discord.com/api/users/@me', { headers: { Authorization: `Bearer ${token}` } })
           .then(r => r.json()).then(user => {
-            localStorage.setItem('lscsd_user', JSON.stringify({
-              id: user.id,
-              username: user.username,
-              avatar: user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png` : ''
-            }));
+            localStorage.setItem('lscsd_user', JSON.stringify({ id: user.id, username: user.username, avatar: user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png` : '' }));
             window.location.hash = '';
             location.reload();
           }).catch(() => showNotification('Ошибка авторизации', 'error'));
