@@ -483,31 +483,46 @@
     }
   }
 
-  // Preloader
-  var progress = 0;
-  var progressBar = document.getElementById('preloaderProgress');
-  var interval = setInterval(function() {
-    progress += Math.floor(Math.random() * 8) + 4;
-    if (progress > 100) progress = 100;
-    if (progressBar) progressBar.style.width = progress + '%';
-    if (progress >= 100) {
-      clearInterval(interval);
-      setTimeout(() => {
-        var preloader = document.getElementById('preloader');
-        if (preloader) {
-          preloader.style.opacity = '0';
-          setTimeout(() => {
-            preloader.style.display = 'none';
-            var app = document.getElementById('app');
-            if (app) {
-              app.style.display = 'flex';
-              setTimeout(() => app.style.opacity = '1', 50);
-            }
-          }, 500);
-        }
-      }, 1000);
+// Прелоадер
+var progress = 0;
+var progressBar = document.getElementById('preloaderProgress');
+var interval = setInterval(function() {
+  progress += Math.floor(Math.random() * 8) + 4;
+  if (progress > 100) progress = 100;
+  if (progressBar) progressBar.style.width = progress + '%';
+  if (progress >= 100) {
+    clearInterval(interval);
+    // Дополнительная защита: скрыть прелоадер через 0.5 сек
+    setTimeout(function() {
+      var preloader = document.getElementById('preloader');
+      var app = document.getElementById('app');
+      if (preloader) {
+        preloader.style.opacity = '0';
+        setTimeout(function() {
+          preloader.style.display = 'none';
+          if (app) {
+            app.style.display = 'flex';
+            setTimeout(function() { app.style.opacity = '1'; }, 50);
+          }
+        }, 500);
+      }
+    }, 500);
+  }
+}, 70);
+
+// Аварийное скрытие через 5 секунд (на случай, если прогресс не дошел до 100)
+setTimeout(function() {
+  var preloader = document.getElementById('preloader');
+  var app = document.getElementById('app');
+  if (preloader && preloader.style.display !== 'none') {
+    clearInterval(interval);
+    preloader.style.display = 'none';
+    if (app) {
+      app.style.display = 'flex';
+      app.style.opacity = '1';
     }
-  }, 70);
+  }
+}, 5000);
 
   var bugModal = document.getElementById('bugModal');
   document.getElementById('reportBugBtn').onclick = () => { if(currentUser) bugModal.style.display = 'flex'; else showNotification('Авторизуйтесь', 'warning'); };
