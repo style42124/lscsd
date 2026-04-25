@@ -676,48 +676,54 @@
       });
     }
 
-    async function renderUsers() {
-      const container = document.getElementById('usersGrid');
-      const searchTerm = document.getElementById('userSearch')?.value.toLowerCase() || '';
-      if (!container) return;
-      const roleLevels = {1:'Младший состав',2:'Dep.Head',3:'Head',4:'Curator',5:'Assist Sheriff',6:'SK/Dep.SK',7:'UnderSheriff',8:'Sheriff',9:'Разработчик'};
-      let usersList = Object.keys(allUsers).map(id => ({ id, role: allUsers[id] }));
-      usersList = usersList.filter(u => u.id.toLowerCase().includes(searchTerm) || (u.role.username || '').toLowerCase().includes(searchTerm));
-      container.innerHTML = '';
-      const canManage = (currentUserRole && (currentUserRole.level >= 7 || currentUserRole.level === 9));
+      async function renderUsers() {
+    const container = document.getElementById('usersGrid');
+    const searchTerm = document.getElementById('userSearch')?.value.toLowerCase() || '';
+    if (!container) return;
+    const roleLevels = {1:'Младший состав',2:'Dep.Head',3:'Head',4:'Curator',5:'Assist Sheriff',6:'SK/Dep.SK',7:'UnderSheriff',8:'Sheriff',9:'Разработчик'};
+    let usersList = Object.keys(allUsers).map(id => ({ id, role: allUsers[id] }));
+    
+    // СОРТИРОВКА ПО УРОВНЮ (от высшего к низшему)
+    usersList.sort((a, b) => (b.role.level || 1) - (a.role.level || 1));
+    
+    usersList = usersList.filter(u => u.id.toLowerCase().includes(searchTerm) || (u.role.username || '').toLowerCase().includes(searchTerm));
+    container.innerHTML = '';
+    const canManage = (currentUserRole && (currentUserRole.level >= 7 || currentUserRole.level === 9));
+    
+    for (const user of usersList) {
+      const userData = await fetchDiscordUser(user.id);
+      const username = userData.username || user.id;
+      const avatarUrl = userData.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${userData.avatar}.png` : '';
+      const roleClass = 'role-' + (user.role.level || 1);
+      const roleName = roleLevels[user.role.level] || 'Младший состав';
+      const deptText = user.role.department ? `<span style="margin-left:8px; color:#d4af37;">(${escapeHtml(user.role.department)})</span>` : '';
       
-      for (const user of usersList) {
-        const userData = await fetchDiscordUser(user.id);
-        const username = userData.username || user.id;
-        const avatarUrl = userData.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${userData.avatar}.png` : '';
-        const roleClass = 'role-' + (user.role.level || 1);
-        const card = document.createElement('div');
-        card.className = 'user-card';
-        card.innerHTML = `
-          <div class="user-info">
-            ${avatarUrl ? `<img class="user-avatar-small" src="${escapeHtml(avatarUrl)}" onerror="this.src=''">` : `<div class="badge-icon"><i class="fab fa-discord"></i></div>`}
-            <div>
-              <strong>${escapeHtml(username)}</strong><br>
-              <span style="font-size:11px; color:#9ca3af;">ID: ${escapeHtml(user.id)}</span><br>
-              <span class="user-role-tag ${roleClass}">${roleLevels[user.role.level] || 'Младший состав'}</span>
-              ${user.role.department ? `<span style="margin-left:8px; color:#d4af37;">(${escapeHtml(user.role.department)})</span>` : ''}
-            </div>
+      const card = document.createElement('div');
+      card.className = 'user-card';
+      card.innerHTML = `
+        <div class="user-info">
+          ${avatarUrl ? `<img class="user-avatar-small" src="${escapeHtml(avatarUrl)}" onerror="this.src=''">` : `<div class="badge-icon"><i class="fab fa-discord"></i></div>`}
+          <div>
+            <strong>${escapeHtml(username)}</strong><br>
+            <span style="font-size:11px; color:#9ca3af;">ID: ${escapeHtml(user.id)}</span><br>
+            <span class="user-role-tag ${roleClass}">${roleName}</span>
+            ${deptText}
           </div>
-          ${canManage ? `<div class="user-actions"><button class="cog-btn" data-id="${escapeHtml(user.id)}"><i class="fas fa-cog"></i></button></div>` : ''}
-        `;
-        container.appendChild(card);
-        if (canManage) {
-          const cogBtn = card.querySelector('.cog-btn');
-          if (cogBtn) {
-            cogBtn.onclick = (function(uid, urole) {
-              return function() { openUserModal(uid, urole); };
-            })(user.id, user.role);
-          }
+        </div>
+        ${canManage ? `<div class="user-actions"><button class="cog-btn" data-id="${escapeHtml(user.id)}"><i class="fas fa-cog"></i></button></div>` : ''}
+      `;
+      container.appendChild(card);
+      if (canManage) {
+        const cogBtn = card.querySelector('.cog-btn');
+        if (cogBtn) {
+          cogBtn.onclick = (function(uid, urole) {
+            return function() { openUserModal(uid, urole); };
+          })(user.id, user.role);
         }
       }
-      if (usersList.length === 0) container.innerHTML = '<div style="text-align:center; padding:20px;">Нет пользователей</div>';
     }
-
+    if (usersList.length === 0) container.innerHTML = '<div style="text-align:center; padding:20px;">Нет пользователей</div>';
+  }
     function openUserModal(userId, userRole) {
       const modal = document.getElementById('roleModal');
       if (!modal) return;
