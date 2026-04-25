@@ -72,14 +72,7 @@
       padding: 5px 16px;
       border-radius: 40px;
       border: 1px solid rgba(212, 175, 55, 0.3);
-      cursor: pointer;
-      transition: 0.2s;
       margin-left: auto;
-    }
-
-    .nav-user:hover {
-      border-color: #d4af37;
-      transform: scale(1.02);
     }
 
     .nav-avatar {
@@ -103,11 +96,7 @@
       cursor: pointer;
       color: #0f121a;
       font-weight: bold;
-      transition: 0.2s;
-    }
-
-    .back-btn:hover {
-      transform: scale(1.02);
+      margin-left: 8px;
     }
 
     /* AUTH */
@@ -153,12 +142,6 @@
       color: white;
       cursor: pointer;
       font-weight: 600;
-      transition: 0.2s;
-    }
-
-    .auth-btn:hover {
-      transform: scale(1.03);
-      box-shadow: 0 5px 20px rgba(88, 101, 242, 0.4);
     }
 
     /* MAIN */
@@ -192,17 +175,11 @@
       padding: 10px 25px;
       cursor: pointer;
       color: #e8e8e8;
-      transition: 0.2s;
     }
 
     .tab-btn.active {
       background: #d4af37;
       color: #0f121a;
-    }
-
-    .tab-btn:hover {
-      transform: translateY(-2px);
-      border-color: #d4af37;
     }
 
     .tab-content {
@@ -242,7 +219,6 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      transition: 0.2s;
     }
 
     .user-card:hover {
@@ -295,11 +271,6 @@
       color: #d4af37;
       font-size: 1.2rem;
       cursor: pointer;
-      transition: 0.2s;
-    }
-
-    .user-actions button:hover {
-      transform: scale(1.1);
     }
 
     .app-list {
@@ -314,7 +285,6 @@
       margin-bottom: 10px;
       border-left: 3px solid #d4af37;
       cursor: pointer;
-      transition: 0.2s;
     }
 
     .app-item:hover {
@@ -340,7 +310,6 @@
       padding: 8px 16px;
       cursor: pointer;
       color: #e8e8e8;
-      transition: 0.2s;
     }
 
     .filter-btn.active {
@@ -392,11 +361,6 @@
       margin: 5px;
       font-weight: bold;
       color: #0f121a;
-      transition: 0.2s;
-    }
-
-    .btn-primary:hover {
-      transform: scale(1.02);
     }
 
     .btn-danger {
@@ -519,7 +483,7 @@
 <div class="role-modal" id="roleModal">
   <div class="review-content">
     <h3 style="color:#d4af37;"><i class="fas fa-user-tag"></i> Управление пользователем</h3>
-    <p id="roleTargetName"></p>
+    <p id="roleTargetName" style="margin-bottom:10px;"></p>
     <div id="banInfoContainer"></div>
     <div style="margin:10px 0;">
       <label>Причина бана (для нового бана):</label>
@@ -538,6 +502,13 @@
       <option value="7">UnderSheriff</option><option value="8">Sheriff</option><option value="9">Разработчик</option>
     </select>
     <button id="saveRoleBtn" class="btn-primary" style="width:100%;">Сохранить ранг и отдел</button>
+    <select id="roleDeptSelect" class="dept-select">
+      <option value="">Без отдела</option><option value="SAI">SAI</option><option value="GU">GU</option>
+      <option value="AF">AF</option><option value="IAD">IAD</option><option value="SEB">SEB</option>
+      <option value="K9">K-9</option><option value="DID">DID</option><option value="MED">MED</option>
+      <option value="SPD">SPD</option><option value="HS">High Staff</option>
+    </select>
+    <button id="setDeptBtn" class="btn-primary" style="width:100%; margin-top:10px;">Сохранить отдел</button>
     <div class="flex-buttons">
       <button id="closeRoleBtn" class="btn-danger">Закрыть</button>
     </div>
@@ -573,9 +544,7 @@
 
     async function fetchDiscordUser(userId) {
       try {
-        const response = await fetch(`https://discord.com/api/v9/users/${userId}`, {
-          headers: { 'Content-Type': 'application/json' }
-        });
+        const response = await fetch(`https://discord.com/api/v9/users/${userId}`);
         const data = await response.json();
         return { username: data.username, avatar: data.avatar };
       } catch(e) {
@@ -725,60 +694,11 @@
       }
       if (usersList.length === 0) container.innerHTML = '<div style="text-align:center; padding:20px;">Нет пользователей</div>';
     }
-  function openUserModal(userId, userRole) {
-    const modal = document.getElementById('roleModal');
-    if (!modal) return;
 
-    document.getElementById('roleTargetName').innerHTML = `<strong>${escapeHtml(userId)}</strong>`;
-    document.getElementById('roleLevelSelect').value = userRole.level || 1;
-    document.getElementById('roleDeptSelect').value = userRole.department || '';
-    
-    const banInfoDiv = document.getElementById('banInfoContainer');
-    if (userRole.is_banned && userRole.ban_details) {
-      const ban = userRole.ban_details;
-      banInfoDiv.innerHTML = `<div class="ban-info">
-        <strong>🔒 Пользователь забанен</strong><br>
-        Причина: ${escapeHtml(ban.reason)}<br>
-        Заблокировал: ${escapeHtml(ban.banned_by_name)}<br>
-        Дата: ${escapeHtml(ban.timestamp)}
-      </div>`;
-    } else {
-      banInfoDiv.innerHTML = '';
-    }
-    
-    modal.style.display = 'flex';
-    
-    const banWithReasonBtn = document.getElementById('banWithReasonBtn');
-    const unbanBtn = document.getElementById('unbanBtn');
-    const tempBanBtn = document.getElementById('tempBanBtn');
-    const excludeBtn = document.getElementById('excludeBtn');
-    const includeBtn = document.getElementById('includeBtn');
-    const saveRoleBtn = document.getElementById('saveRoleBtn');
-    const closeBtn = document.getElementById('closeRoleBtn');
-    
-    if (banWithReasonBtn) {
-      banWithReasonBtn.onclick = () => {
-        const reason = document.getElementById('banReason').value.trim();
-        if (!reason) { showNotification('Укажите причину бана', 'error'); return; }
-        banUser(userId, reason).then(() => modal.style.display = 'none');
-      };
-    }
-    if (unbanBtn) unbanBtn.onclick = () => { unbanUser(userId).then(() => modal.style.display = 'none'); };
-    if (tempBanBtn) tempBanBtn.onclick = () => { tempBanUser(userId, 1); modal.style.display = 'none'; };
-    if (excludeBtn) excludeBtn.onclick = () => { excludeFromDuty(userId); modal.style.display = 'none'; };
-    if (includeBtn) includeBtn.onclick = () => { includeToDuty(userId); modal.style.display = 'none'; };
-    if (saveRoleBtn) {
-      saveRoleBtn.onclick = () => {
-        const level = parseInt(document.getElementById('roleLevelSelect').value);
-        const dept = document.getElementById('roleDeptSelect').value || null;
-        setUserRole(userId, level, dept);
-        modal.style.display = 'none';
-      };
-    }
-    if (closeBtn) closeBtn.onclick = () => modal.style.display = 'none';
-  }
     function openUserModal(userId, userRole) {
       const modal = document.getElementById('roleModal');
+      if (!modal) return;
+
       document.getElementById('roleTargetName').innerHTML = `<strong>${escapeHtml(userId)}</strong>`;
       document.getElementById('roleLevelSelect').value = userRole.level || 1;
       document.getElementById('roleDeptSelect').value = userRole.department || '';
@@ -798,30 +718,43 @@
       
       modal.style.display = 'flex';
       
+      // Кнопки управления
       const banWithReasonBtn = document.getElementById('banWithReasonBtn');
       const unbanBtn = document.getElementById('unbanBtn');
       const tempBanBtn = document.getElementById('tempBanBtn');
       const excludeBtn = document.getElementById('excludeBtn');
       const includeBtn = document.getElementById('includeBtn');
       const saveRoleBtn = document.getElementById('saveRoleBtn');
+      const setDeptBtn = document.getElementById('setDeptBtn');
       const closeBtn = document.getElementById('closeRoleBtn');
       
-      banWithReasonBtn.onclick = () => {
-        const reason = document.getElementById('banReason').value.trim();
-        if (!reason) { showNotification('Укажите причину бана', 'error'); return; }
-        banUser(userId, reason).then(() => modal.style.display = 'none');
-      };
-      unbanBtn.onclick = () => { unbanUser(userId).then(() => modal.style.display = 'none'); };
-      tempBanBtn.onclick = () => { tempBanUser(userId, 1); modal.style.display = 'none'; };
-      excludeBtn.onclick = () => { excludeFromDuty(userId); modal.style.display = 'none'; };
-      includeBtn.onclick = () => { includeToDuty(userId); modal.style.display = 'none'; };
-      saveRoleBtn.onclick = () => {
-        const level = parseInt(document.getElementById('roleLevelSelect').value);
-        const dept = document.getElementById('roleDeptSelect').value || null;
-        setUserRole(userId, level, dept);
-        modal.style.display = 'none';
-      };
-      closeBtn.onclick = () => modal.style.display = 'none';
+      if (banWithReasonBtn) {
+        banWithReasonBtn.onclick = () => {
+          const reason = document.getElementById('banReason').value.trim();
+          if (!reason) { showNotification('Укажите причину бана', 'error'); return; }
+          banUser(userId, reason).then(() => modal.style.display = 'none');
+        };
+      }
+      if (unbanBtn) unbanBtn.onclick = () => { unbanUser(userId).then(() => modal.style.display = 'none'); };
+      if (tempBanBtn) tempBanBtn.onclick = () => { tempBanUser(userId, 1); modal.style.display = 'none'; };
+      if (excludeBtn) excludeBtn.onclick = () => { excludeFromDuty(userId); modal.style.display = 'none'; };
+      if (includeBtn) includeBtn.onclick = () => { includeToDuty(userId); modal.style.display = 'none'; };
+      if (saveRoleBtn) {
+        saveRoleBtn.onclick = () => {
+          const level = parseInt(document.getElementById('roleLevelSelect').value);
+          const dept = document.getElementById('roleDeptSelect').value || null;
+          setUserRole(userId, level, dept);
+          modal.style.display = 'none';
+        };
+      }
+      if (setDeptBtn) {
+        setDeptBtn.onclick = () => {
+          const dept = document.getElementById('roleDeptSelect').value || null;
+          setUserRole(userId, userRole.level, dept);
+          modal.style.display = 'none';
+        };
+      }
+      if (closeBtn) closeBtn.onclick = () => modal.style.display = 'none';
     }
 
     function renderApplications() {
@@ -886,6 +819,7 @@
         submit_resignation:'Увольнение'
       };
       const modal = document.getElementById('reviewModal');
+      if (!modal) return;
       document.getElementById('reviewAppData').innerHTML = `
         <p><strong>Тип:</strong> ${typeNames[appData.type] || appData.type}</p>
         <p><strong>Заявитель:</strong> ${escapeHtml(appData.username || appData.userId)}</p>
@@ -894,15 +828,17 @@
       modal.style.display = 'flex';
       const submitBtn = document.getElementById('submitReviewBtn');
       const closeBtn = document.getElementById('closeReviewBtn');
-      submitBtn.onclick = () => {
-        const status = document.getElementById('reviewStatus').value;
-        const comment = document.getElementById('reviewComment').value;
-        reviewApplication(appId, status, comment, appData, typeNames[appData.type] || appData.type).then(() => {
-          modal.style.display = 'none';
-          loadApplications();
-        });
-      };
-      closeBtn.onclick = () => modal.style.display = 'none';
+      if (submitBtn) {
+        submitBtn.onclick = () => {
+          const status = document.getElementById('reviewStatus').value;
+          const comment = document.getElementById('reviewComment').value;
+          reviewApplication(appId, status, comment, appData, typeNames[appData.type] || appData.type).then(() => {
+            modal.style.display = 'none';
+            loadApplications();
+          });
+        };
+      }
+      if (closeBtn) closeBtn.onclick = () => modal.style.display = 'none';
     }
 
     function handleAuthCallback() {
