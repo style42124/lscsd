@@ -75,28 +75,33 @@
       to { width: 100%; }
     }
 
-    /* NAVBAR */
+    /* NAVBAR - ТОЧНО КАК НА ГЛАВНОМ САЙТЕ */
     .navbar {
       background: rgba(13, 17, 23, 0.95);
       backdrop-filter: blur(20px);
-      border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+      border-bottom: 1px solid rgba(212, 175, 55, 0.2);
       padding: 12px 35px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
     }
+
     .nav-brand {
       display: flex;
       align-items: center;
       gap: 12px;
       cursor: pointer;
     }
+
     .nav-logo {
       width: 40px;
       height: 40px;
       background: linear-gradient(145deg, #d4af37, #b8962a);
       clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
     }
+
     .nav-title-main {
       font-size: 1.2rem;
       font-weight: 800;
@@ -106,32 +111,43 @@
       background-clip: text;
       color: transparent;
     }
+
     .nav-title-sub {
       font-size: 0.55rem;
       color: #6b6f78;
       display: block;
     }
+
     .nav-user {
       display: flex;
       align-items: center;
-      gap: 15px;
+      gap: 12px;
       background: rgba(30, 35, 45, 0.9);
-      padding: 5px 20px;
+      padding: 5px 16px;
       border-radius: 40px;
       border: 1px solid rgba(212, 175, 55, 0.3);
-      margin-left: auto;
+      cursor: pointer;
+      transition: 0.2s;
     }
+
+    .nav-user:hover {
+      border-color: #d4af37;
+      transform: scale(1.02);
+    }
+
     .nav-avatar {
-      width: 32px;
-      height: 32px;
+      width: 30px;
+      height: 30px;
       border-radius: 50%;
       border: 2px solid #d4af37;
     }
+
     .nav-user span {
       color: #e8e8e8;
       font-weight: 500;
       font-size: 13px;
     }
+
     .back-btn {
       background: #d4af37;
       border: none;
@@ -141,7 +157,9 @@
       color: #0f121a;
       font-weight: bold;
       transition: 0.2s;
+      margin-left: 8px;
     }
+
     .back-btn:hover {
       transform: scale(1.02);
     }
