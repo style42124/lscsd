@@ -6,7 +6,7 @@
   let allApplications = [];
   let currentFilter = 'all';
 
-  // Preloader (аналогичный index.html)
+  // Preloader
   let progress = 0;
   const progressBar = document.getElementById('preloaderProgress');
   const interval = setInterval(() => {
