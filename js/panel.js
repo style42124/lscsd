@@ -197,6 +197,7 @@
     const container = document.getElementById('usersGrid');
     const searchTerm = document.getElementById('userSearch')?.value.toLowerCase() || '';
     if (!container) return;
+    
     const roleLevels = {1:'Младший состав',2:'Dep.Head',3:'Head',4:'Curator',5:'Assist Sheriff',6:'SK/Dep.SK',7:'UnderSheriff',8:'Sheriff',9:'Разработчик'};
     let usersList = Object.keys(allUsers).map(id => ({ id, role: allUsers[id] }));
     usersList = usersList.filter(u => u.id.toLowerCase().includes(searchTerm));
