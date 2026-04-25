@@ -35,13 +35,11 @@
     .search-box{width:100%;max-width:400px;margin:0 auto 20px;}
     .search-box input{width:100%;padding:10px 15px;background:#0f121a;border:1px solid rgba(212,175,55,0.3);border-radius:30px;color:#e8e8e8;}
     .users-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(350px,1fr));gap:20px;margin-top:20px;}
-    .user-card{background:rgba(20,25,35,0.7);border-radius:20px;padding:18px;border:1px solid rgba(212,175,55,0.3);position:relative;}
+    .user-card{background:rgba(20,25,35,0.7);border-radius:20px;padding:18px;border:1px solid rgba(212,175,55,0.3);display:flex;align-items:center;justify-content:space-between;}
     .user-card:hover{border-color:#d4af37;}
-    .user-actions{position:absolute;top:15px;right:15px;}
+    .user-info{display:flex;align-items:center;gap:12px;}
     .user-actions button{background:none;border:none;color:#d4af37;font-size:18px;cursor:pointer;}
-    .user-menu{display:none;position:absolute;top:40px;right:0;background:#1a1f2a;border-radius:15px;padding:10px;min-width:200px;z-index:100;border:1px solid #d4af37;}
-    .user-menu button,.user-menu select{width:100%;margin:5px 0;padding:8px;text-align:left;background:#0f121a;border:1px solid #d4af37;border-radius:8px;color:#e8e8e8;cursor:pointer;}
-    .user-menu button:hover{background:rgba(212,175,55,0.2);}
+    .user-actions button:hover{color:#f5e7a3;}
     .user-role-tag{padding:4px 10px;border-radius:20px;font-size:12px;display:inline-block;margin-top:8px;}
     .role-1{background:#2c3e50;}
     .role-2,.role-3,.role-4,.role-5{background:#16a085;}
@@ -61,13 +59,15 @@
     @keyframes slideIn{from{transform:translateX(400px);opacity:0;}to{transform:translateX(0);opacity:1;}}
     @keyframes fadeOut{to{opacity:0;visibility:hidden;}}
     .btn-primary{background:#d4af37;border:none;padding:8px 16px;border-radius:20px;cursor:pointer;color:#0f121a;font-weight:bold;}
-    .review-modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);z-index:2000;display:flex;justify-content:center;align-items:center;}
-    .review-content{background:linear-gradient(145deg,#1a1f2a,#0f121a);border-radius:20px;max-width:500px;width:90%;padding:25px;border:1px solid #d4af37;}
-    .review-content select,.review-content textarea{width:100%;margin:10px 0;padding:10px;background:#0f121a;border:1px solid #d4af37;border-radius:12px;color:#e8e8e8;}
+    .review-modal,.user-modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);z-index:2000;display:flex;justify-content:center;align-items:center;}
+    .review-content,.user-content{background:linear-gradient(145deg,#1a1f2a,#0f121a);border-radius:20px;max-width:500px;width:90%;padding:25px;border:1px solid #d4af37;}
+    .review-content select,.review-content textarea,.user-content select,.user-content textarea{width:100%;margin:10px 0;padding:10px;background:#0f121a;border:1px solid #d4af37;border-radius:12px;color:#e8e8e8;}
     .preloader{position:fixed;top:0;left:0;width:100%;height:100%;background:#0a0c10;z-index:10000;display:flex;justify-content:center;align-items:center;flex-direction:column;}
     .preloader-logo{font-size:1.8rem;font-family:'Orbitron';background:linear-gradient(135deg,#d4af37,#f5e7a3);-webkit-background-clip:text;background-clip:text;color:transparent;}
     .preloader-progress{width:240px;height:2px;background:rgba(212,175,55,0.2);border-radius:10px;margin-top:15px;overflow:hidden;}
     .preloader-progress-bar{width:0%;height:100%;background:linear-gradient(90deg,#d4af37,#f5e7a3);transition:width 0.1s;}
+    .flex-buttons{display:flex;gap:10px;margin-top:15px;}
+    .btn-cancel{background:#ff6b6b;border:none;padding:8px 16px;border-radius:20px;cursor:pointer;color:white;}
   </style>
 </head>
 <body>
@@ -102,7 +102,7 @@
       <button class="tab-btn" data-tab="applications">Заявки</button>
     </div>
     <div id="users-tab" class="tab-content active">
-      <div class="search-box"><input type="text" id="userSearch" placeholder="Поиск по ID или имени..."></div>
+      <div class="search-box"><input type="text" id="userSearch" placeholder="Поиск по ID..."></div>
       <div class="users-grid" id="usersGrid"></div>
     </div>
     <div id="applications-tab" class="tab-content">
