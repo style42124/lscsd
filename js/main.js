@@ -174,7 +174,7 @@
     }
   }
 
-  function checkAuth() {
+    function checkAuth() {
     var user = localStorage.getItem('lscsd_user');
     if (user) {
       currentUser = JSON.parse(user);
@@ -184,60 +184,25 @@
       document.getElementById('navUser').style.display = 'flex';
       document.getElementById('navName').innerText = currentUser.username;
       if (currentUser.avatar) document.getElementById('navAvatar').src = currentUser.avatar;
-      loadUserRoleFromServer().then(role => {
+      loadUserRoleFromServer().then(function(role) {
         renderCards();
         renderHistory();
         renderStats();
+        // Показываем кнопку панели ВСЕМ авторизованным (уровень 1+)
         var panelContainer = document.getElementById('panelBtnContainer');
         var panelBtn = document.getElementById('panelBtn');
-        if (panelContainer && panelBtn && role && (role.level >= 7 || role.level === 9)) {
+        if (panelContainer && panelBtn) {
           panelContainer.style.display = 'flex';
-          panelBtn.onclick = () => window.location.href = '/lscsd/panel.html';
+          panelBtn.onclick = function() { window.location.href = '/lscsd/panel.html'; };
         }
       });
-    } else {
-      document.getElementById('authContainer').style.display = 'flex';
-      document.getElementById('mainContainer').style.display = 'none';
-      document.getElementById('navUser').style.display = 'none';
-      handleAuthCallback();
+    } else { 
+      document.getElementById('authContainer').style.display = 'flex'; 
+      document.getElementById('mainContainer').style.display = 'none'; 
+      document.getElementById('navUser').style.display = 'none'; 
+      handleAuthCallback(); 
     }
   }
-
-  document.getElementById('authBtn').onclick = () => window.location.href = 'https://discord.com/api/oauth2/authorize?client_id='+DISCORD_CLIENT_ID+'&redirect_uri='+encodeURIComponent(REDIRECT_URI)+'&response_type=token&scope=identify';
-  document.getElementById('settingsLogoutBtn').onclick = () => { localStorage.removeItem('lscsd_user'); location.reload(); };
-
-  var settingsPanel = document.getElementById('settingsPanel');
-  document.getElementById('navUser').onclick = e => { e.stopPropagation(); settingsPanel.classList.toggle('open'); };
-  document.getElementById('closeSettings').onclick = () => settingsPanel.classList.remove('open');
-  document.onclick = e => { if (!settingsPanel.contains(e.target) && !document.getElementById('navUser').contains(e.target)) settingsPanel.classList.remove('open'); };
-
-  if (document.getElementById('themeSwitch')) {
-    document.getElementById('themeSwitch').onclick = function() {
-      if (document.body.classList.contains('light')) { document.body.classList.remove('light'); localStorage.setItem('lscsd_theme','dark'); this.classList.remove('active'); }
-      else { document.body.classList.add('light'); localStorage.setItem('lscsd_theme','light'); this.classList.add('active'); }
-    };
-  }
-  if (document.getElementById('autoFillSwitch')) {
-    document.getElementById('autoFillSwitch').onclick = function() {
-      autoFillEnabled = !autoFillEnabled;
-      localStorage.setItem('lscsd_autofill', autoFillEnabled);
-      this.classList.toggle('active', autoFillEnabled);
-      showNotification(autoFillEnabled ? 'Автозаполнение включено' : 'Автозаполнение выключено', 'info');
-    };
-  }
-
-  document.getElementById('historySearch')?.addEventListener('input', () => renderHistory());
-  var tabBtns = document.querySelectorAll('.tab-btn');
-  tabBtns.forEach(btn => {
-    btn.onclick = function() {
-      tabBtns.forEach(b => b.classList.remove('active'));
-      this.classList.add('active');
-      document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-      document.getElementById(this.dataset.tab + '-tab').classList.add('active');
-      if (this.dataset.tab === 'stats') renderStats();
-      if (this.dataset.tab === 'history') renderHistory();
-    };
-  });
 
   function renderCards() {
     var c = document.getElementById('cardsGrid');
@@ -310,22 +275,19 @@
 
   function renderDepartmentForm(container) {
     var saved = loadAutoFillData('department');
-    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Имя</label><input id="firstName" value="' + (saved.firstName || '') + '" required></div><div class="form-group"><label>Фамилия</label><input id="lastName" value="' + (saved.lastName || '') + '" required></div><div class="form-group"><label>Статик</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Ранг</label><input id="rank" value="' + (saved.rank || '') + '" required></div><div class="form-group"><label>Отдел</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department" value="' + (saved.department || '') + '"></div><div class="form-group"><label>Причина</label><textarea id="reason" rows="3" required>' + (saved.reason || '') + '</textarea></div><div class="form-group"><label>Вложения</label><input type="file" id="attachments" multiple accept="image/*,application/pdf"></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
+    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Имя</label><input id="firstName" value="' + (saved.firstName || '') + '" required></div><div class="form-group"><label>Фамилия</label><input id="lastName" value="' + (saved.lastName || '') + '" required></div><div class="form-group"><label>Статик</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Ранг</label><input id="rank" value="' + (saved.rank || '') + '" required></div><div class="form-group"><label>Отдел</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department" value="' + (saved.department || '') + '"></div><div class="form-group"><label>Причина</label><textarea id="reason" rows="3" required>' + (saved.reason || '') + '</textarea></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
     var btns = container.querySelector('#deptBtns');
-    DEPARTMENTS.forEach(d => { var btn = document.createElement('div'); btn.className = 'role-btn'; btn.textContent = d; if (saved.department === d) btn.classList.add('selected'); btn.onclick = function() { btns.querySelectorAll('.role-btn').forEach(b => b.classList.remove('selected')); btn.classList.add('selected'); document.getElementById('department').value = d; }; btns.appendChild(btn); });
-    var attachments = [];
-    var fileInput = container.querySelector('#attachments');
-    fileInput.onchange = e => { attachments = Array.from(e.target.files); createFilePreview(container, attachments, 'attachments'); };
-    container.querySelector('#formEl').onsubmit = e => {
+    DEPARTMENTS.forEach(function(d) { var btn = document.createElement('div'); btn.className = 'role-btn'; btn.textContent = d; if (saved.department === d) btn.classList.add('selected'); btn.onclick = function() { btns.querySelectorAll('.role-btn').forEach(function(b){ b.classList.remove('selected'); }); btn.classList.add('selected'); document.getElementById('department').value = d; }; btns.appendChild(btn); });
+    container.querySelector('#formEl').onsubmit = function(e) {
       e.preventDefault();
       var btn = document.getElementById('submitBtn');
       if (btn.disabled) return;
       btn.disabled = true;
       btn.textContent = 'Отправка...';
-      var data = { firstName:document.getElementById('firstName').value, lastName:document.getElementById('lastName').value, staticc:document.getElementById('staticc').value, rank:document.getElementById('rank').value, department:document.getElementById('department').value, reason:document.getElementById('reason').value, attachments };
+      var data = { firstName:document.getElementById('firstName').value, lastName:document.getElementById('lastName').value, staticc:document.getElementById('staticc').value, rank:document.getElementById('rank').value, department:document.getElementById('department').value, reason:document.getElementById('reason').value };
       if(!data.department){ showError(container,'Выберите отдел'); btn.disabled = false; btn.textContent = 'Отправить'; return; }
       saveAutoFillData({ firstName:data.firstName, lastName:data.lastName, staticc:data.staticc, rank:data.rank, department:data.department, reason:data.reason }, 'department');
-      callAPI('submit_department', data, true).then(r => { if(r.success) document.getElementById('modal').style.display='none'; setTimeout(() => { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); }).catch(() => { setTimeout(() => { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); });
+      callAPI('submit_department', data, false).then(function(r){ if(r.success) document.getElementById('modal').style.display='none'; setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); }).catch(function() { setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); });
     };
   }
 
