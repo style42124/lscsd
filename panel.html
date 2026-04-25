@@ -77,16 +77,16 @@
 
     /* NAVBAR - ТОЧНО КАК НА ГЛАВНОМ САЙТЕ */
     .navbar {
-      background: rgba(13, 17, 23, 0.95);
-      backdrop-filter: blur(20px);
-      border-bottom: 1px solid rgba(212, 175, 55, 0.2);
-      padding: 12px 35px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 15px;
-    }
+     background: rgba(13, 17, 23, 0.95);
+     backdrop-filter: blur(20px);
+     border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+     padding: 12px 35px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: nowrap;  /* 👈 ЭТО ЗАПРЕЩАЕТ ПЕРЕНОС НА НОВУЮ СТРОКУ */
+    gap: 15px;
+}
 
     .nav-brand {
       display: flex;
@@ -119,16 +119,17 @@
     }
 
     .nav-user {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      background: rgba(30, 35, 45, 0.9);
-      padding: 5px 16px;
-      border-radius: 40px;
-      border: 1px solid rgba(212, 175, 55, 0.3);
-      cursor: pointer;
-      transition: 0.2s;
-    }
+     display: flex;
+     align-items: center;
+     gap: 12px;
+     background: rgba(30, 35, 45, 0.9);
+     padding: 5px 16px;
+     border-radius: 40px;
+     border: 1px solid rgba(212, 175, 55, 0.3);
+     cursor: pointer;
+     transition: 0.2s;
+    margin-left: auto;  /* 👈 ЭТО ПРИЖИМАЕТ БЛОК ВПРАВО */
+}
 
     .nav-user:hover {
       border-color: #d4af37;
