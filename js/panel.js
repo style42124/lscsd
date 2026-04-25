@@ -1,596 +1,406 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>LSCSD — Панель управления</title>
-  <link rel="icon" type="image/png" href="/lscsd/file.png">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+(function() {
+  const PROXY_URL = 'https://cs324022.tw1.ru/index.php';
+  let currentUser = null;
+  let currentUserRole = null;
+  let allUsers = {};
+  let allApplications = [];
+  let currentFilter = 'all';
 
-    body {
-      font-family: 'Inter', sans-serif;
-      background: #0a0c10;
-      min-height: 100vh;
+  // Preloader
+  let progress = 0;
+  const progressBar = document.getElementById('preloaderProgress');
+  const interval = setInterval(() => {
+    progress += Math.floor(Math.random() * 10) + 5;
+    if (progress > 100) progress = 100;
+    if (progressBar) progressBar.style.width = progress + '%';
+    if (progress >= 100) {
+      clearInterval(interval);
+      setTimeout(() => {
+        const preloader = document.getElementById('preloader');
+        if (preloader) {
+          preloader.style.opacity = '0';
+          setTimeout(() => {
+            preloader.style.display = 'none';
+            const app = document.getElementById('app');
+            if (app) app.style.display = 'flex';
+          }, 500);
+        }
+      }, 500);
     }
+  }, 80);
+  setTimeout(() => {
+    const preloader = document.getElementById('preloader');
+    if (preloader && preloader.style.display !== 'none') {
+      preloader.style.display = 'none';
+      document.getElementById('app').style.display = 'flex';
+    }
+  }, 5000);
 
-    /* PRELOADER */
-    .preloader {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: #0a0c10;
-      z-index: 10000;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-    }
-    .badge-container {
-      position: relative;
-      width: 200px;
-      height: 200px;
-      margin-bottom: 30px;
-      animation: badgeGlow 1.5s ease-in-out infinite;
-    }
-    .badge-star {
-      position: absolute;
-      width: 200px;
-      height: 200px;
-      background: linear-gradient(145deg, #d4af37, #b8962a);
-      clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
-      animation: badgeSpin 2s ease-in-out infinite;
-    }
-    .badge-inner {
-      position: absolute;
-      top: 25px;
-      left: 25px;
-      width: 150px;
-      height: 150px;
-      background: linear-gradient(135deg, #1a1a2e, #0f121a);
-      clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
-    }
-    .badge-text {
-      position: absolute;
-      top: 60px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-family: 'Orbitron', monospace;
-      font-size: 14px;
-      font-weight: 800;
-      color: #d4af37;
-      text-align: center;
-      letter-spacing: 2px;
-    }
-    .badge-text span {
-      font-size: 10px;
-      display: block;
-      margin-top: 5px;
-    }
-    .siren-glow {
-      position: absolute;
-      top: -20px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      gap: 15px;
-    }
-    .siren-glow-light {
-      width: 20px;
-      height: 20px;
-      background: #ff0000;
-      border-radius: 50%;
-      animation: sirenPulse 0.4s infinite;
-      box-shadow: 0 0 15px #ff0000;
-    }
-    .siren-glow-light:nth-child(2) {
-      background: #0066ff;
-      animation-delay: 0.2s;
-      box-shadow: 0 0 15px #0066ff;
-    }
-    @keyframes badgeGlow {
-      0%, 100% { filter: drop-shadow(0 0 5px #d4af37); }
-      50% { filter: drop-shadow(0 0 25px #d4af37); }
-    }
-    @keyframes badgeSpin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    @keyframes sirenPulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.5; transform: scale(1.3); }
-    }
-    .orbiting-particle {
-      position: absolute;
-      width: 6px;
-      height: 6px;
-      background: #d4af37;
-      border-radius: 50%;
-    }
-    .particle1 { top: -30px; left: 50%; animation: orbit1 2s linear infinite; }
-    .particle2 { top: 50%; right: -30px; animation: orbit2 2s linear infinite; }
-    .particle3 { bottom: -30px; left: 50%; animation: orbit3 2s linear infinite; }
-    .particle4 { top: 50%; left: -30px; animation: orbit4 2s linear infinite; }
-    @keyframes orbit1 {
-      0% { transform: translate(0, 0); opacity: 1; }
-      50% { transform: translate(30px, 30px); opacity: 0.5; }
-      100% { transform: translate(0, 0); opacity: 1; }
-    }
-    @keyframes orbit2 {
-      0% { transform: translate(0, 0); opacity: 1; }
-      50% { transform: translate(-30px, 30px); opacity: 0.5; }
-      100% { transform: translate(0, 0); opacity: 1; }
-    }
-    @keyframes orbit3 {
-      0% { transform: translate(0, 0); opacity: 1; }
-      50% { transform: translate(-30px, -30px); opacity: 0.5; }
-      100% { transform: translate(0, 0); opacity: 1; }
-    }
-    @keyframes orbit4 {
-      0% { transform: translate(0, 0); opacity: 1; }
-      50% { transform: translate(30px, -30px); opacity: 0.5; }
-      100% { transform: translate(0, 0); opacity: 1; }
-    }
-    .preloader-logo {
-      font-size: 1.8rem;
-      font-weight: 800;
-      font-family: 'Orbitron', monospace;
-      letter-spacing: 6px;
-      background: linear-gradient(135deg, #d4af37, #f5e7a3);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-      margin-top: 20px;
-      opacity: 0;
-      animation: fadeInText 0.8s 1s forwards;
-    }
-    .preloader-text {
-      color: #6b6f78;
-      font-size: 0.75rem;
-      margin-top: 10px;
-      opacity: 0;
-      animation: fadeInText 0.8s 1.2s forwards;
-    }
-    .preloader-progress {
-      width: 240px;
-      height: 2px;
-      background: rgba(212, 175, 55, 0.2);
-      border-radius: 10px;
-      margin-top: 15px;
-      overflow: hidden;
-      opacity: 0;
-      animation: fadeInText 0.8s 1.4s forwards;
-    }
-    .preloader-progress-bar {
-      width: 0%;
-      height: 100%;
-      background: linear-gradient(90deg, #d4af37, #f5e7a3);
-      transition: width 0.1s linear;
-    }
-    @keyframes fadeInText {
-      0% { opacity: 0; transform: translateY(10px); }
-      100% { opacity: 1; transform: translateY(0); }
-    }
+  function showNotification(msg, type) {
+    const div = document.createElement('div');
+    div.className = 'notification';
+    div.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'}"></i> ${msg}`;
+    document.body.appendChild(div);
+    setTimeout(() => div.remove(), 3000);
+  }
 
-    /* NAVBAR */
-    .navbar {
-      background: rgba(13, 17, 23, 0.95);
-      backdrop-filter: blur(20px);
-      border-bottom: 1px solid rgba(212, 175, 55, 0.2);
-      padding: 12px 35px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .nav-brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      cursor: pointer;
-    }
-    .nav-logo {
-      width: 40px;
-      height: 40px;
-      background: linear-gradient(145deg, #d4af37, #b8962a);
-      clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
-    }
-    .nav-title-main {
-      font-size: 1.2rem;
-      font-weight: 800;
-      font-family: 'Orbitron';
-      background: linear-gradient(135deg, #d4af37, #f5e7a3);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-    }
-    .nav-title-sub {
-      font-size: 0.55rem;
-      color: #6b6f78;
-      display: block;
-    }
-    .nav-user {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      background: rgba(30, 35, 45, 0.9);
-      padding: 5px 16px;
-      border-radius: 40px;
-      border: 1px solid rgba(212, 175, 55, 0.3);
-    }
-    .nav-avatar {
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      border: 2px solid #d4af37;
-    }
-    .nav-user span {
-      color: #e8e8e8;
-      font-weight: 500;
-      font-size: 13px;
-    }
-    .back-btn {
-      background: #d4af37;
-      border: none;
-      padding: 5px 12px;
-      border-radius: 20px;
-      cursor: pointer;
-      color: #0f121a;
-      font-weight: bold;
-      margin-left: 10px;
-    }
+  function loadUserRole() {
+    return fetch(PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'get_user_role', data: { userId: currentUser.id } })
+    }).then(r => r.json()).then(res => {
+      if (res.success) {
+        currentUserRole = res.role;
+        document.getElementById('userRoleBadge').innerText = currentUserRole.name || 'Младший состав';
+        return currentUserRole;
+      }
+      return null;
+    });
+  }
 
-    /* AUTH */
-    .auth-container {
-      flex: 1;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 40px;
-    }
-    .auth-card {
-      background: rgba(20, 25, 35, 0.95);
-      backdrop-filter: blur(20px);
-      border: 1px solid rgba(212, 175, 55, 0.3);
-      border-radius: 35px;
-      padding: 40px;
-      text-align: center;
-      max-width: 420px;
-      width: 100%;
-    }
-    .auth-icon {
-      font-size: 3.2rem;
-      color: #5865F2;
-    }
-    .auth-title {
-      font-size: 1.6rem;
-      font-family: 'Orbitron';
-      background: linear-gradient(135deg, #d4af37, #f5e7a3);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-      margin: 10px 0;
-    }
-    .auth-btn {
-      background: linear-gradient(135deg, #5865F2, #4752c4);
-      border: none;
-      padding: 12px 28px;
-      border-radius: 40px;
-      color: white;
-      cursor: pointer;
-      font-weight: 600;
-    }
+  function loadAllUsers() {
+    return fetch(PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'get_all_users_roles' })
+    }).then(r => r.json()).then(res => {
+      if (res.success) {
+        allUsers = res.users;
+        renderUsers();
+      }
+    });
+  }
 
-    /* MAIN */
-    .main-container {
-      flex: 1;
-      padding: 30px;
-    }
-    .dashboard-header {
-      text-align: center;
-      margin-bottom: 35px;
-    }
-    .dashboard-title {
-      font-size: 1.8rem;
-      font-family: 'Orbitron';
-      color: #d4af37;
-    }
-    .tabs {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      margin-bottom: 30px;
-    }
-    .tab-btn {
-      background: rgba(20, 25, 35, 0.7);
-      border: 1px solid rgba(212, 175, 55, 0.3);
-      border-radius: 30px;
-      padding: 10px 25px;
-      cursor: pointer;
-      color: #e8e8e8;
-    }
-    .tab-btn.active {
-      background: #d4af37;
-      color: #0f121a;
-    }
-    .tab-content {
-      display: none;
-    }
-    .tab-content.active {
-      display: block;
-    }
-    .search-box {
-      max-width: 400px;
-      margin: 0 auto 20px;
-    }
-    .search-box input {
-      width: 100%;
-      padding: 10px 15px;
-      background: #0f121a;
-      border: 1px solid rgba(212, 175, 55, 0.3);
-      border-radius: 30px;
-      color: #e8e8e8;
-    }
-    .users-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-      gap: 20px;
-      margin-top: 20px;
-    }
-    .user-card {
-      background: rgba(20, 25, 35, 0.7);
-      border-radius: 20px;
-      padding: 18px;
-      border: 1px solid rgba(212, 175, 55, 0.3);
-      transition: 0.2s;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .user-card:hover {
-      border-color: #d4af37;
-    }
-    .user-info {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-    }
-    .badge-icon {
-      width: 40px;
-      height: 40px;
-      background: linear-gradient(135deg, #d4af37, #b8962a);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-      color: #0f121a;
-    }
-    .user-role-tag {
-      padding: 4px 10px;
-      border-radius: 20px;
-      font-size: 12px;
-      display: inline-block;
-      margin-top: 8px;
-    }
-    .role-1 { background: #2c3e50; color: white; }
-    .role-2, .role-3, .role-4, .role-5 { background: #16a085; color: white; }
-    .role-6 { background: #8e44ad; color: white; }
-    .role-7, .role-8, .role-9 { background: #c0392b; color: white; }
-    .user-actions button {
-      background: none;
-      border: none;
-      color: #d4af37;
-      font-size: 1.2rem;
-      cursor: pointer;
-    }
-    .app-list {
-      max-height: 500px;
-      overflow-y: auto;
-    }
-    .app-item {
-      background: rgba(20, 25, 35, 0.5);
-      border-radius: 12px;
-      padding: 12px;
-      margin-bottom: 10px;
-      border-left: 3px solid #d4af37;
-      cursor: pointer;
-    }
-    .app-item:hover {
-      background: rgba(212, 175, 55, 0.1);
-    }
-    .app-status-pending { border-left-color: #ffa500; }
-    .app-status-approved { border-left-color: #6bcf7f; }
-    .app-status-rejected { border-left-color: #ff6b6b; }
-    .filters {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-    .filter-btn {
-      background: rgba(20, 25, 35, 0.7);
-      border: 1px solid rgba(212, 175, 55, 0.3);
-      border-radius: 20px;
-      padding: 8px 16px;
-      cursor: pointer;
-      color: #e8e8e8;
-    }
-    .filter-btn.active {
-      background: #d4af37;
-      color: #0f121a;
-    }
-    .review-modal, .role-modal {
-      display: none;
-      position: fixed;
-      z-index: 2000;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.95);
-      justify-content: center;
-      align-items: center;
-    }
-    .review-content {
-      background: linear-gradient(145deg, #1a1f2a, #0f121a);
-      border-radius: 20px;
-      max-width: 500px;
-      width: 90%;
-      padding: 25px;
-      border: 1px solid #d4af37;
-    }
-    .role-select, .dept-select {
-      width: 100%;
-      padding: 10px;
-      background: #0f121a;
-      border: 1px solid rgba(212, 175, 55, 0.3);
-      border-radius: 12px;
-      color: #e8e8e8;
-      margin: 10px 0;
-    }
-    .btn-primary {
-      background: #d4af37;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 30px;
-      cursor: pointer;
-      margin: 5px;
-      font-weight: bold;
-      color: #0f121a;
-    }
-    .btn-danger {
-      background: #ff6b6b;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 30px;
-      cursor: pointer;
-      color: white;
-    }
-    .flex-buttons {
-      display: flex;
-      gap: 10px;
-      margin-top: 15px;
-      flex-wrap: wrap;
-    }
-  </style>
-</head>
-<body>
+  function loadApplications() {
+    return fetch(PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'get_applications',
+        data: {
+          userId: currentUser.id,
+          userRole: currentUserRole ? currentUserRole.level : 1,
+          userDept: currentUserRole ? (currentUserRole.department || '') : ''
+        }
+      })
+    }).then(r => r.json()).then(res => {
+      if (res.success) {
+        allApplications = res.applications || [];
+        renderApplications();
+      }
+    });
+  }
 
-<div class="preloader" id="preloader">
-  <div class="badge-container">
-    <div class="siren-glow"><div class="siren-glow-light"></div><div class="siren-glow-light"></div></div>
-    <div class="badge-star"></div><div class="badge-inner"></div>
-    <div class="badge-text">LSCSD<br><span>PANEL ADMIN</span></div>
-  </div>
-  <div class="preloader-logo">УПРАВЛЕНИЕ</div>
-  <div class="preloader-text">Загрузка панели...</div>
-  <div class="preloader-progress"><div class="preloader-progress-bar" id="preloaderProgress"></div></div>
-</div>
+  function performAction(action, targetUserId, extra = {}) {
+    const data = { targetUserId, executorId: currentUser.id, ...extra };
+    return fetch(PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, data })
+    }).then(r => r.json()).then(res => {
+      if (res.success) {
+        showNotification('✅ Операция выполнена!', 'success');
+        loadAllUsers();
+        loadApplications();
+      } else {
+        showNotification(res.error || '❌ Ошибка', 'error');
+      }
+    });
+  }
 
-<div class="app" id="app" style="display: none;">
-  <nav class="navbar">
-    <div class="nav-brand"><div class="nav-logo"></div><div><span class="nav-title-main">LSCSD PANEL</span><span class="nav-title-sub">УПРАВЛЕНИЕ ПЕРСОНАЛОМ</span></div></div>
-    <div class="nav-user" id="navUser">
-      <img id="navAvatar" class="nav-avatar"><span id="navName"></span>
-      <span id="userRoleBadge" style="background:#d4af37;color:#0f121a;padding:2px 8px;border-radius:20px;font-size:12px;"></span>
-      <button class="back-btn" id="backToMainBtn"><i class="fas fa-home"></i> На главную</button>
-    </div>
-  </nav>
+  function setUserRole(targetUserId, level, department) {
+    const levelNames = {1:'Младший состав',2:'Dep.Head',3:'Head',4:'Curator',5:'Assist Sheriff',6:'SK/Dep.SK',7:'UnderSheriff',8:'Sheriff',9:'Разработчик'};
+    return performAction('set_user_role', targetUserId, { level, department, roleName: levelNames[level] });
+  }
 
-  <div class="auth-container" id="authContainer">
-    <div class="auth-card">
-      <div class="auth-icon"><i class="fab fa-discord"></i></div>
-      <h1 class="auth-title">Панель управления</h1>
-      <p style="color:#9ca3af;margin-bottom:25px;">Авторизуйтесь через Discord</p>
-      <button class="auth-btn" id="authBtn"><i class="fab fa-discord"></i> Войти через Discord</button>
-    </div>
-  </div>
+  function banUser(targetUserId) { return performAction('ban_user', targetUserId); }
+  function unbanUser(targetUserId) { return performAction('unban_user', targetUserId); }
+  function tempBanUser(targetUserId, hours = 1) { return performAction('temp_ban_user', targetUserId, { hours }); }
+  function excludeFromDuty(targetUserId) { return performAction('exclude_from_duty', targetUserId); }
+  function includeToDuty(targetUserId) { return performAction('include_to_duty', targetUserId); }
 
-  <div class="main-container" id="mainContainer" style="display: none;">
-    <div class="dashboard-header"><h1 class="dashboard-title"><i class="fas fa-users-cog"></i> Управление отделом</h1></div>
-    
-    <div class="tabs">
-      <button class="tab-btn active" data-tab="users">👥 Сотрудники</button>
-      <button class="tab-btn" data-tab="applications">📋 Заявки</button>
-    </div>
-    
-    <div id="users-tab" class="tab-content active">
-      <div class="search-box"><input type="text" id="userSearch" placeholder="🔍 Поиск по имени или ID..."></div>
-      <div class="users-grid" id="usersGrid"></div>
-    </div>
-    
-    <div id="applications-tab" class="tab-content">
-      <div class="filters" id="appFilters">
-        <button class="filter-btn active" data-filter="all">Все заявки</button>
-        <button class="filter-btn" data-filter="pending">На рассмотрении</button>
-        <button class="filter-btn" data-filter="approved">Одобренные</button>
-        <button class="filter-btn" data-filter="rejected">Отклоненные</button>
+  function reviewApplication(appId, status, comment, appData, appType) {
+    return fetch(PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'review_application',
+        data: {
+          applicationId: appId,
+          status,
+          comment,
+          reviewer: currentUser.id,
+          reviewerRole: currentUserRole ? currentUserRole.name : '',
+          applicationType: appType,
+          applicationData: appData
+        }
+      })
+    }).then(r => r.json()).then(res => {
+      if (res.success) showNotification('✅ Решение отправлено!', 'success');
+      else showNotification('❌ Ошибка', 'error');
+      return res;
+    });
+  }
+
+  function openUserModal(userId, userRole) {
+    const modalDiv = document.createElement('div');
+    modalDiv.className = 'review-modal';
+    modalDiv.style.display = 'flex';
+    modalDiv.innerHTML = `
+      <div class="review-content">
+        <h3 style="color:#d4af37;"><i class="fas fa-user-cog"></i> Управление пользователем: ${userId}</h3>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin:10px 0;">
+          <button id="userBanBtn" class="btn-primary">🔨 Забанить</button>
+          <button id="userUnbanBtn" class="btn-primary">🔓 Разбанить</button>
+          <button id="userTempBanBtn" class="btn-primary">⏱ Бан на 1 час</button>
+          <button id="userExcludeBtn" class="btn-primary">🚫 Исключить</button>
+          <button id="userIncludeBtn" class="btn-primary">✅ Включить</button>
+        </div>
+        <select id="userRankSelect" class="role-select">
+          <option value="1">Младший состав</option><option value="2">Dep.Head</option><option value="3">Head</option>
+          <option value="4">Curator</option><option value="5">Assist Sheriff</option><option value="6">SK/Dep.SK</option>
+          <option value="7">UnderSheriff</option><option value="8">Sheriff</option><option value="9">Разработчик</option>
+        </select>
+        <button id="userSetRankBtn" class="btn-primary">Назначить ранг</button>
+        <select id="userDeptSelect" class="dept-select">
+          <option value="">Без отдела</option><option value="SAI">SAI</option><option value="GU">GU</option>
+          <option value="AF">AF</option><option value="IAD">IAD</option><option value="SEB">SEB</option>
+          <option value="K9">K-9</option><option value="DID">DID</option><option value="MED">MED</option>
+          <option value="SPD">SPD</option><option value="HS">High Staff</option>
+        </select>
+        <button id="userSetDeptBtn" class="btn-primary">Назначить отдел</button>
+        <div style="display:flex; gap:10px; margin-top:20px;">
+          <button id="userModalCloseBtn" class="btn-danger">Закрыть</button>
+        </div>
       </div>
-      <div class="app-list" id="applicationsList"></div>
-    </div>
-  </div>
-</div>
+    `;
+    document.body.appendChild(modalDiv);
+    document.getElementById('userRankSelect').value = userRole.level || 1;
+    document.getElementById('userDeptSelect').value = userRole.department || '';
+    document.getElementById('userBanBtn').onclick = () => { banUser(userId); modalDiv.remove(); };
+    document.getElementById('userUnbanBtn').onclick = () => { unbanUser(userId); modalDiv.remove(); };
+    document.getElementById('userTempBanBtn').onclick = () => { tempBanUser(userId, 1); modalDiv.remove(); };
+    document.getElementById('userExcludeBtn').onclick = () => { excludeFromDuty(userId); modalDiv.remove(); };
+    document.getElementById('userIncludeBtn').onclick = () => { includeToDuty(userId); modalDiv.remove(); };
+    document.getElementById('userSetRankBtn').onclick = () => {
+      const level = parseInt(document.getElementById('userRankSelect').value);
+      setUserRole(userId, level, userRole.department);
+      modalDiv.remove();
+    };
+    document.getElementById('userSetDeptBtn').onclick = () => {
+      const dept = document.getElementById('userDeptSelect').value || null;
+      setUserRole(userId, userRole.level, dept);
+      modalDiv.remove();
+    };
+    document.getElementById('userModalCloseBtn').onclick = () => modalDiv.remove();
+  }
 
-<div class="review-modal" id="reviewModal">
-  <div class="review-content">
-    <h3 style="color:#d4af37;margin-bottom:15px;"><i class="fas fa-gavel"></i> Рассмотрение заявки</h3>
-    <div id="reviewAppData"></div>
-    <select id="reviewStatus" style="width:100%;padding:10px;margin:10px 0;background:#0f121a;border:1px solid #d4af37;border-radius:12px;color:#e8e8e8;">
-      <option value="approved">✅ Одобрить</option>
-      <option value="rejected">❌ Отклонить</option>
-    </select>
-    <textarea id="reviewComment" rows="3" placeholder="Комментарий..." style="width:100%;padding:10px;background:#0f121a;border:1px solid #d4af37;border-radius:12px;color:#e8e8e8;"></textarea>
-    <div class="flex-buttons">
-      <button id="submitReviewBtn" class="btn-primary" style="flex:1;">Отправить решение</button>
-      <button id="closeReviewBtn" class="btn-danger" style="flex:1;">Отмена</button>
-    </div>
-  </div>
-</div>
+  function renderUsers() {
+    const container = document.getElementById('usersGrid');
+    const searchTerm = document.getElementById('userSearch')?.value.toLowerCase() || '';
+    if (!container) return;
 
-<div class="role-modal" id="roleModal">
-  <div class="review-content">
-    <h3 style="color:#d4af37;"><i class="fas fa-user-tag"></i> Назначение роли</h3>
-    <p id="roleTargetName" style="margin:10px 0;"></p>
-    <select id="roleLevelSelect" class="role-select">
-      <option value="1">Младший состав</option>
-      <option value="2">Dep.Head (старший состав)</option>
-      <option value="3">Head (старший состав)</option>
-      <option value="4">Curator (старший состав)</option>
-      <option value="5">Assist Sheriff</option>
-      <option value="6">SK/Dep.SK</option>
-      <option value="7">UnderSheriff</option>
-      <option value="8">Sheriff</option>
-      <option value="9">Разработчик</option>
-    </select>
-    <select id="roleDeptSelect" class="dept-select">
-      <option value="">Без отдела</option>
-      <option value="SAI">SAI</option>
-      <option value="GU">GU</option>
-      <option value="AF">AF</option>
-      <option value="IAD">IAD</option>
-      <option value="SEB">SEB</option>
-      <option value="K9">K-9</option>
-      <option value="DID">DID</option>
-      <option value="MED">MED</option>
-      <option value="SPD">SPD</option>
-      <option value="HS">High Staff</option>
-    </select>
-    <div class="flex-buttons">
-      <button id="saveRoleBtn" class="btn-primary" style="flex:1;">Сохранить</button>
-      <button id="closeRoleBtn" class="btn-danger" style="flex:1;">Отмена</button>
-    </div>
-  </div>
-</div>
+    const roleLevels = {1:'Младший состав',2:'Dep.Head',3:'Head',4:'Curator',5:'Assist Sheriff',6:'SK/Dep.SK',7:'UnderSheriff',8:'Sheriff',9:'Разработчик'};
+    let usersList = Object.keys(allUsers).map(id => ({ id, role: allUsers[id] }));
+    usersList = usersList.filter(u => u.id.toLowerCase().includes(searchTerm));
+    container.innerHTML = '';
 
-<script src="js/panel.js"></script>
-</body>
-</html>
+    const canManage = (currentUserRole && (currentUserRole.level >= 7 || currentUserRole.level === 9));
+
+    for (const user of usersList) {
+      const card = document.createElement('div');
+      card.className = 'user-card';
+      const roleClass = 'role-' + (user.role.level || 1);
+      card.innerHTML = `
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div class="badge-icon"><i class="fab fa-discord"></i></div>
+          <div>
+            <strong>${escapeHtml(user.id)}</strong><br>
+            <span class="user-role-tag ${roleClass}">${roleLevels[user.role.level] || 'Младший состав'}</span>
+            ${user.role.department ? `<span style="margin-left:8px; color:#d4af37;">(${escapeHtml(user.role.department)})</span>` : ''}
+          </div>
+        </div>
+        ${canManage ? `<div style="margin-top:10px; text-align:right;"><button class="cog-btn" data-id="${escapeHtml(user.id)}" style="background:none; border:none; color:#d4af37; font-size:1.2rem; cursor:pointer;"><i class="fas fa-cog"></i></button></div>` : ''}
+      `;
+      container.appendChild(card);
+      if (canManage) {
+        const cogBtn = card.querySelector('.cog-btn');
+        cogBtn.onclick = () => openUserModal(user.id, user.role);
+      }
+    }
+    if (usersList.length === 0) container.innerHTML = '<div style="text-align:center; padding:20px;">Нет пользователей</div>';
+  }
+
+  function renderApplications() {
+    const container = document.getElementById('applicationsList');
+    if (!container) return;
+    let filtered = allApplications;
+    if (currentFilter === 'pending') filtered = filtered.filter(a => a.data.status === 'pending');
+    if (currentFilter === 'approved') filtered = filtered.filter(a => a.data.status === 'approved');
+    if (currentFilter === 'rejected') filtered = filtered.filter(a => a.data.status === 'rejected');
+    container.innerHTML = '';
+    if (filtered.length === 0) {
+      container.innerHTML = '<div style="text-align:center; padding:40px;">Нет заявок</div>';
+      return;
+    }
+    const typeNames = {
+      submit_department:'📋 Заявка в отдел', submit_promotion:'⭐ Повышение', submit_appeal:'⚖ Обжалование',
+      submit_workoff:'🛠 Отработка', submit_leave:'🏖 Отпуск', submit_rest:'🌴 Отдых',
+      submit_spec_request:'🔫 Спецвооружение запрос', submit_spec_receive:'📦 Получение спец',
+      submit_resignation:'📄 Увольнение'
+    };
+    for (const app of filtered) {
+      const item = document.createElement('div');
+      const statusClass = 'app-status-' + (app.data.status || 'pending');
+      item.className = `app-item ${statusClass}`;
+      const statusText = app.data.status === 'pending' ? '⏳ На рассмотрении' : (app.data.status === 'approved' ? '✅ Одобрена' : '❌ Отклонена');
+      item.innerHTML = `
+        <div style="display:flex; justify-content:space-between;">
+          <span style="font-weight:600;">${typeNames[app.data.type] || app.data.type}</span>
+          <span style="font-size:12px;">#${app.id}</span>
+        </div>
+        <div style="font-size:13px; margin:5px 0;">От: ${escapeHtml(app.data.username || app.data.userId)}</div>
+        <div>${statusText}</div>
+        <div style="font-size:11px; opacity:0.7;">${app.data.created_at || ''}</div>
+      `;
+      if (app.data.status === 'pending') {
+        let canReview = false;
+        const role = currentUserRole;
+        const isAppealWorkoff = (typeNames[app.data.type] === 'Обжалование' || typeNames[app.data.type] === 'Отработка');
+        if (role.level >= 7) canReview = true;
+        else if (role.level === 6 && (typeNames[app.data.type] === 'Спецвооружение запрос' || typeNames[app.data.type] === 'Получение спец')) canReview = true;
+        else if (role.level >= 2 && role.level <= 5 && !isAppealWorkoff && app.data.department === role.department) canReview = true;
+        if (canReview) {
+          const reviewBtn = document.createElement('button');
+          reviewBtn.textContent = 'Рассмотреть';
+          reviewBtn.className = 'btn-primary';
+          reviewBtn.style.marginTop = '8px';
+          reviewBtn.style.width = '100%';
+          reviewBtn.onclick = () => openReviewModal(app.id, app.data);
+          item.appendChild(reviewBtn);
+        }
+      }
+      container.appendChild(item);
+    }
+  }
+
+  function openReviewModal(appId, appData) {
+    const typeNames = {
+      submit_department:'Заявка в отдел', submit_promotion:'Повышение', submit_appeal:'Обжалование',
+      submit_workoff:'Отработка', submit_leave:'Отпуск', submit_rest:'Отдых',
+      submit_spec_request:'Спецвооружение запрос', submit_spec_receive:'Спецвооружение получение',
+      submit_resignation:'Увольнение'
+    };
+    const modalDiv = document.createElement('div');
+    modalDiv.className = 'review-modal';
+    modalDiv.style.display = 'flex';
+    modalDiv.innerHTML = `
+      <div class="review-content">
+        <h3 style="color:#d4af37;"><i class="fas fa-gavel"></i> Рассмотрение заявки</h3>
+        <p><strong>Тип:</strong> ${typeNames[appData.type] || appData.type}</p>
+        <p><strong>Заявитель:</strong> ${escapeHtml(appData.username || appData.userId)}</p>
+        <p><strong>Дата:</strong> ${appData.created_at || ''}</p>
+        <select id="reviewStatus" style="width:100%; padding:10px; margin:10px 0;">
+          <option value="approved">✅ Одобрить</option>
+          <option value="rejected">❌ Отклонить</option>
+        </select>
+        <textarea id="reviewComment" rows="3" placeholder="Комментарий..."></textarea>
+        <div style="display:flex; gap:10px; margin-top:15px;">
+          <button id="submitReviewBtn" class="btn-primary">Отправить решение</button>
+          <button id="closeReviewBtn" class="btn-danger">Отмена</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modalDiv);
+    document.getElementById('submitReviewBtn').onclick = () => {
+      const status = document.getElementById('reviewStatus').value;
+      const comment = document.getElementById('reviewComment').value;
+      reviewApplication(appId, status, comment, appData, typeNames[appData.type] || appData.type).then(() => {
+        modalDiv.remove();
+        loadApplications();
+      });
+    };
+    document.getElementById('closeReviewBtn').onclick = () => modalDiv.remove();
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, function(m) {
+      if (m === '&') return '&amp;';
+      if (m === '<') return '&lt;';
+      if (m === '>') return '&gt;';
+      return m;
+    });
+  }
+
+  function handleAuthCallback() {
+    const hash = window.location.hash.substring(1);
+    if (hash && hash.includes('access_token')) {
+      const params = new URLSearchParams(hash);
+      const token = params.get('access_token');
+      if (token) {
+        fetch('https://discord.com/api/users/@me', { headers: { Authorization: `Bearer ${token}` } })
+          .then(r => r.json()).then(user => {
+            localStorage.setItem('lscsd_user', JSON.stringify({ id: user.id, username: user.username, avatar: user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png` : '' }));
+            window.location.hash = '';
+            location.reload();
+          }).catch(() => showNotification('Ошибка авторизации', 'error'));
+      }
+    }
+  }
+
+  function checkAuth() {
+    const user = localStorage.getItem('lscsd_user');
+    if (user) {
+      currentUser = JSON.parse(user);
+      document.getElementById('authContainer').style.display = 'none';
+      document.getElementById('mainContainer').style.display = 'block';
+      document.getElementById('navName').innerText = currentUser.username;
+      if (currentUser.avatar) document.getElementById('navAvatar').src = currentUser.avatar;
+      loadUserRole().then(() => {
+        loadAllUsers();
+        loadApplications();
+      });
+    } else {
+      document.getElementById('authContainer').style.display = 'flex';
+      document.getElementById('mainContainer').style.display = 'none';
+      handleAuthCallback();
+    }
+  }
+
+  document.getElementById('authBtn').onclick = () => {
+    window.location.href = `https://discord.com/api/oauth2/authorize?client_id=1494686473520287774&redirect_uri=${encodeURIComponent('https://style42124.github.io/lscsd/panel.html')}&response_type=token&scope=identify`;
+  };
+  
+  // Новая кнопка «На главную»
+  document.getElementById('backToMainBtn').onclick = () => {
+    window.location.href = '/lscsd/';
+  };
+
+  document.getElementById('userSearch')?.addEventListener('input', () => renderUsers());
+
+  const tabBtns = document.querySelectorAll('.tab-btn');
+  tabBtns.forEach(btn => {
+    btn.onclick = () => {
+      tabBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+      document.getElementById(`${btn.dataset.tab}-tab`).classList.add('active');
+      if (btn.dataset.tab === 'users') renderUsers();
+      if (btn.dataset.tab === 'applications') renderApplications();
+    };
+  });
+
+  const filterBtns = document.querySelectorAll('.filter-btn');
+  filterBtns.forEach(btn => {
+    btn.onclick = () => {
+      filterBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentFilter = btn.dataset.filter;
+      renderApplications();
+    };
+  });
+
+  checkAuth();
+})();
