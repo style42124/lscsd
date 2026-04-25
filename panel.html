@@ -238,23 +238,22 @@
       align-items: center;
       gap: 15px;
     }
-    .badge-icon {
-      width: 40px;
-      height: 40px;
-      background: linear-gradient(135deg, #d4af37, #b8962a);
+    .user-avatar {
+      width: 50px;
+      height: 50px;
       border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-      color: #0f121a;
+      object-fit: cover;
+      border: 2px solid #d4af37;
+    }
+    .user-details {
+      flex: 1;
     }
     .user-role-tag {
       padding: 4px 10px;
       border-radius: 20px;
       font-size: 12px;
       display: inline-block;
-      margin-top: 8px;
+      margin-top: 6px;
     }
     .role-1 { background: #2c3e50; color: white; }
     .role-2, .role-3, .role-4, .role-5 { background: #16a085; color: white; }
@@ -310,6 +309,7 @@
       width: 100%;
       height: 100%;
       background: rgba(0, 0, 0, 0.95);
+      backdrop-filter: blur(15px);
       justify-content: center;
       align-items: center;
     }
@@ -373,23 +373,6 @@
     @keyframes fadeOut {
       to { opacity: 0; visibility: hidden; }
     }
-  body {
-    margin: 0;
-    padding: 0;
-}
-  .app {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-  .navbar {
-  margin-top: 0;         /* прижимаем к верху */
-  width: 100%;
-}
- .main-container {
-  flex: 1;
-  padding: 20px 30px;    /* отступы только внутри, не слева */
-}
   </style>
 </head>
 <body>
@@ -425,7 +408,7 @@
       <button class="tab-btn" data-tab="applications">📋 Заявки</button>
     </div>
     <div id="users-tab" class="tab-content active">
-      <div class="search-box"><input type="text" id="userSearch" placeholder="🔍 Поиск по ID..."></div>
+      <div class="search-box"><input type="text" id="userSearch" placeholder="🔍 Поиск по ID или имени..."></div>
       <div class="users-grid" id="usersGrid"></div>
     </div>
     <div id="applications-tab" class="tab-content">
@@ -471,9 +454,17 @@
       <option value="K9">K-9</option><option value="DID">DID</option><option value="MED">MED</option>
       <option value="SPD">SPD</option><option value="HS">High Staff</option>
     </select>
+    <div class="flex-buttons" id="userActionButtons">
+      <button id="banWithReasonBtn" class="btn-primary">🔨 Забанить (с причиной)</button>
+      <button id="unbanBtn" class="btn-primary">🔓 Разбанить</button>
+      <button id="tempBanBtn" class="btn-primary">⏱ Бан на 1 час</button>
+      <button id="excludeBtn" class="btn-primary">🚫 Исключить</button>
+      <button id="includeBtn" class="btn-primary">✅ Включить</button>
+    </div>
+    <div id="banExtra"></div>
     <div class="flex-buttons">
-      <button id="saveRoleBtn" class="btn-primary">Сохранить</button>
-      <button id="closeRoleBtn" class="btn-danger">Отмена</button>
+      <button id="saveRoleBtn" class="btn-primary">Сохранить ранг/отдел</button>
+      <button id="closeRoleBtn" class="btn-danger">Закрыть</button>
     </div>
   </div>
 </div>
@@ -487,7 +478,7 @@
     let allApplications = [];
     let currentFilter = 'all';
 
-    // Принудительно скрыть прелоадер через 3 секунды
+    // Гарантированное скрытие прелоадера через 3 секунды
     setTimeout(() => {
       const preloader = document.getElementById('preloader');
       if (preloader && preloader.style.display !== 'none') {
@@ -502,6 +493,16 @@
       div.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'}"></i> ${msg}`;
       document.body.appendChild(div);
       setTimeout(() => div.remove(), 3000);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/[&<>]/g, function(m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
+      });
     }
 
     function loadUserRole() {
@@ -574,7 +575,9 @@
       return performAction('set_user_role', targetUserId, { level, department, roleName: levelNames[level] });
     }
 
-    function banUser(targetUserId) { return performAction('ban_user', targetUserId); }
+    function banUser(targetUserId, reason) {
+      return performAction('ban_user', targetUserId, { reason: reason });
+    }
     function unbanUser(targetUserId) { return performAction('unban_user', targetUserId); }
     function tempBanUser(targetUserId, hours = 1) { return performAction('temp_ban_user', targetUserId, { hours }); }
     function excludeFromDuty(targetUserId) { return performAction('exclude_from_duty', targetUserId); }
@@ -605,19 +608,60 @@
 
     function openUserModal(userId, userRole) {
       const modal = document.getElementById('roleModal');
-      document.getElementById('roleTargetName').innerText = userId;
+      document.getElementById('roleTargetName').innerHTML = `<strong>${escapeHtml(userId)}</strong> ${userRole.username ? `(${escapeHtml(userRole.username)})` : ''}`;
       document.getElementById('roleLevelSelect').value = userRole.level || 1;
       document.getElementById('roleDeptSelect').value = userRole.department || '';
+      
+      // Обновляем информацию о бане
+      let banInfo = '';
+      if (userRole.is_banned && userRole.ban_details) {
+        const ban = userRole.ban_details;
+        banInfo = `<div style="background:#330000; padding:10px; border-radius:10px; margin:10px 0; border-left:3px solid #ff6b6b;">
+          <strong style="color:#ff6b6b;">🔒 Пользователь забанен</strong><br>
+          Причина: ${escapeHtml(ban.reason)}<br>
+          Заблокировал: ${escapeHtml(ban.banned_by_name)}<br>
+          Дата: ${escapeHtml(ban.timestamp)}
+        </div>`;
+      }
+      const extraHtml = `
+        ${banInfo}
+        <div style="margin:10px 0;">
+          <label>Причина бана (для нового бана):</label>
+          <input type="text" id="banReason" placeholder="Нарушение, оскорбления, ..." style="width:100%; padding:8px; margin-top:5px; background:#0f121a; border:1px solid #d4af37; border-radius:10px; color:#e8e8e8;">
+        </div>
+      `;
+      const extraDiv = document.getElementById('banExtra');
+      if (extraDiv) extraDiv.innerHTML = extraHtml;
+      
       modal.style.display = 'flex';
-      const saveBtn = document.getElementById('saveRoleBtn');
-      const closeBtn = document.getElementById('closeRoleBtn');
-      saveBtn.onclick = () => {
+      
+      // Переназначаем обработчики кнопок (уже есть в разметке, но обновим onclick)
+      document.getElementById('banWithReasonBtn').onclick = () => {
+        const reason = document.getElementById('banReason').value.trim();
+        if (!reason) {
+          showNotification('Укажите причину бана', 'error');
+          return;
+        }
+        banUser(userId, reason).then(() => modal.style.display = 'none');
+      };
+      document.getElementById('unbanBtn').onclick = () => {
+        unbanUser(userId).then(() => modal.style.display = 'none');
+      };
+      document.getElementById('tempBanBtn').onclick = () => {
+        tempBanUser(userId, 1).then(() => modal.style.display = 'none');
+      };
+      document.getElementById('excludeBtn').onclick = () => {
+        excludeFromDuty(userId).then(() => modal.style.display = 'none');
+      };
+      document.getElementById('includeBtn').onclick = () => {
+        includeToDuty(userId).then(() => modal.style.display = 'none');
+      };
+      document.getElementById('saveRoleBtn').onclick = () => {
         const level = parseInt(document.getElementById('roleLevelSelect').value);
         const dept = document.getElementById('roleDeptSelect').value || null;
-        setUserRole(userId, level, dept);
-        modal.style.display = 'none';
+        setUserRole(userId, level, dept).then(() => modal.style.display = 'none');
       };
-      closeBtn.onclick = () => modal.style.display = 'none';
+      document.getElementById('closeRoleBtn').onclick = () => modal.style.display = 'none';
     }
 
     function renderUsers() {
@@ -626,18 +670,20 @@
       if (!container) return;
       const roleLevels = {1:'Младший состав',2:'Dep.Head',3:'Head',4:'Curator',5:'Assist Sheriff',6:'SK/Dep.SK',7:'UnderSheriff',8:'Sheriff',9:'Разработчик'};
       let usersList = Object.keys(allUsers).map(id => ({ id, role: allUsers[id] }));
-      usersList = usersList.filter(u => u.id.toLowerCase().includes(searchTerm));
+      usersList = usersList.filter(u => u.id.toLowerCase().includes(searchTerm) || (u.role.username && u.role.username.toLowerCase().includes(searchTerm)));
       container.innerHTML = '';
       const canManage = (currentUserRole && (currentUserRole.level >= 7 || currentUserRole.level === 9));
       for (const user of usersList) {
         const roleClass = 'role-' + (user.role.level || 1);
+        const avatarUrl = user.role.avatar ? user.role.avatar : '/lscsd/file.png';
+        const userName = user.role.username ? escapeHtml(user.role.username) : escapeHtml(user.id);
         const card = document.createElement('div');
         card.className = 'user-card';
         card.innerHTML = `
           <div class="user-info">
-            <div class="badge-icon"><i class="fab fa-discord"></i></div>
-            <div>
-              <strong>${escapeHtml(user.id)}</strong><br>
+            <img class="user-avatar" src="${avatarUrl}" onerror="this.src='/lscsd/file.png'">
+            <div class="user-details">
+              <div><strong>${userName}</strong> <span style="font-size:11px; opacity:0.7;">(${escapeHtml(user.id)})</span></div>
               <span class="user-role-tag ${roleClass}">${roleLevels[user.role.level] || 'Младший состав'}</span>
               ${user.role.department ? `<span style="margin-left:8px; color:#d4af37;">(${escapeHtml(user.role.department)})</span>` : ''}
             </div>
@@ -720,9 +766,7 @@
         <p><strong>Дата:</strong> ${appData.created_at || ''}</p>
       `;
       modal.style.display = 'flex';
-      const submitBtn = document.getElementById('submitReviewBtn');
-      const closeBtn = document.getElementById('closeReviewBtn');
-      submitBtn.onclick = () => {
+      document.getElementById('submitReviewBtn').onclick = () => {
         const status = document.getElementById('reviewStatus').value;
         const comment = document.getElementById('reviewComment').value;
         reviewApplication(appId, status, comment, appData, typeNames[appData.type] || appData.type).then(() => {
@@ -730,17 +774,7 @@
           loadApplications();
         });
       };
-      closeBtn.onclick = () => modal.style.display = 'none';
-    }
-
-    function escapeHtml(str) {
-      if (!str) return '';
-      return str.replace(/[&<>]/g, function(m) {
-        if (m === '&') return '&amp;';
-        if (m === '<') return '&lt;';
-        if (m === '>') return '&gt;';
-        return m;
-      });
+      document.getElementById('closeReviewBtn').onclick = () => modal.style.display = 'none';
     }
 
     function handleAuthCallback() {
@@ -765,11 +799,16 @@
         currentUser = JSON.parse(user);
         document.getElementById('authContainer').style.display = 'none';
         document.getElementById('mainContainer').style.display = 'block';
-        document.getElementById('navName').innerText = currentUser.username;
+        document.getElementById('navName').innerText = currentUser.username || currentUser.id;
         if (currentUser.avatar) document.getElementById('navAvatar').src = currentUser.avatar;
         loadUserRole().then(() => {
-          loadAllUsers();
-          loadApplications();
+          Promise.all([loadAllUsers(), loadApplications()]).finally(() => {
+            const preloader = document.getElementById('preloader');
+            if (preloader) {
+              preloader.style.opacity = '0';
+              setTimeout(() => { preloader.style.display = 'none'; }, 300);
+            }
+          });
         });
       } else {
         document.getElementById('authContainer').style.display = 'flex';
