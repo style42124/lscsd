@@ -169,7 +169,7 @@
     }
 
     .tab-btn {
-      background: rgba(20, 25, 35, 0.7);
+      background: linear-gradient(135deg, rgba(20,25,35,0.7), rgba(15,18,26,0.8));
       border: 1px solid rgba(212, 175, 55, 0.3);
       border-radius: 30px;
       padding: 10px 25px;
@@ -178,7 +178,7 @@
     }
 
     .tab-btn.active {
-      background: #d4af37;
+      background: linear-gradient(135deg, #d4af37, #b8962a);
       color: #0f121a;
     }
 
@@ -198,7 +198,7 @@
     .search-box input {
       width: 100%;
       padding: 10px 15px;
-      background: #0f121a;
+      background: linear-gradient(135deg, #0f121a, #0a0e14);
       border: 1px solid rgba(212, 175, 55, 0.3);
       border-radius: 30px;
       color: #e8e8e8;
@@ -212,17 +212,20 @@
     }
 
     .user-card {
-      background: rgba(20, 25, 35, 0.7);
+      background: linear-gradient(145deg, rgba(20,25,35,0.7), rgba(15,18,26,0.8));
       border-radius: 20px;
       padding: 18px;
       border: 1px solid rgba(212, 175, 55, 0.3);
       display: flex;
       justify-content: space-between;
       align-items: center;
+      transition: all 0.3s;
     }
 
     .user-card:hover {
       border-color: #d4af37;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(212,175,55,0.1);
     }
 
     .user-info {
@@ -236,7 +239,7 @@
       height: 48px;
       border-radius: 50%;
       border: 2px solid #d4af37;
-      background: #0f121a;
+      background: linear-gradient(135deg, #0f121a, #0a0e14);
       object-fit: cover;
     }
 
@@ -260,9 +263,9 @@
       margin-top: 8px;
     }
 
-    .role-1 { background: #2c3e50; color: white; }
-    .role-2, .role-3, .role-4, .role-5 { background: #16a085; color: white; }
-    .role-6 { background: #8e44ad; color: white; }
+    .role-1 { background: linear-gradient(135deg, #2c3e50, #1a252f); color: white; }
+    .role-2, .role-3, .role-4, .role-5 { background: linear-gradient(135deg, #16a085, #0e6b58); color: white; }
+    .role-6 { background: linear-gradient(135deg, #8e44ad, #6c3483); color: white; }
     .role-7, .role-8, .role-9 { background: linear-gradient(135deg, #2c2c2c, #1a1a1a); color: #d4af37; border: 1px solid #d4af37; }
 
     .user-actions button {
@@ -279,16 +282,17 @@
     }
 
     .app-item {
-      background: rgba(20, 25, 35, 0.5);
+      background: linear-gradient(135deg, rgba(20,25,35,0.5), rgba(15,18,26,0.6));
       border-radius: 12px;
       padding: 12px;
       margin-bottom: 10px;
       border-left: 3px solid #d4af37;
       cursor: pointer;
+      transition: all 0.3s;
     }
 
     .app-item:hover {
-      background: rgba(212, 175, 55, 0.1);
+      background: linear-gradient(135deg, rgba(212,175,55,0.1), rgba(212,175,55,0.05));
     }
 
     .app-status-pending { border-left-color: #ffa500; }
@@ -304,7 +308,7 @@
     }
 
     .filter-btn {
-      background: rgba(20, 25, 35, 0.7);
+      background: linear-gradient(135deg, rgba(20,25,35,0.7), rgba(15,18,26,0.8));
       border: 1px solid rgba(212, 175, 55, 0.3);
       border-radius: 20px;
       padding: 8px 16px;
@@ -313,7 +317,7 @@
     }
 
     .filter-btn.active {
-      background: #d4af37;
+      background: linear-gradient(135deg, #d4af37, #b8962a);
       color: #0f121a;
     }
 
@@ -332,7 +336,7 @@
     }
 
     .review-content {
-      background: linear-gradient(145deg, #1a1f2a, #0f121a);
+      background: linear-gradient(145deg, #1a1f2a, #0a0e14, #0f121a);
       border-radius: 20px;
       max-width: 550px;
       width: 90%;
@@ -340,12 +344,24 @@
       border: 1px solid #d4af37;
       max-height: 90vh;
       overflow-y: auto;
+      position: relative;
+    }
+    
+    .review-content::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(212,175,55,0.08) 0%, transparent 70%);
+      pointer-events: none;
     }
 
     .role-select, .dept-select {
       width: 100%;
       padding: 10px;
-      background: #0f121a;
+      background: linear-gradient(135deg, #0f121a, #0a0e14);
       border: 1px solid rgba(212, 175, 55, 0.3);
       border-radius: 12px;
       color: #e8e8e8;
@@ -353,7 +369,7 @@
     }
 
     .btn-primary {
-      background: #d4af37;
+      background: linear-gradient(135deg, #d4af37, #b8962a);
       border: none;
       padding: 8px 16px;
       border-radius: 30px;
@@ -361,10 +377,16 @@
       margin: 5px;
       font-weight: bold;
       color: #0f121a;
+      transition: all 0.3s;
+    }
+
+    .btn-primary:hover {
+      transform: scale(1.02);
+      box-shadow: 0 5px 15px rgba(212,175,55,0.3);
     }
 
     .btn-danger {
-      background: #ff6b6b;
+      background: linear-gradient(135deg, #ff6b6b, #ff4444);
       border: none;
       padding: 8px 16px;
       border-radius: 30px;
@@ -383,13 +405,14 @@
       position: fixed;
       top: 20px;
       right: 20px;
-      background: #1a1f2a;
+      background: linear-gradient(135deg, #1a1f2a, #0f121a);
       border-left: 4px solid #d4af37;
       border-radius: 12px;
       padding: 12px 20px;
       min-width: 260px;
       z-index: 9999;
       animation: slideInRight 0.3s, fadeOut 0.3s 2.7s forwards;
+      box-shadow: 0 5px 25px rgba(0,0,0,0.3);
     }
 
     @keyframes slideInRight {
@@ -402,7 +425,7 @@
     }
 
     .ban-info {
-      background: #330000;
+      background: linear-gradient(135deg, #330000, #1a0000);
       padding: 10px;
       border-radius: 10px;
       margin: 10px 0;
@@ -468,11 +491,11 @@
   <div class="review-content">
     <h3 style="color:#d4af37;"><i class="fas fa-gavel"></i> Рассмотрение заявки</h3>
     <div id="reviewAppData"></div>
-    <select id="reviewStatus" style="width:100%;padding:10px;margin:10px 0;">
+    <select id="reviewStatus" style="width:100%;padding:10px;margin:10px 0;background:linear-gradient(135deg,#0f121a,#0a0e14);border:1px solid #d4af37;border-radius:12px;color:#e8e8e8;">
       <option value="approved">✅ Одобрить</option>
       <option value="rejected">❌ Отклонить</option>
     </select>
-    <textarea id="reviewComment" rows="3" placeholder="Комментарий..."></textarea>
+    <textarea id="reviewComment" rows="3" placeholder="Комментарий..." style="width:100%;padding:10px;background:linear-gradient(135deg,#0f121a,#0a0e14);border:1px solid #d4af37;border-radius:12px;color:#e8e8e8;"></textarea>
     <div class="flex-buttons">
       <button id="submitReviewBtn" class="btn-primary">Отправить решение</button>
       <button id="closeReviewBtn" class="btn-danger">Отмена</button>
@@ -487,7 +510,7 @@
     <div id="banInfoContainer"></div>
     <div style="margin:10px 0;">
       <label>Причина бана (для нового бана):</label>
-      <input type="text" id="banReason" placeholder="Нарушение, оскорбления, ..." style="width:100%; padding:8px; margin-top:5px; background:#0f121a; border:1px solid #d4af37; border-radius:10px; color:#e8e8e8;">
+      <input type="text" id="banReason" placeholder="Нарушение, оскорбления, ..." style="width:100%; padding:8px; margin-top:5px; background:linear-gradient(135deg,#0f121a,#0a0e14); border:1px solid #d4af37; border-radius:10px; color:#e8e8e8;">
     </div>
     <div class="flex-buttons">
       <button id="banWithReasonBtn" class="btn-primary">🔨 Забанить (с причиной)</button>
@@ -718,7 +741,6 @@
       
       modal.style.display = 'flex';
       
-      // Кнопки управления
       const banWithReasonBtn = document.getElementById('banWithReasonBtn');
       const unbanBtn = document.getElementById('unbanBtn');
       const tempBanBtn = document.getElementById('tempBanBtn');
