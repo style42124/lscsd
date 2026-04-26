@@ -27,7 +27,7 @@
   var userHistory = JSON.parse(localStorage.getItem('lscsd_user_history') || '[]');
   var usersRoles = JSON.parse(localStorage.getItem('lscsd_users_roles') || '{}');
 
-  var DEPARTMENTS = ['SAI', 'GU', 'AF', 'IAD', 'SEB', 'K-9', 'DID', 'MED', 'SPD'];
+  var DEPARTMENTS = ['SAI', 'GU', 'AF', 'IAD', 'SEB', 'K-9', 'DID', 'MED', 'SPD', 'HS' ];
   var FORMS_LIST = [
     {id:'department', label:'Заявка в отдел', icon:'📋', desc:'Подача заявления на перевод'},
     {id:'appeal', label:'Обжалование', icon:'⚖️', desc:'Обжалование выговора'},
