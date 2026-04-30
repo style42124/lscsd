@@ -82,7 +82,7 @@
         localStorage.setItem('lscsd_users_roles', JSON.stringify(usersRoles));
         var panelContainer = document.getElementById('panelBtnContainer');
         var panelBtn = document.getElementById('panelBtn');
-        if (panelContainer && panelBtn && currentUserRole && (currentUserRole.level >= 7 || currentUserRole.level === 9)) {
+        if (panelContainer && panelBtn && currentUserRole && (currentUserRole.level >= 2 || currentUserRole.level === 9)) {
           panelContainer.style.display = 'flex';
           panelBtn.onclick = function() { window.location.href = '/lscsd/panel.html'; };
         }
