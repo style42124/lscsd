@@ -575,33 +575,50 @@
       }
     }
 
-    function loadUserRole() {
-      return fetch(PROXY_URL, {
+    function loadUserRoleFromServer() {
+    if (!currentUser) return Promise.resolve(null);
+    var token = currentUser.token || '';
+    if (!token) return Promise.resolve(null);
+    
+    return fetch(PROXY_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+        },
         body: JSON.stringify({ action: 'get_user_role', data: { userId: currentUser.id } })
-      }).then(r => r.json()).then(res => {
+    }).then(r => r.json()).then(res => {
         if (res.success) {
-          currentUserRole = res.role;
-          document.getElementById('userRoleBadge').innerText = currentUserRole.name || 'Младший состав';
-          return currentUserRole;
+            currentUserRole = res.role;
+            return currentUserRole;
         }
         return null;
-      });
-    }
+    });
+}
 
-    function loadAllUsers() {
-      return fetch(PROXY_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'get_all_users_roles' })
-      }).then(r => r.json()).then(res => {
-        if (res.success) {
-          allUsers = res.users;
-          renderUsers();
-        }
-      });
+function loadAllUsers() {
+    var token = currentUser ? currentUser.token : '';
+    if (!token) {
+        console.warn('Нет токена');
+        return;
     }
+    
+    return fetch(PROXY_URL, {
+        method: 'POST',
+        headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+        },
+        body: JSON.stringify({ action: 'get_all_users_roles' })
+    }).then(r => r.json()).then(res => {
+        if (res.success) {
+            allUsers = res.users;
+            renderUsers();
+        } else {
+            console.error('Ошибка:', res.error);
+        }
+    });
+}
 
     function loadApplications() {
       return fetch(PROXY_URL, {
@@ -654,27 +671,29 @@
     function includeToDuty(targetUserId) { return performAction('include_to_duty', targetUserId); }
 
     function reviewApplication(appId, status, comment, appData, appType) {
-      return fetch(PROXY_URL, {
+    var token = currentUser ? currentUser.token : '';
+    if (!token) return Promise.resolve({ success: false, error: 'No token' });
+    
+    return fetch(PROXY_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+        },
         body: JSON.stringify({
-          action: 'review_application',
-          data: {
-            applicationId: appId,
-            status,
-            comment,
-            reviewer: currentUser.id,
-            reviewerRole: currentUserRole ? currentUserRole.name : '',
-            applicationType: appType,
-            applicationData: appData
-          }
+            action: 'review_application',
+            data: {
+                applicationId: appId,
+                status: status,
+                comment: comment,
+                reviewer: currentUser.id,
+                reviewerRole: currentUserRole ? currentUserRole.name : '',
+                applicationType: appType,
+                applicationData: appData
+            }
         })
-      }).then(r => r.json()).then(res => {
-        if (res.success) showNotification('✅ Решение отправлено!', 'success');
-        else showNotification('❌ Ошибка', 'error');
-        return res;
-      });
-    }
+    }).then(r => r.json());
+}
 
       async function renderUsers() {
     const container = document.getElementById('usersGrid');
