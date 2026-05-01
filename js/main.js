@@ -80,14 +80,15 @@
         currentUserRole = res.role;
         usersRoles[currentUser.id] = currentUserRole;
         localStorage.setItem('lscsd_users_roles', JSON.stringify(usersRoles));
-        var panelContainer = document.getElementById('panelBtnContainer');
-        var panelBtn = document.getElementById('panelBtn');
-        if (panelContainer && panelBtn && currentUserRole && (currentUserRole.level >= 2 || currentUserRole.level === 9)) {
-          panelContainer.style.display = 'flex';
-          panelBtn.onclick = function() { window.location.href = '/lscsd/panel.html'; };
-        }
-        return currentUserRole;
-      }
+        // Показываем кнопку "Панель управления" для уровня >= 2 или разработчика
+var panelContainer = document.getElementById('panelBtnContainer');
+var panelBtn = document.getElementById('panelBtn');
+if (panelContainer && panelBtn && currentUserRole) {
+    if (currentUserRole.level >= 2 || currentUserRole.level === 9) {
+        panelContainer.style.display = 'flex';
+        panelBtn.onclick = function() { window.location.href = '/lscsd/panel.html'; };
+    }
+}
       return null;
     });
   }
