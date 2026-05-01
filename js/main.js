@@ -1,5 +1,5 @@
 (function() {
-  // Защита
+  // Защита от F12
   document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
   document.addEventListener('keydown', function(e) {
     if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'C' || e.key === 'J')) || (e.ctrlKey && e.key === 'U')) {
@@ -7,6 +7,7 @@
     }
   });
 
+  // Конфиг
   var PROXY_URL = 'https://cs324022.tw1.ru/index.php';
   var DISCORD_CLIENT_ID = '1494686473520287774';
   var REDIRECT_URI = 'https://style42124.github.io/lscsd/';
@@ -15,7 +16,7 @@
   var currentUserRole = null;
   var isSending = false;
   
-  // Заявки хранятся в localStorage
+  // Заявки
   var allApplications = JSON.parse(localStorage.getItem('lscsd_applications') || '[]');
 
   function saveApplications() {
@@ -28,24 +29,26 @@
     app.status = 'pending';
     allApplications.unshift(app);
     saveApplications();
-    renderHistory();
-    renderStats();
+    renderFormsList(); // Обновляем список заявок в истории
   }
 
-  var DEPARTMENTS = ['SAI', 'GU', 'AF', 'IAD', 'SEB', 'K-9', 'DID', 'MED', 'SPD', 'HS'];
+  // Список форм
   var FORMS_LIST = [
-    {id:'department', label:'Заявка в отдел', icon:'📋', desc:'Подача заявления на перевод'},
-    {id:'appeal', label:'Обжалование', icon:'⚖️', desc:'Обжалование выговора'},
-    {id:'workoff', label:'Отработка', icon:'🛠️', desc:'Отработка выговора'},
-    {id:'promotion', label:'Повышение', icon:'⭐', desc:'Заявка на повышение'},
-    {id:'leave', label:'Отпуск', icon:'🏖️', desc:'Плановый отпуск'},
-    {id:'rest', label:'Отдых', icon:'🌴', desc:'Краткосрочный отдых'},
-    {id:'spec-request', label:'Спецвооружение', icon:'🔫', desc:'Заявка на выдачу'},
-    {id:'spec-receive', label:'Получение спец', icon:'📦', desc:'Отчёт о получении'},
-    {id:'resignation', label:'Увольнение', icon:'📄', desc:'Рапорт на увольнение'}
+    {id:'department', label:'📋 Заявка в отдел', desc:'Подача заявления на перевод'},
+    {id:'appeal', label:'⚖️ Обжалование выговора', desc:'Обжалование дисциплинарного взыскания'},
+    {id:'workoff', label:'🛠️ Отработка выговора', desc:'Отработка для снятия выговора'},
+    {id:'promotion', label:'⭐ Заявка на повышение', desc:'Повышение в должности'},
+    {id:'leave', label:'🏖️ Заявка на отпуск', desc:'Плановый отпуск'},
+    {id:'rest', label:'🌴 Заявка на отдых', desc:'Краткосрочный отдых'},
+    {id:'spec-request', label:'🔫 Заявка на спецвооружение', desc:'Заявка на выдачу'},
+    {id:'spec-receive', label:'📦 Получение спецвооружения', desc:'Отчёт о получении'},
+    {id:'resignation', label:'📄 Рапорт на увольнение', desc:'Заявление об увольнении'}
   ];
 
-  var typeNamesMap = {
+  var DEPARTMENTS = ['SAI', 'GU', 'AF', 'IAD', 'SEB', 'K-9', 'DID', 'MED', 'SPD', 'HS'];
+
+  // Типы заявок для отображения
+  var typeNames = {
     'submit_department': '📋 Заявка в отдел',
     'submit_promotion': '⭐ Повышение',
     'submit_appeal': '⚖ Обжалование',
@@ -65,7 +68,7 @@
     setTimeout(function() { div.remove(); }, 3000);
   }
 
-  // Отправка в Discord через прокси
+  // Отправка в Discord
   function sendToDiscord(action, formData, hasFile) {
     return new Promise(function(resolve, reject) {
       if (isSending) { showNotification('Подождите...', 'warning'); reject(); return; }
@@ -99,7 +102,7 @@
         .then(function(d) {
           isSending = false;
           if (d.success) {
-            showNotification('✅ Заявка отправлена в Discord!', 'success');
+            showNotification('✅ Заявка отправлена!', 'success');
             resolve(d);
           } else {
             showNotification(d.error || '❌ Ошибка', 'error');
@@ -114,6 +117,7 @@
     });
   }
 
+  // Получение роли пользователя
   function loadUserRoleFromServer() {
     if (!currentUser) return Promise.resolve(null);
     var token = currentUser.token || '';
@@ -139,6 +143,76 @@
     }).catch(function() { return null; });
   }
 
+  // ========== ОСНОВНОЙ РЕНДЕР КАРТОЧЕК ==========
+  function renderCards() {
+    var container = document.getElementById('cardsGrid');
+    if (!container) {
+      console.log('cardsGrid not found');
+      return;
+    }
+    console.log('Рендерим карточки, форм:', FORMS_LIST.length);
+    container.innerHTML = '';
+    FORMS_LIST.forEach(function(form) {
+      var card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = '<div class="card-icon">' + form.label.split(' ')[0] + '</div><h3>' + form.label + '</h3><p>' + form.desc + '</p>';
+      card.onclick = function() { openForm(form.id); };
+      container.appendChild(card);
+    });
+  }
+
+  // Рендер истории заявок
+  function renderFormsList() {
+    var container = document.getElementById('historyList');
+    if (!container) return;
+    
+    var searchTerm = document.getElementById('historySearch')?.value.toLowerCase() || '';
+    var filtered = allApplications.filter(function(app) {
+      var typeName = typeNames[app.type] || app.type;
+      return typeName.toLowerCase().indexOf(searchTerm) !== -1;
+    });
+    
+    container.innerHTML = '';
+    if (filtered.length === 0) {
+      container.innerHTML = '<div style="text-align:center;padding:20px;color:#6b6f78;">Нет заявок</div>';
+      return;
+    }
+    
+    filtered.forEach(function(app) {
+      var typeName = typeNames[app.type] || app.type;
+      var statusText = app.status === 'pending' ? '⏳ На рассмотрении' : (app.status === 'approved' ? '✅ Одобрена' : '❌ Отклонена');
+      var details = '';
+      if (app.data && app.data.department) details += 'Отдел: ' + app.data.department;
+      if (app.data && app.data.nickname) details += (details ? ' | ' : '') + 'От: ' + app.data.nickname;
+      if (app.data && app.data.weapon) details += (details ? ' | ' : '') + 'Оружие: ' + app.data.weapon;
+      
+      var div = document.createElement('div');
+      div.className = 'history-item';
+      div.innerHTML = '<div class="time" style="color:#9ca3af; font-size:11px;">' + (app.created_at || '-') + ' ' + statusText + '</div>' +
+                     '<div class="type" style="color:#d4af37; font-weight:600;">' + typeName + '</div>' +
+                     '<div class="details" style="color:#e8e8e8; font-size:12px; margin-top:4px;">' + details + '</div>';
+      container.appendChild(div);
+    });
+  }
+
+  // Рендер статистики
+  function renderStats() {
+    var stats = {total: allApplications.length, byType: {}};
+    allApplications.forEach(function(app) {
+      var displayType = typeNames[app.type] || app.type;
+      stats.byType[displayType] = (stats.byType[displayType] || 0) + 1;
+    });
+    
+    var container = document.getElementById('statsGrid');
+    if (container) {
+      container.innerHTML = '<div class="stat-card"><div class="stat-number">' + stats.total + '</div><div class="stat-label">Всего заявок</div></div>';
+      for (var type in stats.byType) {
+        container.innerHTML += '<div class="stat-card"><div class="stat-number">' + stats.byType[type] + '</div><div class="stat-label">' + type + '</div></div>';
+      }
+    }
+  }
+
+  // Авторизация
   function handleAuthCallback() {
     var hash = window.location.hash.substring(1);
     if (hash && hash.indexOf('access_token') !== -1) {
@@ -172,7 +246,7 @@
       
       loadUserRoleFromServer().then(function() {
         renderCards();
-        renderHistory();
+        renderFormsList();
         renderStats();
       });
     } else {
@@ -193,6 +267,7 @@
     location.reload(); 
   };
 
+  // Настройки
   var settingsPanel = document.getElementById('settingsPanel');
   var navUser = document.getElementById('navUser');
   if (navUser) {
@@ -212,8 +287,12 @@
       settingsPanel.classList.remove('open'); 
   };
 
+  // Тема
+  var currentTheme = localStorage.getItem('lscsd_theme') || 'dark';
+  if (currentTheme === 'light') document.body.classList.add('light');
   var themeSwitch = document.getElementById('themeSwitch');
   if (themeSwitch) {
+    themeSwitch.classList.toggle('active', currentTheme === 'light');
     themeSwitch.onclick = function() {
       if (document.body.classList.contains('light')) { 
         document.body.classList.remove('light'); 
@@ -226,126 +305,21 @@
       }
     };
   }
-  
+
+  // Автозаполнение
+  var autoFillEnabled = localStorage.getItem('lscsd_autofill') === 'true';
   var autoFillSwitch = document.getElementById('autoFillSwitch');
   if (autoFillSwitch) {
+    autoFillSwitch.classList.toggle('active', autoFillEnabled);
     autoFillSwitch.onclick = function() {
-      var enabled = localStorage.getItem('lscsd_autofill') === 'true';
-      enabled = !enabled;
-      localStorage.setItem('lscsd_autofill', enabled);
-      this.classList.toggle('active', enabled);
-      showNotification(enabled ? 'Автозаполнение включено' : 'Автозаполнение выключено', 'info');
+      autoFillEnabled = !autoFillEnabled;
+      localStorage.setItem('lscsd_autofill', autoFillEnabled);
+      this.classList.toggle('active', autoFillEnabled);
+      showNotification(autoFillEnabled ? 'Автозаполнение включено' : 'Автозаполнение выключено', 'info');
     };
   }
 
-  function renderCards() {
-    var c = document.getElementById('cardsGrid');
-    if(!c) return;
-    c.innerHTML = '';
-    FORMS_LIST.forEach(function(f) {
-      var card = document.createElement('div');
-      card.className = 'card';
-      card.innerHTML = '<div class="card-icon">'+f.icon+'</div><h3>'+f.label+'</h3><p>'+f.desc+'</p>';
-      card.onclick = function() { openForm(f.id); };
-      c.appendChild(card);
-    });
-  }
-
-  function renderHistory() {
-    var container = document.getElementById('historyList');
-    if (!container) return;
-    
-    var searchTerm = document.getElementById('historySearch')?.value.toLowerCase() || '';
-    var filtered = allApplications.filter(function(app) {
-      var typeName = typeNamesMap[app.type] || app.type;
-      return typeName.toLowerCase().indexOf(searchTerm) !== -1 || 
-             JSON.stringify(app.data).toLowerCase().indexOf(searchTerm) !== -1;
-    });
-    
-    container.innerHTML = '';
-    filtered.forEach(function(app) {
-      var typeName = typeNamesMap[app.type] || app.type;
-      var statusText = app.status === 'pending' ? '⏳ На рассмотрении' : (app.status === 'approved' ? '✅ Одобрена' : '❌ Отклонена');
-      var details = '';
-      if (app.data.department) details += 'Отдел: ' + app.data.department + ' | ';
-      if (app.data.nickname) details += 'От: ' + app.data.nickname;
-      else if (app.data.weapon) details += 'Оружие: ' + app.data.weapon;
-      else if (app.data.reason) details += 'Причина: ' + (app.data.reason.length > 50 ? app.data.reason.substring(0,50)+'...' : app.data.reason);
-      
-      var div = document.createElement('div');
-      div.className = 'history-item';
-      div.innerHTML = '<div class="time" style="color:#9ca3af; font-size:11px;">' + (app.created_at || '-') + ' ' + statusText + '</div>' +
-                     '<div class="type" style="color:#d4af37; font-weight:600;">' + typeName + '</div>' +
-                     '<div class="details" style="color:#e8e8e8; font-size:12px; margin-top:4px;">' + details + '</div>';
-      container.appendChild(div);
-    });
-    if (filtered.length === 0) container.innerHTML = '<div style="text-align:center;padding:20px;color:#6b6f78;">Нет заявок</div>';
-  }
-
-  function renderStats() {
-    var stats = {total: allApplications.length, byType: {}};
-    allApplications.forEach(function(app) {
-      var displayType = typeNamesMap[app.type] || app.type;
-      stats.byType[displayType] = (stats.byType[displayType] || 0) + 1;
-    });
-    
-    var container = document.getElementById('statsGrid');
-    if (container) {
-      container.innerHTML = '<div class="stat-card"><div class="stat-number" style="color:#d4af37; font-size:2rem; font-weight:800;">' + stats.total + '</div><div class="stat-label" style="color:#9ca3af;">Всего заявок</div></div>';
-      var sortedTypes = Object.keys(stats.byType).sort();
-      for (var i = 0; i < sortedTypes.length; i++) {
-        var type = sortedTypes[i];
-        container.innerHTML += '<div class="stat-card"><div class="stat-number" style="color:#d4af37; font-size:1.5rem; font-weight:700;">' + stats.byType[type] + '</div><div class="stat-label" style="color:#9ca3af;">' + type + '</div></div>';
-      }
-    }
-    
-    var ctx = document.getElementById('statsChart')?.getContext('2d');
-    if (ctx && window.statsChart) window.statsChart.destroy();
-    if (ctx && Object.keys(stats.byType).length > 0) {
-      window.statsChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: { labels: Object.keys(stats.byType), datasets: [{ data: Object.values(stats.byType), backgroundColor: ['#d4af37', '#5865F2', '#6bcf7f', '#ff6b6b', '#ffa500', '#4a90d9', '#9b59b6'] }] },
-        options: { responsive: true, plugins: { legend: { labels: { color: '#e8e8e8' } } } }
-      });
-    } else if (ctx) {
-      window.statsChart = new Chart(ctx, { type: 'doughnut', data: { labels: ['Нет данных'], datasets: [{ data: [1], backgroundColor: ['#d4af37'] }] }, options: { responsive: true } });
-    }
-  }
-
-  function openForm(type) {
-    var m = document.getElementById('modal');
-    var b = document.getElementById('modalBody');
-    var t = document.getElementById('modalTitle');
-    var f = FORMS_LIST.find(function(x){ return x.id===type; });
-    t.innerText = f ? f.label : 'Форма';
-    b.innerHTML = '<div style="text-align:center;padding:30px;">Загрузка...</div>';
-    m.style.display = 'flex';
-    switch(type) {
-      case 'department': renderDepartmentForm(b); break;
-      case 'appeal': renderAppealForm(b); break;
-      case 'workoff': renderWorkoffForm(b); break;
-      case 'promotion': renderPromotionForm(b); break;
-      case 'leave': renderLeaveForm(b,'отпуск'); break;
-      case 'rest': renderLeaveForm(b,'отдых'); break;
-      case 'spec-request': renderSpecRequestForm(b); break;
-      case 'spec-receive': renderSpecReceiveForm(b); break;
-      case 'resignation': renderResignationForm(b); break;
-      default: b.innerHTML = '<p>Форма не найдена</p>';
-    }
-  }
-
-  document.getElementById('modalClose').onclick = function() { document.getElementById('modal').style.display = 'none'; };
-  window.onclick = function(e) { if(e.target===document.getElementById('modal')) document.getElementById('modal').style.display = 'none'; };
-  
-  function showError(container, msg) { 
-    var err = container.querySelector('#formError'); 
-    if(err) { 
-      err.textContent = msg; 
-      err.style.display='block'; 
-      setTimeout(function(){ err.style.display='none'; },4000); 
-    } else showNotification(msg,'error'); 
-  }
-
+  // Функции для файлов
   function createFilePreview(container, files, inputId) {
     var previewDiv = container.querySelector('#filePreview');
     if (!previewDiv) { 
@@ -382,9 +356,46 @@
     }
   }
 
+  function showError(container, msg) { 
+    var err = container.querySelector('#formError'); 
+    if(err) { 
+      err.textContent = msg; 
+      err.style.display='block'; 
+      setTimeout(function(){ err.style.display='none'; },4000); 
+    } else showNotification(msg,'error'); 
+  }
+
+  // ========== ФОРМЫ ==========
+  function openForm(type) {
+    var m = document.getElementById('modal');
+    var b = document.getElementById('modalBody');
+    var t = document.getElementById('modalTitle');
+    var f = FORMS_LIST.find(function(x){ return x.id===type; });
+    t.innerText = f ? f.label : 'Форма заявки';
+    b.innerHTML = '<div style="text-align:center;padding:30px;">Загрузка...</div>';
+    m.style.display = 'flex';
+    
+    switch(type) {
+      case 'department': renderDepartmentForm(b); break;
+      case 'appeal': renderAppealForm(b); break;
+      case 'workoff': renderWorkoffForm(b); break;
+      case 'promotion': renderPromotionForm(b); break;
+      case 'leave': renderLeaveForm(b,'отпуск'); break;
+      case 'rest': renderLeaveForm(b,'отдых'); break;
+      case 'spec-request': renderSpecRequestForm(b); break;
+      case 'spec-receive': renderSpecReceiveForm(b); break;
+      case 'resignation': renderResignationForm(b); break;
+      default: b.innerHTML = '<p>Форма не найдена</p>';
+    }
+  }
+
+  document.getElementById('modalClose').onclick = function() { document.getElementById('modal').style.display = 'none'; };
+  window.onclick = function(e) { if(e.target===document.getElementById('modal')) document.getElementById('modal').style.display = 'none'; };
+
+  // Заявка в отдел
   function renderDepartmentForm(container) {
-    var saved = JSON.parse(localStorage.getItem('lscsd_saved_data_department') || '{}');
-    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Никнейм</label><input id="nickname" value="' + (saved.nickname || '') + '" required></div><div class="form-group"><label>Статик</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Ранг</label><input id="rank" value="' + (saved.rank || '') + '" required></div><div class="form-group"><label>Текущий отдел</label><input id="currentDept" value="' + (saved.currentDept || '') + '" required></div><div class="form-group"><label>Отдел подачи</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department" value="' + (saved.department || '') + '"></div><div class="form-group"><label>Причина</label><textarea id="reason" rows="3" required>' + (saved.reason || '') + '</textarea></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
+    var saved = autoFillEnabled ? JSON.parse(localStorage.getItem('lscsd_saved_department') || '{}') : {};
+    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Никнейм *</label><input id="nickname" value="' + (saved.nickname || '') + '" required></div><div class="form-group"><label>Статик *</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Ранг *</label><input id="rank" value="' + (saved.rank || '') + '" required></div><div class="form-group"><label>Текущий отдел *</label><input id="currentDept" value="' + (saved.currentDept || '') + '" required></div><div class="form-group"><label>Отдел подачи *</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department"></div><div class="form-group"><label>Причина *</label><textarea id="reason" rows="3" required>' + (saved.reason || '') + '</textarea></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit">Отправить</button></form>';
     var btnsDiv = container.querySelector('#deptBtns');
     DEPARTMENTS.forEach(function(d) {
       var btn = document.createElement('div');
@@ -400,77 +411,54 @@
     });
     container.querySelector('#formEl').onsubmit = function(e) {
       e.preventDefault();
-      var btn = document.getElementById('submitBtn');
-      if (btn.disabled) return;
-      btn.disabled = true;
-      btn.textContent = 'Отправка...';
       var data = { nickname:document.getElementById('nickname').value, staticc:document.getElementById('staticc').value, rank:document.getElementById('rank').value, currentDept:document.getElementById('currentDept').value, department:document.getElementById('department').value, reason:document.getElementById('reason').value };
-      if(!data.department){ showError(container,'Выберите отдел'); btn.disabled = false; btn.textContent = 'Отправить'; return; }
-      
-      localStorage.setItem('lscsd_saved_data_department', JSON.stringify(data));
-      
+      if(!data.department){ showError(container,'Выберите отдел'); return; }
+      if(autoFillEnabled) localStorage.setItem('lscsd_saved_department', JSON.stringify(data));
       addApplication({ type: 'submit_department', data: data });
-      
-      sendToDiscord('submit_department', data, false).finally(function() {
-        btn.disabled = false;
-        btn.textContent = 'Отправить';
-        document.getElementById('modal').style.display = 'none';
-      });
+      sendToDiscord('submit_department', data, false);
+      document.getElementById('modal').style.display = 'none';
     };
   }
 
+  // Обжалование
   function renderAppealForm(container) {
-    var saved = JSON.parse(localStorage.getItem('lscsd_saved_data_appeal') || '{}');
-    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Никнейм</label><input id="nickname" value="' + (saved.nickname || '') + '" required></div><div class="form-group"><label>Статик</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Вид наказания</label><input id="reprimandType" value="' + (saved.reprimandType || '') + '" required></div><div class="form-group"><label>Кем выдано</label><input id="issuedBy" value="' + (saved.issuedBy || '') + '" required></div><div class="form-group"><label>Когда выдано</label><input type="date" id="issuedDate" value="' + (saved.issuedDate || '') + '" required></div><div class="form-group"><label>Причина из выговора</label><textarea id="reasonGiven" rows="2" required>' + (saved.reasonGiven || '') + '</textarea></div><div class="form-group"><label>Описание ситуации</label><textarea id="description" rows="3" required>' + (saved.description || '') + '</textarea></div><div class="form-group"><label>Вложения</label><input type="file" id="attachments" multiple accept="image/*"></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
+    var saved = autoFillEnabled ? JSON.parse(localStorage.getItem('lscsd_saved_appeal') || '{}') : {};
+    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Никнейм *</label><input id="nickname" value="' + (saved.nickname || '') + '" required></div><div class="form-group"><label>Статик *</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Вид наказания *</label><input id="reprimandType" value="' + (saved.reprimandType || '') + '" required></div><div class="form-group"><label>Кем выдано *</label><input id="issuedBy" value="' + (saved.issuedBy || '') + '" required></div><div class="form-group"><label>Когда выдано *</label><input type="date" id="issuedDate" value="' + (saved.issuedDate || '') + '" required></div><div class="form-group"><label>Причина из выговора *</label><textarea id="reasonGiven" rows="2" required>' + (saved.reasonGiven || '') + '</textarea></div><div class="form-group"><label>Описание ситуации *</label><textarea id="description" rows="3" required>' + (saved.description || '') + '</textarea></div><div class="form-group"><label>Вложения (скриншоты)</label><input type="file" id="attachments" multiple accept="image/*"></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit">Отправить</button></form>';
     var attachments = [];
     var fileInput = container.querySelector('#attachments');
     fileInput.onchange = function(e) { attachments = Array.from(e.target.files); createFilePreview(container, attachments, 'attachments'); };
     container.querySelector('#formEl').onsubmit = function(e) {
       e.preventDefault();
-      var btn = document.getElementById('submitBtn');
-      if (btn.disabled) return;
-      btn.disabled = true;
-      btn.textContent = 'Отправка...';
       var data = { nickname:document.getElementById('nickname').value, staticc:document.getElementById('staticc').value, reprimandType:document.getElementById('reprimandType').value, issuedBy:document.getElementById('issuedBy').value, issuedDate:document.getElementById('issuedDate').value, reasonGiven:document.getElementById('reasonGiven').value, description:document.getElementById('description').value, attachments: attachments };
-      
-      localStorage.setItem('lscsd_saved_data_appeal', JSON.stringify(data));
+      if(autoFillEnabled) localStorage.setItem('lscsd_saved_appeal', JSON.stringify(data));
       addApplication({ type: 'submit_appeal', data: data });
-      sendToDiscord('submit_appeal', data, true).finally(function() {
-        btn.disabled = false;
-        btn.textContent = 'Отправить';
-        document.getElementById('modal').style.display = 'none';
-      });
+      sendToDiscord('submit_appeal', data, true);
+      document.getElementById('modal').style.display = 'none';
     };
   }
 
+  // Отработка
   function renderWorkoffForm(container) {
-    var saved = JSON.parse(localStorage.getItem('lscsd_saved_data_workoff') || '{}');
-    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Никнейм</label><input id="nickname" value="' + (saved.nickname || '') + '" required></div><div class="form-group"><label>Статик</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Ранг</label><select id="rank"><option>1-4</option><option>5-8</option><option>9-11</option><option>13</option></select></div><div class="form-group"><label>За что выговор</label><textarea id="reason" rows="2" required>' + (saved.reason || '') + '</textarea></div><div class="form-group"><label>Тип наказания</label><select id="punishmentType"><option>Устный выговор</option><option>Строгий выговор</option></select></div><div class="form-group"><label>Док-ва</label><input type="file" id="attachments" multiple accept="image/*,application/pdf"></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
+    var saved = autoFillEnabled ? JSON.parse(localStorage.getItem('lscsd_saved_workoff') || '{}') : {};
+    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Никнейм *</label><input id="nickname" value="' + (saved.nickname || '') + '" required></div><div class="form-group"><label>Статик *</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Ранг *</label><select id="rank"><option>1-4</option><option>5-8</option><option>9-11</option><option>13</option></select></div><div class="form-group"><label>За что выговор *</label><textarea id="reason" rows="2" required>' + (saved.reason || '') + '</textarea></div><div class="form-group"><label>Тип наказания *</label><select id="punishmentType"><option>Устный выговор</option><option>Строгий выговор</option></select></div><div class="form-group"><label>Док-ва (скриншот/фото)</label><input type="file" id="attachments" multiple accept="image/*"></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit">Отправить</button></form>';
     if (saved.rank) document.getElementById('rank').value = saved.rank;
-    if (saved.punishmentType) document.getElementById('punishmentType').value = saved.punishmentType;
     var attachments = [];
     var fileInput = container.querySelector('#attachments');
     fileInput.onchange = function(e) { attachments = Array.from(e.target.files); createFilePreview(container, attachments, 'attachments'); };
     container.querySelector('#formEl').onsubmit = function(e) {
       e.preventDefault();
-      var btn = document.getElementById('submitBtn');
-      if (btn.disabled) return;
-      btn.disabled = true;
-      btn.textContent = 'Отправка...';
       var data = { nickname:document.getElementById('nickname').value, staticc:document.getElementById('staticc').value, rank:document.getElementById('rank').value, reason:document.getElementById('reason').value, punishmentType:document.getElementById('punishmentType').value, attachments: attachments };
-      localStorage.setItem('lscsd_saved_data_workoff', JSON.stringify(data));
+      if(autoFillEnabled) localStorage.setItem('lscsd_saved_workoff', JSON.stringify(data));
       addApplication({ type: 'submit_workoff', data: data });
-      sendToDiscord('submit_workoff', data, true).finally(function() {
-        btn.disabled = false;
-        btn.textContent = 'Отправить';
-        document.getElementById('modal').style.display = 'none';
-      });
+      sendToDiscord('submit_workoff', data, true);
+      document.getElementById('modal').style.display = 'none';
     };
   }
 
+  // Повышение
   function renderPromotionForm(container) {
-    var saved = JSON.parse(localStorage.getItem('lscsd_saved_data_promotion') || '{}');
-    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Никнейм</label><input id="nickname" value="' + (saved.nickname || '') + '" required></div><div class="form-group"><label>Статик</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Текущий ранг</label><input id="currentRank" value="' + (saved.currentRank || '') + '" required></div><div class="form-group"><label>Целевой ранг</label><input id="targetRank" value="' + (saved.targetRank || '') + '" required></div><div class="form-group"><label>Баллы</label><input type="number" id="points" value="' + (saved.points || '') + '" required></div><div class="form-group"><label>Док-ва баллов</label><textarea id="proof" rows="2" required>' + (saved.proof || '') + '</textarea></div><div class="form-group"><label>Отдел подачи</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department" value="' + (saved.department || '') + '"></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
+    var saved = autoFillEnabled ? JSON.parse(localStorage.getItem('lscsd_saved_promotion') || '{}') : {};
+    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Никнейм *</label><input id="nickname" value="' + (saved.nickname || '') + '" required></div><div class="form-group"><label>Статик *</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Текущий ранг *</label><input id="currentRank" value="' + (saved.currentRank || '') + '" required></div><div class="form-group"><label>Целевой ранг *</label><input id="targetRank" value="' + (saved.targetRank || '') + '" required></div><div class="form-group"><label>Баллы *</label><input type="number" id="points" value="' + (saved.points || '') + '" required></div><div class="form-group"><label>Док-ва баллов *</label><textarea id="proof" rows="2" required>' + (saved.proof || '') + '</textarea></div><div class="form-group"><label>Отдел подачи *</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department"></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit">Отправить</button></form>';
     var btnsDiv = container.querySelector('#deptBtns');
     DEPARTMENTS.forEach(function(d) {
       var btn = document.createElement('div');
@@ -484,28 +472,21 @@
       };
       btnsDiv.appendChild(btn);
     });
-    if (saved.department) document.getElementById('department').value = saved.department;
     container.querySelector('#formEl').onsubmit = function(e) {
       e.preventDefault();
-      var btn = document.getElementById('submitBtn');
-      if (btn.disabled) return;
-      btn.disabled = true;
-      btn.textContent = 'Отправка...';
       var data = { nickname:document.getElementById('nickname').value, staticc:document.getElementById('staticc').value, currentRank:document.getElementById('currentRank').value, targetRank:document.getElementById('targetRank').value, points:document.getElementById('points').value, proof:document.getElementById('proof').value, department:document.getElementById('department').value };
-      if(!data.department){ showError(container,'Выберите отдел'); btn.disabled = false; btn.textContent = 'Отправить'; return; }
-      localStorage.setItem('lscsd_saved_data_promotion', JSON.stringify(data));
+      if(!data.department){ showError(container,'Выберите отдел'); return; }
+      if(autoFillEnabled) localStorage.setItem('lscsd_saved_promotion', JSON.stringify(data));
       addApplication({ type: 'submit_promotion', data: data });
-      sendToDiscord('submit_promotion', data, false).finally(function() {
-        btn.disabled = false;
-        btn.textContent = 'Отправить';
-        document.getElementById('modal').style.display = 'none';
-      });
+      sendToDiscord('submit_promotion', data, false);
+      document.getElementById('modal').style.display = 'none';
     };
   }
 
+  // Отпуск/Отдых
   function renderLeaveForm(container, type) {
-    var saved = JSON.parse(localStorage.getItem('lscsd_saved_data_' + type) || '{}');
-    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Отдел</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department" value="' + (saved.department || '') + '"></div><div class="form-group"><label>Причина</label><textarea id="reason" rows="2" required>' + (saved.reason || '') + '</textarea></div><div class="form-group"><label>С даты</label><input type="datetime-local" id="fromDate" value="' + (saved.fromDate || '') + '" required></div><div class="form-group"><label>По дату</label><input type="datetime-local" id="toDate" value="' + (saved.toDate || '') + '" required></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
+    var saved = autoFillEnabled ? JSON.parse(localStorage.getItem('lscsd_saved_' + type) || '{}') : {};
+    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Отдел *</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department"></div><div class="form-group"><label>Причина *</label><textarea id="reason" rows="2" required>' + (saved.reason || '') + '</textarea></div><div class="form-group"><label>С даты *</label><input type="datetime-local" id="fromDate" value="' + (saved.fromDate || '') + '" required></div><div class="form-group"><label>По дату *</label><input type="datetime-local" id="toDate" value="' + (saved.toDate || '') + '" required></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit">Отправить</button></form>';
     var btnsDiv = container.querySelector('#deptBtns');
     DEPARTMENTS.forEach(function(d) {
       var btn = document.createElement('div');
@@ -519,28 +500,22 @@
       };
       btnsDiv.appendChild(btn);
     });
-    if (saved.department) document.getElementById('department').value = saved.department;
     container.querySelector('#formEl').onsubmit = function(e) {
       e.preventDefault();
-      var btn = document.getElementById('submitBtn');
-      if (btn.disabled) return;
-      btn.disabled = true;
-      btn.textContent = 'Отправка...';
       var data = { department:document.getElementById('department').value, reason:document.getElementById('reason').value, fromDate:document.getElementById('fromDate').value, toDate:document.getElementById('toDate').value };
-      if(!data.department){ showError(container,'Выберите отдел'); btn.disabled = false; btn.textContent = 'Отправить'; return; }
-      localStorage.setItem('lscsd_saved_data_' + type, JSON.stringify(data));
-      addApplication({ type: type === 'отпуск' ? 'submit_leave' : 'submit_rest', data: data });
-      sendToDiscord(type === 'отпуск' ? 'submit_leave' : 'submit_rest', data, false).finally(function() {
-        btn.disabled = false;
-        btn.textContent = 'Отправить';
-        document.getElementById('modal').style.display = 'none';
-      });
+      if(!data.department){ showError(container,'Выберите отдел'); return; }
+      if(autoFillEnabled) localStorage.setItem('lscsd_saved_' + type, JSON.stringify(data));
+      var action = type === 'отпуск' ? 'submit_leave' : 'submit_rest';
+      addApplication({ type: action, data: data });
+      sendToDiscord(action, data, false);
+      document.getElementById('modal').style.display = 'none';
     };
   }
 
+  // Спецвооружение запрос
   function renderSpecRequestForm(container) {
-    var saved = JSON.parse(localStorage.getItem('lscsd_saved_data_spec-request') || '{}');
-    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Никнейм</label><input id="nickname" value="' + (saved.nickname || '') + '" required></div><div class="form-group"><label>Статик</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Ранг</label><input id="rank" value="' + (saved.rank || '') + '" required></div><div class="form-group"><label>Отдел</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department" value="' + (saved.department || '') + '"></div><div class="form-group"><label>Оружие</label><input id="weapon" value="' + (saved.weapon || '') + '" required></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
+    var saved = autoFillEnabled ? JSON.parse(localStorage.getItem('lscsd_saved_spec_request') || '{}') : {};
+    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Никнейм *</label><input id="nickname" value="' + (saved.nickname || '') + '" required></div><div class="form-group"><label>Статик *</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Ранг *</label><input id="rank" value="' + (saved.rank || '') + '" required></div><div class="form-group"><label>Отдел *</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department"></div><div class="form-group"><label>Оружие *</label><input id="weapon" value="' + (saved.weapon || '') + '" required></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit">Отправить</button></form>';
     var btnsDiv = container.querySelector('#deptBtns');
     DEPARTMENTS.forEach(function(d) {
       var btn = document.createElement('div');
@@ -554,28 +529,21 @@
       };
       btnsDiv.appendChild(btn);
     });
-    if (saved.department) document.getElementById('department').value = saved.department;
     container.querySelector('#formEl').onsubmit = function(e) {
       e.preventDefault();
-      var btn = document.getElementById('submitBtn');
-      if (btn.disabled) return;
-      btn.disabled = true;
-      btn.textContent = 'Отправка...';
       var data = { nickname:document.getElementById('nickname').value, staticc:document.getElementById('staticc').value, rank:document.getElementById('rank').value, department:document.getElementById('department').value, weapon:document.getElementById('weapon').value };
-      if(!data.department){ showError(container,'Выберите отдел'); btn.disabled = false; btn.textContent = 'Отправить'; return; }
-      localStorage.setItem('lscsd_saved_data_spec-request', JSON.stringify(data));
+      if(!data.department){ showError(container,'Выберите отдел'); return; }
+      if(autoFillEnabled) localStorage.setItem('lscsd_saved_spec_request', JSON.stringify(data));
       addApplication({ type: 'submit_spec_request', data: data });
-      sendToDiscord('submit_spec_request', data, false).finally(function() {
-        btn.disabled = false;
-        btn.textContent = 'Отправить';
-        document.getElementById('modal').style.display = 'none';
-      });
+      sendToDiscord('submit_spec_request', data, false);
+      document.getElementById('modal').style.display = 'none';
     };
   }
 
+  // Спецвооружение получение
   function renderSpecReceiveForm(container) {
-    var saved = JSON.parse(localStorage.getItem('lscsd_saved_data_spec-receive') || '{}');
-    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Никнейм</label><input id="nickname" value="' + (saved.nickname || '') + '" required></div><div class="form-group"><label>Статик</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Ранг</label><input id="rank" value="' + (saved.rank || '') + '" required></div><div class="form-group"><label>Отдел</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department" value="' + (saved.department || '') + '"></div><div class="form-group"><label>Оружие</label><input id="weapon" value="' + (saved.weapon || '') + '" required></div><div class="form-group"><label>Номер</label><input id="weaponNumber" value="' + (saved.weaponNumber || '') + '" required></div><div class="form-group"><label>Кто выдал</label><input id="issuedBy" value="' + (saved.issuedBy || '') + '" required></div><div class="form-group"><label>Скрин инвентаря</label><input type="file" id="attachments" multiple accept="image/*"></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
+    var saved = autoFillEnabled ? JSON.parse(localStorage.getItem('lscsd_saved_spec_receive') || '{}') : {};
+    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Никнейм *</label><input id="nickname" value="' + (saved.nickname || '') + '" required></div><div class="form-group"><label>Статик *</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Ранг *</label><input id="rank" value="' + (saved.rank || '') + '" required></div><div class="form-group"><label>Отдел *</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department"></div><div class="form-group"><label>Оружие *</label><input id="weapon" value="' + (saved.weapon || '') + '" required></div><div class="form-group"><label>Номер спецухи *</label><input id="weaponNumber" value="' + (saved.weaponNumber || '') + '" required></div><div class="form-group"><label>Кто выдал *</label><input id="issuedBy" value="' + (saved.issuedBy || '') + '" required></div><div class="form-group"><label>Скрин из инвентаря *</label><input type="file" id="attachments" multiple accept="image/*"></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit">Отправить</button></form>';
     var btnsDiv = container.querySelector('#deptBtns');
     DEPARTMENTS.forEach(function(d) {
       var btn = document.createElement('div');
@@ -589,31 +557,24 @@
       };
       btnsDiv.appendChild(btn);
     });
-    if (saved.department) document.getElementById('department').value = saved.department;
     var attachments = [];
     var fileInput = container.querySelector('#attachments');
     fileInput.onchange = function(e) { attachments = Array.from(e.target.files); createFilePreview(container, attachments, 'attachments'); };
     container.querySelector('#formEl').onsubmit = function(e) {
       e.preventDefault();
-      var btn = document.getElementById('submitBtn');
-      if (btn.disabled) return;
-      btn.disabled = true;
-      btn.textContent = 'Отправка...';
       var data = { nickname:document.getElementById('nickname').value, staticc:document.getElementById('staticc').value, rank:document.getElementById('rank').value, department:document.getElementById('department').value, weapon:document.getElementById('weapon').value, weaponNumber:document.getElementById('weaponNumber').value, issuedBy:document.getElementById('issuedBy').value, attachments: attachments };
-      if(!data.department){ showError(container,'Выберите отдел'); btn.disabled = false; btn.textContent = 'Отправить'; return; }
-      localStorage.setItem('lscsd_saved_data_spec-receive', JSON.stringify(data));
+      if(!data.department){ showError(container,'Выберите отдел'); return; }
+      if(autoFillEnabled) localStorage.setItem('lscsd_saved_spec_receive', JSON.stringify(data));
       addApplication({ type: 'submit_spec_receive', data: data });
-      sendToDiscord('submit_spec_receive', data, true).finally(function() {
-        btn.disabled = false;
-        btn.textContent = 'Отправить';
-        document.getElementById('modal').style.display = 'none';
-      });
+      sendToDiscord('submit_spec_receive', data, true);
+      document.getElementById('modal').style.display = 'none';
     };
   }
 
+  // Увольнение
   function renderResignationForm(container) {
-    var saved = JSON.parse(localStorage.getItem('lscsd_saved_data_resignation') || '{}');
-    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Никнейм</label><input id="nickname" value="' + (saved.nickname || '') + '" required></div><div class="form-group"><label>Static ID</label><input id="staticId" value="' + (saved.staticId || '') + '" required></div><div class="form-group"><label>Отдел</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department" value="' + (saved.department || '') + '"></div><div class="form-group"><label>Планшет</label><input id="tablet" value="' + (saved.tablet || '') + '" required></div><div class="form-group"><label>Инвентарь</label><input id="inventory" value="' + (saved.inventory || '') + '" required></div><div class="form-group"><label>Вложения</label><input type="file" id="attachments" multiple accept="image/*"></div><div class="form-group"><label>Причина</label><textarea id="reason" rows="3" required>' + (saved.reason || '') + '</textarea></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
+    var saved = autoFillEnabled ? JSON.parse(localStorage.getItem('lscsd_saved_resignation') || '{}') : {};
+    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Никнейм *</label><input id="nickname" value="' + (saved.nickname || '') + '" required></div><div class="form-group"><label>Static ID *</label><input id="staticId" value="' + (saved.staticId || '') + '" required></div><div class="form-group"><label>Отдел *</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department"></div><div class="form-group"><label>Планшет *</label><input id="tablet" value="' + (saved.tablet || '') + '" required></div><div class="form-group"><label>Инвентарь *</label><input id="inventory" value="' + (saved.inventory || '') + '" required></div><div class="form-group"><label>Вложения (скриншоты)</label><input type="file" id="attachments" multiple accept="image/*"></div><div class="form-group"><label>Причина *</label><textarea id="reason" rows="3" required>' + (saved.reason || '') + '</textarea></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit">Отправить</button></form>';
     var btnsDiv = container.querySelector('#deptBtns');
     DEPARTMENTS.forEach(function(d) {
       var btn = document.createElement('div');
@@ -627,28 +588,21 @@
       };
       btnsDiv.appendChild(btn);
     });
-    if (saved.department) document.getElementById('department').value = saved.department;
     var attachments = [];
     var fileInput = container.querySelector('#attachments');
     fileInput.onchange = function(e) { attachments = Array.from(e.target.files); createFilePreview(container, attachments, 'attachments'); };
     container.querySelector('#formEl').onsubmit = function(e) {
       e.preventDefault();
-      var btn = document.getElementById('submitBtn');
-      if (btn.disabled) return;
-      btn.disabled = true;
-      btn.textContent = 'Отправка...';
       var data = { nickname:document.getElementById('nickname').value, staticId:document.getElementById('staticId').value, department:document.getElementById('department').value, tablet:document.getElementById('tablet').value, inventory:document.getElementById('inventory').value, reason:document.getElementById('reason').value, attachments: attachments };
-      if(!data.department){ showError(container,'Выберите отдел'); btn.disabled = false; btn.textContent = 'Отправить'; return; }
-      localStorage.setItem('lscsd_saved_data_resignation', JSON.stringify(data));
+      if(!data.department){ showError(container,'Выберите отдел'); return; }
+      if(autoFillEnabled) localStorage.setItem('lscsd_saved_resignation', JSON.stringify(data));
       addApplication({ type: 'submit_resignation', data: data });
-      sendToDiscord('submit_resignation', data, true).finally(function() {
-        btn.disabled = false;
-        btn.textContent = 'Отправить';
-        document.getElementById('modal').style.display = 'none';
-      });
+      sendToDiscord('submit_resignation', data, true);
+      document.getElementById('modal').style.display = 'none';
     };
   }
 
+  // Табы
   var tabBtns = document.querySelectorAll('.tab-btn');
   tabBtns.forEach(function(btn) {
     btn.onclick = function() {
@@ -657,12 +611,13 @@
       document.querySelectorAll('.tab-content').forEach(function(tab) { tab.classList.remove('active'); });
       document.getElementById(this.dataset.tab + '-tab').classList.add('active');
       if (this.dataset.tab === 'stats') renderStats();
-      if (this.dataset.tab === 'history') renderHistory();
+      if (this.dataset.tab === 'history') renderFormsList();
     };
   });
 
-  document.getElementById('historySearch')?.addEventListener('input', function() { renderHistory(); });
+  document.getElementById('historySearch')?.addEventListener('input', function() { renderFormsList(); });
 
+  // Баг репорт
   var bugModal = document.getElementById('bugModal');
   document.getElementById('reportBugBtn').onclick = function() { if(currentUser) bugModal.style.display = 'flex'; else showNotification('Авторизуйтесь', 'warning'); };
   document.getElementById('closeBugBtn').onclick = function() { bugModal.style.display = 'none'; };
@@ -682,6 +637,7 @@
     showNotification('Баг отправлен!', 'success');
   };
 
+  // Прелоадер
   var progress = 0;
   var progressBar = document.getElementById('preloaderProgress');
   var interval = setInterval(function() {
@@ -697,10 +653,7 @@
           preloader.style.opacity = '0';
           setTimeout(function() {
             preloader.style.display = 'none';
-            if (app) {
-              app.style.display = 'flex';
-              setTimeout(function() { app.style.opacity = '1'; }, 50);
-            }
+            if (app) app.style.display = 'flex';
           }, 500);
         }
       }, 1000);
