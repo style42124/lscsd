@@ -26,8 +26,6 @@
   var blacklist = JSON.parse(localStorage.getItem('lscsd_blacklist') || '[]');
   var tempBlocked = JSON.parse(localStorage.getItem('lscsd_tempBlocked') || '{}');
   var userRequests = JSON.parse(localStorage.getItem('lscsd_requests') || '{}');
-  var userHistory = JSON.parse(localStorage.getItem('lscsd_user_history') || '[]');
-  var usersRoles = JSON.parse(localStorage.getItem('lscsd_users_roles') || '{}');
 
   var DEPARTMENTS = ['SAI', 'GU', 'AF', 'IAD', 'SEB', 'K-9', 'DID', 'MED', 'SPD', 'HS'];
   var FORMS_LIST = [
@@ -62,6 +60,74 @@
     setTimeout(function() { div.remove(); }, 3000);
   }
 
+  function getToken() {
+    if (currentUser && currentUser.token) return currentUser.token;
+    var user = localStorage.getItem('lscsd_user');
+    if (user) {
+      try {
+        var parsed = JSON.parse(user);
+        return parsed.token || '';
+      } catch(e) { return ''; }
+    }
+    return '';
+  }
+
+  function callAPI(action, formData, hasFile) {
+    return new Promise(function(resolve, reject) {
+      if (isSending) { showNotification('Подождите...', 'warning'); reject(); return; }
+      if (currentUser && isTempBlocked(currentUser.id)) { showNotification('Вы заблокированы на 15 минут!', 'error'); reject(); return; }
+      if (currentUser && !checkRateLimit(currentUser.id)) {
+        tempBlocked[currentUser.id] = Date.now() + 15*60*1000;
+        localStorage.setItem('lscsd_tempBlocked', JSON.stringify(tempBlocked));
+        showNotification('Лимит заявок! Блокировка 15 мин.', 'error');
+        reject(); return;
+      }
+      isSending = true;
+      
+      var token = getToken();
+      var dataToSend = { action: action, data: formData || {} };
+      
+      var options = { method:'POST', headers:{}, body:null };
+      
+      if (hasFile) {
+        var fd = new FormData();
+        fd.append('action', action);
+        fd.append('data', JSON.stringify(dataToSend.data));
+        if (formData && formData.attachments) {
+          for (var i = 0; i < formData.attachments.length; i++) {
+            fd.append('attachments[]', formData.attachments[i]);
+          }
+        }
+        options.body = fd;
+      } else {
+        options.headers['Content-Type'] = 'application/json';
+        options.body = JSON.stringify(dataToSend);
+      }
+      
+      if (token) {
+        options.headers['Authorization'] = 'Bearer ' + token;
+      }
+      
+      fetch(PROXY_URL, options)
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          isSending = false;
+          if (d.success) {
+            showNotification('✅ Заявка отправлена!', 'success');
+            resolve(d);
+          } else {
+            showNotification(d.error || '❌ Ошибка отправки', 'error');
+            reject(d);
+          }
+        })
+        .catch(function(err) {
+          isSending = false;
+          showNotification('❌ Ошибка сети', 'error');
+          reject(err);
+        });
+    });
+  }
+
   function isTempBlocked(userId) { 
     var b = tempBlocked[userId]; 
     return b && b > Date.now(); 
@@ -81,7 +147,9 @@
   function loadApplicationsFromServer() {
     if (!currentUser) return Promise.resolve([]);
     
-    var token = currentUser.token || '';
+    var token = getToken();
+    if (!token) return Promise.resolve([]);
+    
     return fetch(PROXY_URL, {
       method: 'POST',
       headers: { 
@@ -95,69 +163,11 @@
     }).catch(function() { return []; });
   }
 
-  function callAPI(action, formData, hasFile) {
-    return new Promise(function(resolve, reject) {
-      if (isSending) { showNotification('Подождите...', 'warning'); reject(); return; }
-      if (currentUser && isTempBlocked(currentUser.id)) { showNotification('Вы заблокированы на 15 минут!', 'error'); reject(); return; }
-      if (currentUser && !checkRateLimit(currentUser.id)) {
-        tempBlocked[currentUser.id] = Date.now() + 15*60*1000;
-        localStorage.setItem('lscsd_tempBlocked', JSON.stringify(tempBlocked));
-        showNotification('Лимит заявок! Блокировка 15 мин.', 'error');
-        reject(); return;
-      }
-      isSending = true;
-      
-      var dataToSend = { action: action, data: formData || {} };
-      if (currentUser) {
-        dataToSend.data.userId = currentUser.id;
-        dataToSend.data.username = currentUser.username;
-        dataToSend.data.userRole = currentUserRole ? currentUserRole.level : 1;
-      }
-      
-      var options = { method:'POST', headers:{}, body:null };
-      if (hasFile) {
-        var fd = new FormData();
-        fd.append('action', action);
-        fd.append('data', JSON.stringify(dataToSend.data));
-        if (formData && formData.attachments) {
-          for (var i = 0; i < formData.attachments.length; i++) {
-            fd.append('attachments[]', formData.attachments[i]);
-          }
-        }
-        options.body = fd;
-      } else {
-        options.headers['Content-Type'] = 'application/json';
-        options.body = JSON.stringify(dataToSend);
-      }
-      
-      if (currentUser && currentUser.token) {
-        options.headers['Authorization'] = 'Bearer ' + currentUser.token;
-      }
-      
-      fetch(PROXY_URL, options)
-        .then(function(r) { return r.json(); })
-        .then(function(d) {
-          isSending = false;
-          if (d.success) {
-            showNotification('✅ Заявка отправлена!', 'success');
-            addToHistory(action, formData);
-            resolve(d);
-          } else {
-            showNotification(d.error || '❌ Ошибка отправки', 'error');
-            reject(d);
-          }
-        })
-        .catch(function(err) {
-          isSending = false;
-          showNotification('❌ Ошибка сети', 'error');
-          reject(err);
-        });
-    });
-  }
-
   function loadUserRoleFromServer() {
     if (!currentUser) return Promise.resolve(null);
-    var token = currentUser.token || '';
+    var token = getToken();
+    if (!token) return Promise.resolve(null);
+    
     return fetch(PROXY_URL, {
       method: 'POST',
       headers: { 
@@ -168,8 +178,7 @@
     }).then(function(r) { return r.json(); }).then(function(res) {
       if (res.success) {
         currentUserRole = res.role;
-        usersRoles[currentUser.id] = currentUserRole;
-        localStorage.setItem('lscsd_users_roles', JSON.stringify(usersRoles));
+        localStorage.setItem('lscsd_user_role', JSON.stringify(currentUserRole));
         
         var panelContainer = document.getElementById('panelBtnContainer');
         var panelBtn = document.getElementById('panelBtn');
@@ -199,19 +208,15 @@
     return {};
   }
 
-  function addToHistory(type, data) {
-    userHistory.unshift({type: type, data: data, time: new Date().toLocaleString(), userId: currentUser?.id});
-    userHistory = userHistory.slice(0, 100);
-    localStorage.setItem('lscsd_user_history', JSON.stringify(userHistory));
-    renderHistory();
-    renderStats();
-  }
-
   function sendBugReport(bugType, bugDesc) {
     if (!currentUser) return;
+    var token = getToken();
     fetch(PROXY_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': token ? 'Bearer ' + token : ''
+      },
       body: JSON.stringify({ action: 'report_bug', data: { userId: currentUser.id, username: currentUser.username, bugType: bugType, bugDescription: bugDesc } })
     }).then(function(r) { return r.json(); }).then(function(res){
       if(res.success) showNotification('Баг отправлен!', 'success');
@@ -227,10 +232,6 @@
       if (token) {
         fetch('https://discord.com/api/users/@me', { headers: { Authorization: 'Bearer '+token } })
           .then(function(r) { return r.json(); }).then(function(user) {
-            if (!usersRoles[user.id]) {
-              usersRoles[user.id] = { level: 1, name: 'Младший состав', department: null };
-              localStorage.setItem('lscsd_users_roles', JSON.stringify(usersRoles));
-            }
             localStorage.setItem('lscsd_user', JSON.stringify({ 
               id: user.id, 
               username: user.username, 
@@ -248,12 +249,11 @@
     var user = localStorage.getItem('lscsd_user');
     if (user) {
       currentUser = JSON.parse(user);
-      if (blacklist.includes(currentUser.id)) { 
-        showNotification('Вы в чёрном списке!', 'error'); 
-        localStorage.removeItem('lscsd_user'); 
-        location.reload(); 
-        return; 
+      var savedRole = localStorage.getItem('lscsd_user_role');
+      if (savedRole) {
+        currentUserRole = JSON.parse(savedRole);
       }
+      
       document.getElementById('authContainer').style.display = 'none';
       document.getElementById('mainContainer').style.display = 'block';
       document.getElementById('navUser').style.display = 'flex';
@@ -278,7 +278,8 @@
   };
   
   document.getElementById('settingsLogoutBtn').onclick = function() { 
-    localStorage.removeItem('lscsd_user'); 
+    localStorage.removeItem('lscsd_user');
+    localStorage.removeItem('lscsd_user_role');
     location.reload(); 
   };
 
