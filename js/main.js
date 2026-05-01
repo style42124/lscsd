@@ -7,13 +7,12 @@
     }
   });
 
-  var PROXY_URL = 'https://cors-anywhere.herokuapp.com/https://cs324022.tw1.ru/index.php';
+  var PROXY_URL = 'https://cs324022.tw1.ru/index.php';
   var DISCORD_CLIENT_ID = '1494686473520287774';
   var REDIRECT_URI = 'https://style42124.github.io/lscsd/';
   
   var currentUser = null;
   var currentUserRole = null;
-  var isSending = false;
   
   // Заявки
   var allApplications = JSON.parse(localStorage.getItem('lscsd_applications') || '[]');
@@ -32,7 +31,6 @@
     renderStats();
   }
 
-  // Список форм
   var FORMS_LIST = [
     {id:'department', label:'📋 Заявка в отдел', desc:'Подача заявления на перевод'},
     {id:'appeal', label:'⚖️ Обжалование выговора', desc:'Обжалование дисциплинарного взыскания'},
@@ -67,78 +65,39 @@
     setTimeout(function() { div.remove(); }, 3000);
   }
 
-  // Отправка в Discord (с ignore ошибок)
-  function sendToDiscord(action, formData, hasFile) {
-    if (!currentUser) return Promise.resolve();
+  // Отправка в Discord (без ожидания ответа)
+  function sendToDiscord(action, formData) {
+    if (!currentUser) return;
     
-    return new Promise(function(resolve) {
-      var dataToSend = { action: action, data: formData || {} };
-      dataToSend.data.userId = currentUser.id;
-      dataToSend.data.username = currentUser.username;
-      
-      var options = { method:'POST', headers:{}, body:null };
-      
-      if (hasFile && formData.attachments && formData.attachments.length) {
-        var fd = new FormData();
-        fd.append('action', action);
-        fd.append('data', JSON.stringify(dataToSend.data));
-        for (var i = 0; i < formData.attachments.length; i++) {
-          fd.append('attachments[]', formData.attachments[i]);
-        }
-        options.body = fd;
-      } else {
-        options.headers['Content-Type'] = 'application/json';
-        options.body = JSON.stringify(dataToSend);
-      }
-      
-      fetch(PROXY_URL, options)
-        .then(function() { resolve(); })
-        .catch(function() { resolve(); });
-    });
-  }
-
-  // Получение роли пользователя (с обработкой ошибок)
-  function loadUserRoleFromServer() {
-    if (!currentUser) return Promise.resolve(null);
+    var dataToSend = { action: action, data: formData || {} };
+    dataToSend.data.userId = currentUser.id;
+    dataToSend.data.username = currentUser.username;
     
-    return fetch(PROXY_URL, {
+    fetch(PROXY_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'get_user_role', data: { userId: currentUser.id } })
-    }).then(function(r) { return r.json(); }).then(function(res) {
-      if (res.success && res.role) {
-        currentUserRole = res.role;
-        localStorage.setItem('lscsd_user_role', JSON.stringify(currentUserRole));
-      } else {
-        currentUserRole = { level: 1, name: 'Младший состав', department: null };
-      }
-      
-      // РАЗРАБОТЧИК - принудительно для ID 909100136074993694
-      if (currentUser.id === '909100136074993694') {
-        currentUserRole = { level: 9, name: 'Разработчик', department: null };
-        localStorage.setItem('lscsd_user_role', JSON.stringify(currentUserRole));
-      }
-      
-      // Показываем кнопку панели управления
-      var panelContainer = document.getElementById('panelBtnContainer');
-      var panelBtn = document.getElementById('panelBtn');
-      if (panelContainer && panelBtn && currentUserRole && (currentUserRole.level >= 2 || currentUserRole.level === 9)) {
-        panelContainer.style.display = 'flex';
-        panelBtn.onclick = function() { window.location.href = '/lscsd/panel.html'; };
-      }
-      
-      return currentUserRole;
-    }).catch(function() {
-      // При ошибке - даём роль 1
-      currentUserRole = { level: 1, name: 'Младший состав', department: null };
-      if (currentUser.id === '909100136074993694') {
-        currentUserRole = { level: 9, name: 'Разработчик', department: null };
-      }
-      return currentUserRole;
-    });
+      body: JSON.stringify(dataToSend)
+    }).catch(function() {});
   }
 
-  // Рендер карточек
+  // Роль пользователя (локально)
+  function getUserRole() {
+    var saved = localStorage.getItem('lscsd_user_role');
+    if (saved) {
+      currentUserRole = JSON.parse(saved);
+    } else {
+      currentUserRole = { level: 1, name: 'Младший состав', department: null };
+    }
+    
+    // Панель управления для ролей >= 2
+    var panelContainer = document.getElementById('panelBtnContainer');
+    var panelBtn = document.getElementById('panelBtn');
+    if (panelContainer && panelBtn && currentUserRole && (currentUserRole.level >= 2 || currentUserRole.level === 9)) {
+      panelContainer.style.display = 'flex';
+      panelBtn.onclick = function() { window.location.href = '/lscsd/panel.html'; };
+    }
+  }
+
   function renderCards() {
     var container = document.getElementById('cardsGrid');
     if (!container) return;
@@ -152,7 +111,6 @@
     });
   }
 
-  // Рендер истории
   function renderFormsList() {
     var container = document.getElementById('historyList');
     if (!container) return;
@@ -175,7 +133,6 @@
       var details = '';
       if (app.data && app.data.department) details += 'Отдел: ' + app.data.department;
       if (app.data && app.data.nickname) details += (details ? ' | ' : '') + 'От: ' + app.data.nickname;
-      if (app.data && app.data.weapon) details += (details ? ' | ' : '') + 'Оружие: ' + app.data.weapon;
       
       var div = document.createElement('div');
       div.className = 'history-item';
@@ -186,59 +143,54 @@
     });
   }
 
-  // Рендер статистики
   function renderStats() {
-  var stats = { total: allApplications.length, byType: {} };
-  
-  for (var i = 0; i < allApplications.length; i++) {
-    var app = allApplications[i];
-    var displayType = typeNames[app.type] || app.type;
-    stats.byType[displayType] = (stats.byType[displayType] || 0) + 1;
-  }
-  
-  var container = document.getElementById('statsGrid');
-  if (container) {
-    var html = '<div class="stat-card"><div class="stat-number">' + stats.total + '</div><div class="stat-label">Всего заявок</div></div>';
-    for (var type in stats.byType) {
-      html += '<div class="stat-card"><div class="stat-number">' + stats.byType[type] + '</div><div class="stat-label">' + type + '</div></div>';
+    var stats = { total: allApplications.length, byType: {} };
+    
+    for (var i = 0; i < allApplications.length; i++) {
+      var app = allApplications[i];
+      var displayType = typeNames[app.type] || app.type;
+      stats.byType[displayType] = (stats.byType[displayType] || 0) + 1;
     }
-    container.innerHTML = html;
-  }
-  
-  var canvas = document.getElementById('statsChart');
-  if (!canvas) return;
-  
-  var ctx = canvas.getContext('2d');
-  if (!ctx) return;
-  
-  // Безопасное удаление старого графика
-  if (window.statsChart) {
-    try {
-      window.statsChart.destroy();
-    } catch(e) {}
-    window.statsChart = null;
-  }
-  
-  if (Object.keys(stats.byType).length > 0) {
-    window.statsChart = new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: Object.keys(stats.byType),
-        datasets: [{
-          data: Object.values(stats.byType),
-          backgroundColor: ['#d4af37', '#5865F2', '#6bcf7f', '#ff6b6b', '#ffa500', '#4a90d9', '#9b59b6']
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: true,
-        plugins: {
-          legend: { labels: { color: '#e8e8e8' } }
-        }
+    
+    var container = document.getElementById('statsGrid');
+    if (container) {
+      var html = '<div class="stat-card"><div class="stat-number">' + stats.total + '</div><div class="stat-label">Всего заявок</div></div>';
+      for (var type in stats.byType) {
+        html += '<div class="stat-card"><div class="stat-number">' + stats.byType[type] + '</div><div class="stat-label">' + type + '</div></div>';
       }
-    });
+      container.innerHTML = html;
+    }
+    
+    var canvas = document.getElementById('statsChart');
+    if (!canvas) return;
+    
+    var ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    if (window.statsChart) {
+      try { window.statsChart.destroy(); } catch(e) {}
+      window.statsChart = null;
+    }
+    
+    if (Object.keys(stats.byType).length > 0) {
+      window.statsChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(stats.byType),
+          datasets: [{
+            data: Object.values(stats.byType),
+            backgroundColor: ['#d4af37', '#5865F2', '#6bcf7f', '#ff6b6b', '#ffa500', '#4a90d9', '#9b59b6']
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: { legend: { labels: { color: '#e8e8e8' } } }
+        }
+      });
+    }
   }
-}
+
   // Авторизация
   function handleAuthCallback() {
     var hash = window.location.hash.substring(1);
@@ -272,11 +224,10 @@
       document.getElementById('navName').innerText = currentUser.username;
       if (currentUser.avatar) document.getElementById('navAvatar').src = currentUser.avatar;
       
-      loadUserRoleFromServer().then(function() {
-        renderCards();
-        renderFormsList();
-        renderStats();
-      });
+      getUserRole();
+      renderCards();
+      renderFormsList();
+      renderStats();
     } else {
       document.getElementById('authContainer').style.display = 'flex';
       document.getElementById('mainContainer').style.display = 'none';
@@ -335,7 +286,6 @@
     };
   }
 
-  // Автозаполнение
   var autoFillEnabled = localStorage.getItem('lscsd_autofill') === 'true';
   var autoFillSwitch = document.getElementById('autoFillSwitch');
   if (autoFillSwitch) {
@@ -348,7 +298,6 @@
     };
   }
 
-  // Функции для файлов
   function createFilePreview(container, files, inputId) {
     var previewDiv = container.querySelector('#filePreview');
     if (!previewDiv) { 
@@ -420,8 +369,6 @@
   document.getElementById('modalClose').onclick = function() { document.getElementById('modal').style.display = 'none'; };
   window.onclick = function(e) { if(e.target===document.getElementById('modal')) document.getElementById('modal').style.display = 'none'; };
 
-  // ========== ФОРМЫ ==========
-  
   function renderDepartmentForm(container) {
     var saved = autoFillEnabled ? JSON.parse(localStorage.getItem('lscsd_saved_department') || '{}') : {};
     container.innerHTML = '<form id="formEl"><div class="form-group"><label>Никнейм *</label><input id="nickname" value="' + (saved.nickname || '') + '" required></div><div class="form-group"><label>Статик *</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Ранг *</label><input id="rank" value="' + (saved.rank || '') + '" required></div><div class="form-group"><label>Текущий отдел *</label><input id="currentDept" value="' + (saved.currentDept || '') + '" required></div><div class="form-group"><label>Отдел подачи *</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department" value="' + (saved.department || '') + '"></div><div class="form-group"><label>Причина *</label><textarea id="reason" rows="3" required>' + (saved.reason || '') + '</textarea></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit">Отправить</button></form>';
@@ -444,30 +391,30 @@
       if(!data.department){ showError(container,'Выберите отдел'); return; }
       if(autoFillEnabled) localStorage.setItem('lscsd_saved_department', JSON.stringify(data));
       addApplication({ type: 'submit_department', data: data });
-      sendToDiscord('submit_department', data, false);
+      sendToDiscord('submit_department', data);
       document.getElementById('modal').style.display = 'none';
     };
   }
 
   function renderAppealForm(container) {
     var saved = autoFillEnabled ? JSON.parse(localStorage.getItem('lscsd_saved_appeal') || '{}') : {};
-    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Никнейм *</label><input id="nickname" value="' + (saved.nickname || '') + '" required></div><div class="form-group"><label>Статик *</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Вид наказания *</label><input id="reprimandType" value="' + (saved.reprimandType || '') + '" required></div><div class="form-group"><label>Кем выдано *</label><input id="issuedBy" value="' + (saved.issuedBy || '') + '" required></div><div class="form-group"><label>Когда выдано *</label><input type="date" id="issuedDate" value="' + (saved.issuedDate || '') + '" required></div><div class="form-group"><label>Причина из выговора *</label><textarea id="reasonGiven" rows="2" required>' + (saved.reasonGiven || '') + '</textarea></div><div class="form-group"><label>Описание ситуации *</label><textarea id="description" rows="3" required>' + (saved.description || '') + '</textarea></div><div class="form-group"><label>Вложения (скриншоты)</label><input type="file" id="attachments" multiple accept="image/*"></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit">Отправить</button></form>';
+    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Никнейм *</label><input id="nickname" value="' + (saved.nickname || '') + '" required></div><div class="form-group"><label>Статик *</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Вид наказания *</label><input id="reprimandType" value="' + (saved.reprimandType || '') + '" required></div><div class="form-group"><label>Кем выдано *</label><input id="issuedBy" value="' + (saved.issuedBy || '') + '" required></div><div class="form-group"><label>Когда выдано *</label><input type="date" id="issuedDate" value="' + (saved.issuedDate || '') + '" required></div><div class="form-group"><label>Причина из выговора *</label><textarea id="reasonGiven" rows="2" required>' + (saved.reasonGiven || '') + '</textarea></div><div class="form-group"><label>Описание ситуации *</label><textarea id="description" rows="3" required>' + (saved.description || '') + '</textarea></div><div class="form-group"><label>Вложения</label><input type="file" id="attachments" multiple accept="image/*"></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit">Отправить</button></form>';
     var attachments = [];
     var fileInput = container.querySelector('#attachments');
     fileInput.onchange = function(e) { attachments = Array.from(e.target.files); createFilePreview(container, attachments, 'attachments'); };
     container.querySelector('#formEl').onsubmit = function(e) {
       e.preventDefault();
-      var data = { nickname:document.getElementById('nickname').value, staticc:document.getElementById('staticc').value, reprimandType:document.getElementById('reprimandType').value, issuedBy:document.getElementById('issuedBy').value, issuedDate:document.getElementById('issuedDate').value, reasonGiven:document.getElementById('reasonGiven').value, description:document.getElementById('description').value, attachments: attachments };
+      var data = { nickname:document.getElementById('nickname').value, staticc:document.getElementById('staticc').value, reprimandType:document.getElementById('reprimandType').value, issuedBy:document.getElementById('issuedBy').value, issuedDate:document.getElementById('issuedDate').value, reasonGiven:document.getElementById('reasonGiven').value, description:document.getElementById('description').value };
       if(autoFillEnabled) localStorage.setItem('lscsd_saved_appeal', JSON.stringify(data));
       addApplication({ type: 'submit_appeal', data: data });
-      sendToDiscord('submit_appeal', data, true);
+      sendToDiscord('submit_appeal', data);
       document.getElementById('modal').style.display = 'none';
     };
   }
 
   function renderWorkoffForm(container) {
     var saved = autoFillEnabled ? JSON.parse(localStorage.getItem('lscsd_saved_workoff') || '{}') : {};
-    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Никнейм *</label><input id="nickname" value="' + (saved.nickname || '') + '" required></div><div class="form-group"><label>Статик *</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Ранг *</label><select id="rank"><option>1-4</option><option>5-8</option><option>9-11</option><option>13</option></select></div><div class="form-group"><label>За что выговор *</label><textarea id="reason" rows="2" required>' + (saved.reason || '') + '</textarea></div><div class="form-group"><label>Тип наказания *</label><select id="punishmentType"><option>Устный выговор</option><option>Строгий выговор</option></select></div><div class="form-group"><label>Док-ва (скриншот/фото)</label><input type="file" id="attachments" multiple accept="image/*"></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit">Отправить</button></form>';
+    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Никнейм *</label><input id="nickname" value="' + (saved.nickname || '') + '" required></div><div class="form-group"><label>Статик *</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Ранг *</label><select id="rank"><option>1-4</option><option>5-8</option><option>9-11</option><option>13</option></select></div><div class="form-group"><label>За что выговор *</label><textarea id="reason" rows="2" required>' + (saved.reason || '') + '</textarea></div><div class="form-group"><label>Тип наказания *</label><select id="punishmentType"><option>Устный выговор</option><option>Строгий выговор</option></select></div><div class="form-group"><label>Док-ва</label><input type="file" id="attachments" multiple accept="image/*"></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit">Отправить</button></form>';
     if (saved.rank) document.getElementById('rank').value = saved.rank;
     if (saved.punishmentType) document.getElementById('punishmentType').value = saved.punishmentType;
     var attachments = [];
@@ -475,10 +422,10 @@
     fileInput.onchange = function(e) { attachments = Array.from(e.target.files); createFilePreview(container, attachments, 'attachments'); };
     container.querySelector('#formEl').onsubmit = function(e) {
       e.preventDefault();
-      var data = { nickname:document.getElementById('nickname').value, staticc:document.getElementById('staticc').value, rank:document.getElementById('rank').value, reason:document.getElementById('reason').value, punishmentType:document.getElementById('punishmentType').value, attachments: attachments };
+      var data = { nickname:document.getElementById('nickname').value, staticc:document.getElementById('staticc').value, rank:document.getElementById('rank').value, reason:document.getElementById('reason').value, punishmentType:document.getElementById('punishmentType').value };
       if(autoFillEnabled) localStorage.setItem('lscsd_saved_workoff', JSON.stringify(data));
       addApplication({ type: 'submit_workoff', data: data });
-      sendToDiscord('submit_workoff', data, true);
+      sendToDiscord('submit_workoff', data);
       document.getElementById('modal').style.display = 'none';
     };
   }
@@ -505,7 +452,7 @@
       if(!data.department){ showError(container,'Выберите отдел'); return; }
       if(autoFillEnabled) localStorage.setItem('lscsd_saved_promotion', JSON.stringify(data));
       addApplication({ type: 'submit_promotion', data: data });
-      sendToDiscord('submit_promotion', data, false);
+      sendToDiscord('submit_promotion', data);
       document.getElementById('modal').style.display = 'none';
     };
   }
@@ -533,7 +480,7 @@
       if(autoFillEnabled) localStorage.setItem('lscsd_saved_' + type, JSON.stringify(data));
       var action = type === 'отпуск' ? 'submit_leave' : 'submit_rest';
       addApplication({ type: action, data: data });
-      sendToDiscord(action, data, false);
+      sendToDiscord(action, data);
       document.getElementById('modal').style.display = 'none';
     };
   }
@@ -560,7 +507,7 @@
       if(!data.department){ showError(container,'Выберите отдел'); return; }
       if(autoFillEnabled) localStorage.setItem('lscsd_saved_spec_request', JSON.stringify(data));
       addApplication({ type: 'submit_spec_request', data: data });
-      sendToDiscord('submit_spec_request', data, false);
+      sendToDiscord('submit_spec_request', data);
       document.getElementById('modal').style.display = 'none';
     };
   }
@@ -586,18 +533,18 @@
     fileInput.onchange = function(e) { attachments = Array.from(e.target.files); createFilePreview(container, attachments, 'attachments'); };
     container.querySelector('#formEl').onsubmit = function(e) {
       e.preventDefault();
-      var data = { nickname:document.getElementById('nickname').value, staticc:document.getElementById('staticc').value, rank:document.getElementById('rank').value, department:document.getElementById('department').value, weapon:document.getElementById('weapon').value, weaponNumber:document.getElementById('weaponNumber').value, issuedBy:document.getElementById('issuedBy').value, attachments: attachments };
+      var data = { nickname:document.getElementById('nickname').value, staticc:document.getElementById('staticc').value, rank:document.getElementById('rank').value, department:document.getElementById('department').value, weapon:document.getElementById('weapon').value, weaponNumber:document.getElementById('weaponNumber').value, issuedBy:document.getElementById('issuedBy').value };
       if(!data.department){ showError(container,'Выберите отдел'); return; }
       if(autoFillEnabled) localStorage.setItem('lscsd_saved_spec_receive', JSON.stringify(data));
       addApplication({ type: 'submit_spec_receive', data: data });
-      sendToDiscord('submit_spec_receive', data, true);
+      sendToDiscord('submit_spec_receive', data);
       document.getElementById('modal').style.display = 'none';
     };
   }
 
   function renderResignationForm(container) {
     var saved = autoFillEnabled ? JSON.parse(localStorage.getItem('lscsd_saved_resignation') || '{}') : {};
-    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Никнейм *</label><input id="nickname" value="' + (saved.nickname || '') + '" required></div><div class="form-group"><label>Static ID *</label><input id="staticId" value="' + (saved.staticId || '') + '" required></div><div class="form-group"><label>Отдел *</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department" value="' + (saved.department || '') + '"></div><div class="form-group"><label>Планшет *</label><input id="tablet" value="' + (saved.tablet || '') + '" required></div><div class="form-group"><label>Инвентарь *</label><input id="inventory" value="' + (saved.inventory || '') + '" required></div><div class="form-group"><label>Вложения (скриншоты)</label><input type="file" id="attachments" multiple accept="image/*"></div><div class="form-group"><label>Причина *</label><textarea id="reason" rows="3" required>' + (saved.reason || '') + '</textarea></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit">Отправить</button></form>';
+    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Никнейм *</label><input id="nickname" value="' + (saved.nickname || '') + '" required></div><div class="form-group"><label>Static ID *</label><input id="staticId" value="' + (saved.staticId || '') + '" required></div><div class="form-group"><label>Отдел *</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department" value="' + (saved.department || '') + '"></div><div class="form-group"><label>Планшет *</label><input id="tablet" value="' + (saved.tablet || '') + '" required></div><div class="form-group"><label>Инвентарь *</label><input id="inventory" value="' + (saved.inventory || '') + '" required></div><div class="form-group"><label>Вложения</label><input type="file" id="attachments" multiple accept="image/*"></div><div class="form-group"><label>Причина *</label><textarea id="reason" rows="3" required>' + (saved.reason || '') + '</textarea></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit">Отправить</button></form>';
     var btnsDiv = container.querySelector('#deptBtns');
     DEPARTMENTS.forEach(function(d) {
       var btn = document.createElement('div');
@@ -616,16 +563,15 @@
     fileInput.onchange = function(e) { attachments = Array.from(e.target.files); createFilePreview(container, attachments, 'attachments'); };
     container.querySelector('#formEl').onsubmit = function(e) {
       e.preventDefault();
-      var data = { nickname:document.getElementById('nickname').value, staticId:document.getElementById('staticId').value, department:document.getElementById('department').value, tablet:document.getElementById('tablet').value, inventory:document.getElementById('inventory').value, reason:document.getElementById('reason').value, attachments: attachments };
+      var data = { nickname:document.getElementById('nickname').value, staticId:document.getElementById('staticId').value, department:document.getElementById('department').value, tablet:document.getElementById('tablet').value, inventory:document.getElementById('inventory').value, reason:document.getElementById('reason').value };
       if(!data.department){ showError(container,'Выберите отдел'); return; }
       if(autoFillEnabled) localStorage.setItem('lscsd_saved_resignation', JSON.stringify(data));
       addApplication({ type: 'submit_resignation', data: data });
-      sendToDiscord('submit_resignation', data, true);
+      sendToDiscord('submit_resignation', data);
       document.getElementById('modal').style.display = 'none';
     };
   }
 
-  // Табы
   var tabBtns = document.querySelectorAll('.tab-btn');
   tabBtns.forEach(function(btn) {
     btn.onclick = function() {
@@ -640,7 +586,6 @@
 
   document.getElementById('historySearch')?.addEventListener('input', function() { renderFormsList(); });
 
-  // Баг репорт
   var bugModal = document.getElementById('bugModal');
   document.getElementById('reportBugBtn').onclick = function() { if(currentUser) bugModal.style.display = 'flex'; else showNotification('Авторизуйтесь', 'warning'); };
   document.getElementById('closeBugBtn').onclick = function() { bugModal.style.display = 'none'; };
@@ -660,7 +605,6 @@
     showNotification('Баг отправлен!', 'success');
   };
 
-  // Прелоадер
   var progress = 0;
   var progressBar = document.getElementById('preloaderProgress');
   var interval = setInterval(function() {
@@ -681,7 +625,7 @@
         }
       }, 1000);
     }
-  }, 70);
+  }, 80);
   
   setTimeout(function() {
     var preloader = document.getElementById('preloader');
