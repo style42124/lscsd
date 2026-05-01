@@ -132,6 +132,11 @@
       margin: 10px 0;
     }
 
+    .auth-desc {
+      color: #9ca3af;
+      margin-bottom: 25px;
+    }
+
     .auth-btn {
       background: linear-gradient(135deg, #5865F2, #4752c4);
       border: none;
@@ -172,11 +177,16 @@
       padding: 10px 25px;
       cursor: pointer;
       color: #e8e8e8;
+      transition: 0.2s;
     }
 
     .tab-btn.active {
       background: linear-gradient(135deg, #d4af37, #b8962a);
       color: #0f121a;
+    }
+
+    .tab-btn:hover {
+      transform: translateY(-2px);
     }
 
     .tab-content {
@@ -270,6 +280,11 @@
       color: #d4af37;
       font-size: 1.2rem;
       cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .user-actions button:hover {
+      transform: scale(1.1);
     }
 
     .app-list {
@@ -310,6 +325,7 @@
       padding: 8px 16px;
       cursor: pointer;
       color: #e8e8e8;
+      transition: 0.2s;
     }
 
     .filter-btn.active {
@@ -426,7 +442,7 @@
 
 <div class="app" id="app">
   <nav class="navbar">
-    <div class="nav-brand">
+    <div class="nav-brand" onclick="window.location.href='/lscsd/'">
       <div class="nav-logo"></div>
       <div>
         <span class="nav-title-main">LSCSD PANEL</span>
@@ -445,7 +461,7 @@
     <div class="auth-card">
       <div class="auth-icon"><i class="fab fa-discord"></i></div>
       <h1 class="auth-title">Панель управления</h1>
-      <p style="color:#9ca3af;margin-bottom:25px;">Авторизуйтесь через Discord</p>
+      <p class="auth-desc">Авторизуйтесь через Discord</p>
       <button class="auth-btn" id="authBtn"><i class="fab fa-discord"></i> Войти через Discord</button>
     </div>
   </div>
@@ -541,18 +557,6 @@
     let allApplications = [];
     let currentFilter = 'all';
 
-    function getToken() {
-      if (currentUser && currentUser.token) return currentUser.token;
-      const user = localStorage.getItem('lscsd_user');
-      if (user) {
-        try {
-          const parsed = JSON.parse(user);
-          return parsed.token || '';
-        } catch(e) { return ''; }
-      }
-      return '';
-    }
-
     function showNotification(msg, type) {
       const div = document.createElement('div');
       div.className = 'notification';
@@ -582,20 +586,17 @@
     }
 
     function loadUserRoleFromServer() {
-      const token = getToken();
-      if (!token) return Promise.resolve(null);
+      if (!currentUser) return Promise.resolve(null);
       
       return fetch(PROXY_URL, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + token
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'get_user_role', data: { userId: currentUser.id } })
       }).then(r => r.json()).then(res => {
         if (res.success && res.role) {
           currentUserRole = res.role;
-          document.getElementById('userRoleBadge').innerText = currentUserRole.name || 'Младший состав';
+          const badge = document.getElementById('userRoleBadge');
+          if (badge) badge.innerText = currentUserRole.name || 'Младший состав';
           return currentUserRole;
         }
         return null;
@@ -606,18 +607,9 @@
     }
 
     function loadAllUsers() {
-      const token = getToken();
-      if (!token) {
-        console.warn('Нет токена для загрузки пользователей');
-        return Promise.resolve();
-      }
-      
       return fetch(PROXY_URL, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + token
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'get_all_users_roles' })
       }).then(r => r.json()).then(res => {
         if (res.success) {
@@ -625,22 +617,20 @@
           renderUsers();
         } else {
           console.error('Ошибка загрузки пользователей:', res.error);
+          showNotification('Ошибка загрузки пользователей: ' + (res.error || 'Неизвестная ошибка'), 'error');
         }
       }).catch(err => {
         console.error('Ошибка сети:', err);
+        showNotification('Ошибка сети при загрузке пользователей', 'error');
       });
     }
 
     function loadApplications() {
-      const token = getToken();
-      if (!token) return Promise.resolve();
+      if (!currentUser) return Promise.resolve();
       
       return fetch(PROXY_URL, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + token
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'get_applications',
           data: {
@@ -660,16 +650,10 @@
     }
 
     function performAction(action, targetUserId, extra = {}) {
-      const token = getToken();
-      if (!token) return Promise.resolve({ success: false, error: 'No token' });
-      
       const data = { targetUserId, executorId: currentUser.id, ...extra };
       return fetch(PROXY_URL, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + token
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, data })
       }).then(r => r.json()).then(res => {
         if (res.success) {
@@ -698,15 +682,9 @@
     function includeToDuty(targetUserId) { return performAction('include_to_duty', targetUserId); }
 
     function reviewApplication(appId, status, comment, appData, appType) {
-      const token = getToken();
-      if (!token) return Promise.resolve({ success: false, error: 'No token' });
-      
       return fetch(PROXY_URL, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + token
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'review_application',
           data: {
@@ -810,33 +788,33 @@
       const setDeptBtn = document.getElementById('setDeptBtn');
       const closeBtn = document.getElementById('closeRoleBtn');
       
+      const closeModal = () => modal.style.display = 'none';
+      
       if (banWithReasonBtn) {
         banWithReasonBtn.onclick = () => {
           const reason = document.getElementById('banReason').value.trim();
           if (!reason) { showNotification('Укажите причину бана', 'error'); return; }
-          banUser(userId, reason).then(() => modal.style.display = 'none');
+          banUser(userId, reason).then(closeModal);
         };
       }
-      if (unbanBtn) unbanBtn.onclick = () => { unbanUser(userId).then(() => modal.style.display = 'none'); };
-      if (tempBanBtn) tempBanBtn.onclick = () => { tempBanUser(userId, 1); modal.style.display = 'none'; };
-      if (excludeBtn) excludeBtn.onclick = () => { excludeFromDuty(userId); modal.style.display = 'none'; };
-      if (includeBtn) includeBtn.onclick = () => { includeToDuty(userId); modal.style.display = 'none'; };
+      if (unbanBtn) unbanBtn.onclick = () => { unbanUser(userId).then(closeModal); };
+      if (tempBanBtn) tempBanBtn.onclick = () => { tempBanUser(userId, 1).then(closeModal); };
+      if (excludeBtn) excludeBtn.onclick = () => { excludeFromDuty(userId).then(closeModal); };
+      if (includeBtn) includeBtn.onclick = () => { includeToDuty(userId).then(closeModal); };
       if (saveRoleBtn) {
         saveRoleBtn.onclick = () => {
           const level = parseInt(document.getElementById('roleLevelSelect').value);
           const dept = document.getElementById('roleDeptSelect').value || null;
-          setUserRole(userId, level, dept);
-          modal.style.display = 'none';
+          setUserRole(userId, level, dept).then(closeModal);
         };
       }
       if (setDeptBtn) {
         setDeptBtn.onclick = () => {
           const dept = document.getElementById('roleDeptSelect').value || null;
-          setUserRole(userId, userRole.level, dept);
-          modal.style.display = 'none';
+          setUserRole(userId, userRole.level, dept).then(closeModal);
         };
       }
-      if (closeBtn) closeBtn.onclick = () => modal.style.display = 'none';
+      if (closeBtn) closeBtn.onclick = closeModal;
     }
 
     function renderApplications() {
@@ -844,9 +822,9 @@
       if (!container) return;
       
       let filtered = allApplications;
-      if (currentFilter === 'pending') filtered = filtered.filter(a => a.data?.status === 'pending');
-      if (currentFilter === 'approved') filtered = filtered.filter(a => a.data?.status === 'approved');
-      if (currentFilter === 'rejected') filtered = filtered.filter(a => a.data?.status === 'rejected');
+      if (currentFilter === 'pending') filtered = filtered.filter(a => a.status === 'pending');
+      if (currentFilter === 'approved') filtered = filtered.filter(a => a.status === 'approved');
+      if (currentFilter === 'rejected') filtered = filtered.filter(a => a.status === 'rejected');
       
       const typeNames = {
         submit_department:'📋 Заявка в отдел', submit_promotion:'⭐ Повышение', submit_appeal:'⚖ Обжалование',
@@ -862,10 +840,10 @@
       }
       
       for (const app of filtered) {
-        const statusClass = 'app-status-' + (app.data?.status || 'pending');
+        const statusClass = app.status === 'pending' ? 'app-status-pending' : (app.status === 'approved' ? 'app-status-approved' : 'app-status-rejected');
         const item = document.createElement('div');
         item.className = `app-item ${statusClass}`;
-        const statusText = app.data?.status === 'pending' ? '⏳ На рассмотрении' : (app.data?.status === 'approved' ? '✅ Одобрена' : '❌ Отклонена');
+        const statusText = app.status === 'pending' ? '⏳ На рассмотрении' : (app.status === 'approved' ? '✅ Одобрена' : '❌ Отклонена');
         item.innerHTML = `
           <div style="display:flex; justify-content:space-between;">
             <span style="font-weight:600;">${typeNames[app.type] || app.type}</span>
@@ -875,7 +853,7 @@
           <div>${statusText}</div>
           <div style="font-size:11px; opacity:0.7;">${app.created_at || ''}</div>
         `;
-        if (app.data?.status === 'pending') {
+        if (app.status === 'pending') {
           let canReview = false;
           const role = currentUserRole;
           const isAppealWorkoff = (typeNames[app.type] === 'Обжалование' || typeNames[app.type] === 'Отработка');
@@ -918,17 +896,19 @@
       const submitBtn = document.getElementById('submitReviewBtn');
       const closeBtn = document.getElementById('closeReviewBtn');
       
+      const closeModal = () => modal.style.display = 'none';
+      
       if (submitBtn) {
         submitBtn.onclick = () => {
           const status = document.getElementById('reviewStatus').value;
           const comment = document.getElementById('reviewComment').value;
           reviewApplication(appId, status, comment, appData, typeNames[appData.type] || appData.type).then(() => {
-            modal.style.display = 'none';
+            closeModal();
             loadApplications();
           });
         };
       }
-      if (closeBtn) closeBtn.onclick = () => modal.style.display = 'none';
+      if (closeBtn) closeBtn.onclick = closeModal;
     }
 
     function handleAuthCallback() {
@@ -939,7 +919,12 @@
         if (token) {
           fetch('https://discord.com/api/users/@me', { headers: { Authorization: `Bearer ${token}` } })
             .then(r => r.json()).then(user => {
-              localStorage.setItem('lscsd_user', JSON.stringify({ id: user.id, username: user.username, avatar: user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png` : '', token: token }));
+              localStorage.setItem('lscsd_user', JSON.stringify({ 
+                id: user.id, 
+                username: user.username, 
+                avatar: user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png` : '',
+                token: token 
+              }));
               window.location.hash = '';
               location.reload();
             }).catch(() => showNotification('Ошибка авторизации', 'error'));
