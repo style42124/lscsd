@@ -84,18 +84,17 @@
       transition: width 0.1s linear;
     }
 
-    /* NAVBAR */
+    /* NAVBAR (логотип слева, профиль справа) */
     .navbar {
       background: rgba(13, 17, 23, 0.95);
       backdrop-filter: blur(20px);
       border-bottom: 1px solid rgba(212, 175, 55, 0.2);
-      padding: 12px 35px;
+      padding: 10px 30px;
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      flex-wrap: wrap;
-      gap: 15px;
+      justify-content: space-between;
     }
+
     .nav-brand {
       display: flex;
       align-items: center;
@@ -108,20 +107,16 @@
       background: linear-gradient(145deg, #d4af37, #b8962a);
       clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
     }
-    .nav-title-main {
+    .nav-title {
       font-size: 1.2rem;
       font-weight: 800;
-      font-family: 'Orbitron';
+      font-family: 'Orbitron', monospace;
       background: linear-gradient(135deg, #d4af37, #f5e7a3);
       -webkit-background-clip: text;
       background-clip: text;
       color: transparent;
     }
-    .nav-title-sub {
-      font-size: 0.55rem;
-      color: #6b6f78;
-      display: block;
-    }
+
     .nav-user {
       display: flex;
       align-items: center;
@@ -130,18 +125,26 @@
       padding: 5px 16px;
       border-radius: 40px;
       border: 1px solid rgba(212, 175, 55, 0.3);
-      margin-left: auto;
     }
     .nav-avatar {
-      width: 30px;
-      height: 30px;
+      width: 32px;
+      height: 32px;
       border-radius: 50%;
       border: 2px solid #d4af37;
     }
-    .nav-user span {
-      color: #e8e8e8;
+    .nav-name {
+      font-size: 14px;
       font-weight: 500;
-      font-size: 13px;
+      color: #e8e8e8;
+    }
+    .nav-settings {
+      color: #d4af37;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .nav-settings:hover {
+      transform: scale(1.1);
     }
 
     /* AUTH */
@@ -190,7 +193,12 @@
       font-weight: 600;
     }
 
-    /* DASHBOARD */
+    /* MAIN */
+    .app {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
     .main-container {
       flex: 1;
       padding: 30px;
@@ -447,7 +455,7 @@
       color: #e8e8e8;
     }
 
-    /* SETTINGS */
+    /* SETTINGS PANEL */
     .settings-panel {
       position: fixed;
       top: 80px;
@@ -528,14 +536,12 @@
   <nav class="navbar">
     <div class="nav-brand" onclick="window.location.href='/lscsd/'">
       <div class="nav-logo"></div>
-      <div>
-        <span class="nav-title-main">LSCSD</span>
-        <span class="nav-title-sub">LOS SANTOS COUNTY SHERIFF'S DEPARTMENT</span>
-      </div>
+      <span class="nav-title">LSCSD</span>
     </div>
     <div class="nav-user" id="navUser" style="display: none;">
-      <img id="navAvatar" class="nav-avatar"><span id="navName"></span>
-      <i class="fas fa-cog" style="color:#d4af37;font-size:1rem; margin-left:8px; cursor:pointer;"></i>
+      <img id="navAvatar" class="nav-avatar">
+      <span id="navName" class="nav-name"></span>
+      <i id="settingsIcon" class="fas fa-cog nav-settings"></i>
     </div>
   </nav>
 
@@ -635,13 +641,13 @@
 
   // Настройки
   var settingsPanel = document.getElementById('settingsPanel');
-  var navUser = document.getElementById('navUser');
-  if (navUser) {
-    navUser.onclick = function(e) { e.stopPropagation(); settingsPanel.classList.toggle('open'); };
+  var settingsIcon = document.getElementById('settingsIcon');
+  if (settingsIcon) {
+    settingsIcon.onclick = function(e) { e.stopPropagation(); settingsPanel.classList.toggle('open'); };
   }
   document.getElementById('closeSettings').onclick = function() { settingsPanel.classList.remove('open'); };
   document.onclick = function(e) {
-    if (settingsPanel && navUser && !settingsPanel.contains(e.target) && !navUser.contains(e.target)) {
+    if (settingsPanel && settingsIcon && !settingsPanel.contains(e.target) && !settingsIcon.contains(e.target)) {
       settingsPanel.classList.remove('open');
     }
   };
