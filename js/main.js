@@ -7,8 +7,7 @@
     }
   });
 
-  // Конфиг
-  var PROXY_URL = 'https://cs324022.tw1.ru/index.php';
+  var PROXY_URL = 'https://cors-anywhere.herokuapp.com/https://cs324022.tw1.ru/index.php';
   var DISCORD_CLIENT_ID = '1494686473520287774';
   var REDIRECT_URI = 'https://style42124.github.io/lscsd/';
   
@@ -189,30 +188,57 @@
 
   // Рендер статистики
   function renderStats() {
-    var stats = {total: allApplications.length, byType: {}};
-    allApplications.forEach(function(app) {
-      var displayType = typeNames[app.type] || app.type;
-      stats.byType[displayType] = (stats.byType[displayType] || 0) + 1;
-    });
-    
-    var container = document.getElementById('statsGrid');
-    if (container) {
-      container.innerHTML = '<div class="stat-card"><div class="stat-number">' + stats.total + '</div><div class="stat-label">Всего заявок</div></div>';
-      for (var type in stats.byType) {
-        container.innerHTML += '<div class="stat-card"><div class="stat-number">' + stats.byType[type] + '</div><div class="stat-label">' + type + '</div></div>';
-      }
-    }
-    
-    var ctx = document.getElementById('statsChart')?.getContext('2d');
-    if (ctx && window.statsChart) window.statsChart.destroy();
-    if (ctx && Object.keys(stats.byType).length > 0) {
-      window.statsChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: { labels: Object.keys(stats.byType), datasets: [{ data: Object.values(stats.byType), backgroundColor: ['#d4af37', '#5865F2', '#6bcf7f', '#ff6b6b', '#ffa500', '#4a90d9', '#9b59b6'] }] },
-        options: { responsive: true, plugins: { legend: { labels: { color: '#e8e8e8' } } } }
-      });
+  var stats = { total: allApplications.length, byType: {} };
+  
+  allApplications.forEach(function(app) {
+    var displayType = typeNames[app.type] || app.type;
+    stats.byType[displayType] = (stats.byType[displayType] || 0) + 1;
+  });
+  
+  var container = document.getElementById('statsGrid');
+  if (container) {
+    container.innerHTML = '<div class="stat-card"><div class="stat-number">' + stats.total + '</div><div class="stat-label">Всего заявок</div></div>';
+    for (var type in stats.byType) {
+      container.innerHTML += '<div class="stat-card"><div class="stat-number">' + stats.byType[type] + '</div><div class="stat-label">' + type + '</div></div>';
     }
   }
+  
+  var canvas = document.getElementById('statsChart');
+  if (!canvas) return;
+  
+  var ctx = canvas.getContext('2d');
+  if (!ctx) return;
+  
+  if (window.statsChart) {
+    try {
+      window.statsChart.destroy();
+    } catch(e) {
+      console.log('Chart destroy error ignored');
+    }
+  }
+  
+  if (Object.keys(stats.byType).length > 0) {
+    window.statsChart = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: Object.keys(stats.byType),
+        datasets: [{
+          data: Object.values(stats.byType),
+          backgroundColor: ['#d4af37', '#5865F2', '#6bcf7f', '#ff6b6b', '#ffa500', '#4a90d9', '#9b59b6']
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { labels: { color: '#e8e8e8' } }
+        }
+      }
+    });
+  } else {
+    if (window.statsChart) window.statsChart = null;
+  }
+}
 
   // Авторизация
   function handleAuthCallback() {
