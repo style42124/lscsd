@@ -1,4 +1,5 @@
 (function() {
+  // ==================== ЗАЩИТА ОТ F12 ====================
   document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
   document.addEventListener('keydown', function(e) {
     if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'C' || e.key === 'J')) || (e.ctrlKey && e.key === 'U')) {
@@ -6,28 +7,33 @@
     }
   });
 
+  // ==================== КОНФИГУРАЦИЯ ====================
   var PROXY_URL = 'https://cs324022.tw1.ru/index.php';
   var DISCORD_CLIENT_ID = '1494686473520287774';
   var REDIRECT_URI = 'https://style42124.github.io/lscsd/';
+  
   var currentUser = null;
   var currentUserRole = null;
   var isSending = false;
   var currentTheme = localStorage.getItem('lscsd_theme') || 'dark';
   var autoFillEnabled = localStorage.getItem('lscsd_autofill') === 'true';
 
+  // Применяем тему
   if (currentTheme === 'light') document.body.classList.add('light');
   var themeSwitch = document.getElementById('themeSwitch');
   if (themeSwitch) themeSwitch.classList.toggle('active', currentTheme === 'light');
+  
   var autoFillSwitch = document.getElementById('autoFillSwitch');
   if (autoFillSwitch) autoFillSwitch.classList.toggle('active', autoFillEnabled);
 
+  // Чёрный список и лимиты
   var blacklist = JSON.parse(localStorage.getItem('lscsd_blacklist') || '[]');
   var tempBlocked = JSON.parse(localStorage.getItem('lscsd_tempBlocked') || '{}');
   var userRequests = JSON.parse(localStorage.getItem('lscsd_requests') || '{}');
   var userHistory = JSON.parse(localStorage.getItem('lscsd_user_history') || '[]');
   var usersRoles = JSON.parse(localStorage.getItem('lscsd_users_roles') || '{}');
 
-  var DEPARTMENTS = ['SAI', 'GU', 'AF', 'IAD', 'SEB', 'K-9', 'DID', 'MED', 'SPD', 'HS' ];
+  var DEPARTMENTS = ['SAI', 'GU', 'AF', 'IAD', 'SEB', 'K-9', 'DID', 'MED', 'SPD', 'HS'];
   var FORMS_LIST = [
     {id:'department', label:'Заявка в отдел', icon:'📋', desc:'Подача заявления на перевод'},
     {id:'appeal', label:'Обжалование', icon:'⚖️', desc:'Обжалование выговора'},
@@ -41,13 +47,18 @@
   ];
 
   var typeNamesMap = {
-    'submit_department': '📋 Заявка в отдел', 'submit_promotion': '⭐ Повышение',
-    'submit_appeal': '⚖ Обжалование', 'submit_workoff': '🛠 Отработка',
-    'submit_leave': '🏖 Отпуск', 'submit_rest': '🌴 Отдых',
-    'submit_spec_request': '🔫 Спецвооружение запрос', 'submit_spec_receive': '📦 Получение спец',
+    'submit_department': '📋 Заявка в отдел',
+    'submit_promotion': '⭐ Повышение',
+    'submit_appeal': '⚖ Обжалование',
+    'submit_workoff': '🛠 Отработка',
+    'submit_leave': '🏖 Отпуск',
+    'submit_rest': '🌴 Отдых',
+    'submit_spec_request': '🔫 Спецвооружение запрос',
+    'submit_spec_receive': '📦 Получение спец',
     'submit_resignation': '📄 Увольнение'
   };
 
+  // ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
   function showNotification(msg, type) {
     var div = document.createElement('div');
     div.className = 'notification';
@@ -56,7 +67,10 @@
     setTimeout(function() { div.remove(); }, 3000);
   }
 
-  function isTempBlocked(userId) { var b = tempBlocked[userId]; return b && b > Date.now(); }
+  function isTempBlocked(userId) { 
+    var b = tempBlocked[userId]; 
+    return b && b > Date.now(); 
+  }
   
   function checkRateLimit(userId) {
     var now = Date.now();
@@ -67,6 +81,63 @@
     userRequests[userId] = reqs;
     localStorage.setItem('lscsd_requests', JSON.stringify(userRequests));
     return true;
+  }
+
+  // ==================== РАБОТА С СЕРВЕРОМ ====================
+  function callAPI(action, formData, hasFile) {
+    return new Promise(function(resolve, reject) {
+      if (isSending) { showNotification('Подождите...', 'warning'); reject(); return; }
+      if (currentUser && isTempBlocked(currentUser.id)) { showNotification('Вы заблокированы на 15 минут!', 'error'); reject(); return; }
+      if (currentUser && !checkRateLimit(currentUser.id)) {
+        tempBlocked[currentUser.id] = Date.now() + 15*60*1000;
+        localStorage.setItem('lscsd_tempBlocked', JSON.stringify(tempBlocked));
+        showNotification('Лимит заявок! Блокировка 15 мин.', 'error');
+        reject(); return;
+      }
+      isSending = true;
+      
+      var dataToSend = { action: action, data: formData || {} };
+      if (currentUser) {
+        dataToSend.data.userId = currentUser.id;
+        dataToSend.data.username = currentUser.username;
+        dataToSend.data.userRole = currentUserRole ? currentUserRole.level : 1;
+      }
+      
+      var options = { method:'POST', headers:{}, body:null };
+      if (hasFile) {
+        var fd = new FormData();
+        fd.append('action', action);
+        fd.append('data', JSON.stringify(dataToSend.data));
+        if (formData && formData.attachments) {
+          for (var i = 0; i < formData.attachments.length; i++) {
+            fd.append('attachments[]', formData.attachments[i]);
+          }
+        }
+        options.body = fd;
+      } else {
+        options.headers['Content-Type'] = 'application/json';
+        options.body = JSON.stringify(dataToSend);
+      }
+      
+      fetch(PROXY_URL, options)
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          isSending = false;
+          if (d.success) {
+            showNotification('✅ Заявка отправлена!', 'success');
+            addToHistory(action, formData);
+            resolve(d);
+          } else {
+            showNotification(d.error || '❌ Ошибка отправки', 'error');
+            reject(d);
+          }
+        })
+        .catch(function(err) {
+          isSending = false;
+          showNotification('❌ Ошибка сети', 'error');
+          reject(err);
+        });
+    });
   }
 
   function loadUserRoleFromServer() {
@@ -80,16 +151,33 @@
         currentUserRole = res.role;
         usersRoles[currentUser.id] = currentUserRole;
         localStorage.setItem('lscsd_users_roles', JSON.stringify(usersRoles));
-        // Показываем кнопку "Панель управления" для уровня >= 2 или разработчика
-var panelContainer = document.getElementById('panelBtnContainer');
-var panelBtn = document.getElementById('panelBtn');
-if (panelContainer && panelBtn && currentUserRole) {
-    if (currentUserRole.level >= 2 || currentUserRole.level === 9) {
-        panelContainer.style.display = 'flex';
-        panelBtn.onclick = function() { window.location.href = '/lscsd/panel.html'; };
-    }
-}
+        
+        // Показываем кнопку панели управления для уровня >= 2 или разработчика
+        var panelContainer = document.getElementById('panelBtnContainer');
+        var panelBtn = document.getElementById('panelBtn');
+        if (panelContainer && panelBtn && currentUserRole && (currentUserRole.level >= 2 || currentUserRole.level === 9)) {
+          panelContainer.style.display = 'flex';
+          panelBtn.onclick = function() { window.location.href = '/lscsd/panel.html'; };
+        }
+        return currentUserRole;
+      }
       return null;
+    });
+  }
+
+  // Загрузка заявок с сервера
+  function loadApplicationsFromServer() {
+    if (!currentUser) return Promise.resolve([]);
+    
+    return fetch(PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'get_applications' })
+    }).then(function(r) { return r.json(); }).then(function(res) {
+      if (res.success) {
+        return res.applications;
+      }
+      return [];
     });
   }
 
@@ -117,55 +205,6 @@ if (panelContainer && panelBtn && currentUserRole) {
     renderStats();
   }
 
-  function callAPI(action, formData, hasFile) {
-    return new Promise(function(resolve, reject) {
-      if (isSending) { showNotification('Подождите...', 'warning'); reject(); return; }
-      if (currentUser && isTempBlocked(currentUser.id)) { showNotification('Вы заблокированы на 15 минут!', 'error'); reject(); return; }
-      if (currentUser && !checkRateLimit(currentUser.id)) {
-        tempBlocked[currentUser.id] = Date.now() + 15*60*1000;
-        localStorage.setItem('lscsd_tempBlocked', JSON.stringify(tempBlocked));
-        showNotification('Лимит заявок! Блокировка 15 мин.', 'error');
-        reject(); return;
-      }
-      isSending = true;
-      var dataToSend = { action: action, data: formData || {} };
-      if (currentUser) {
-        dataToSend.data.userId = currentUser.id;
-        dataToSend.data.username = currentUser.username;
-        dataToSend.data.userRole = currentUserRole ? currentUserRole.level : 1;
-      }
-      var options = { method:'POST', headers:{}, body:null };
-      if (hasFile) {
-        var fd = new FormData();
-        fd.append('action', action);
-        fd.append('data', JSON.stringify(dataToSend.data));
-        if (formData && formData.attachments) {
-          for (var i = 0; i < formData.attachments.length; i++) {
-            fd.append('attachments[]', formData.attachments[i]);
-          }
-        }
-        options.body = fd;
-      } else {
-        options.headers['Content-Type'] = 'application/json';
-        options.body = JSON.stringify(dataToSend);
-      }
-      fetch(PROXY_URL, options)
-        .then(function(r) { return r.json(); })
-        .then(function(d) {
-          isSending = false;
-          showNotification('✅ Заявка отправлена!', 'success');
-          addToHistory(action, formData);
-          resolve(d);
-        })
-        .catch(function(err) {
-          isSending = false;
-          showNotification('✅ Заявка отправлена!', 'success');
-          addToHistory(action, formData);
-          reject(err);
-        });
-    });
-  }
-
   function sendBugReport(bugType, bugDesc) {
     if (!currentUser) return;
     fetch(PROXY_URL, {
@@ -178,6 +217,7 @@ if (panelContainer && panelBtn && currentUserRole) {
     });
   }
 
+  // ==================== АВТОРИЗАЦИЯ ====================
   function handleAuthCallback() {
     var hash = window.location.hash.substring(1);
     if (hash && hash.indexOf('access_token') !== -1) {
@@ -190,7 +230,12 @@ if (panelContainer && panelBtn && currentUserRole) {
               usersRoles[user.id] = { level: 1, name: 'Младший состав', department: null };
               localStorage.setItem('lscsd_users_roles', JSON.stringify(usersRoles));
             }
-            localStorage.setItem('lscsd_user', JSON.stringify({ id: user.id, username: user.username, avatar: user.avatar ? 'https://cdn.discordapp.com/avatars/'+user.id+'/'+user.avatar+'.png' : '' }));
+            localStorage.setItem('lscsd_user', JSON.stringify({ 
+              id: user.id, 
+              username: user.username, 
+              avatar: user.avatar ? 'https://cdn.discordapp.com/avatars/'+user.id+'/'+user.avatar+'.png' : '',
+              token: token
+            }));
             window.location.hash = '';
             location.reload();
           }).catch(function(){ showNotification('Ошибка авторизации', 'error'); });
@@ -202,12 +247,18 @@ if (panelContainer && panelBtn && currentUserRole) {
     var user = localStorage.getItem('lscsd_user');
     if (user) {
       currentUser = JSON.parse(user);
-      if (blacklist.includes(currentUser.id)) { showNotification('Вы в чёрном списке!', 'error'); localStorage.removeItem('lscsd_user'); location.reload(); return; }
+      if (blacklist.includes(currentUser.id)) { 
+        showNotification('Вы в чёрном списке!', 'error'); 
+        localStorage.removeItem('lscsd_user'); 
+        location.reload(); 
+        return; 
+      }
       document.getElementById('authContainer').style.display = 'none';
       document.getElementById('mainContainer').style.display = 'block';
       document.getElementById('navUser').style.display = 'flex';
       document.getElementById('navName').innerText = currentUser.username;
       if (currentUser.avatar) document.getElementById('navAvatar').src = currentUser.avatar;
+      
       loadUserRoleFromServer().then(function() {
         renderCards();
         renderHistory();
@@ -221,22 +272,51 @@ if (panelContainer && panelBtn && currentUserRole) {
     }
   }
 
-  document.getElementById('authBtn').onclick = function() { window.location.href = 'https://discord.com/api/oauth2/authorize?client_id='+DISCORD_CLIENT_ID+'&redirect_uri='+encodeURIComponent(REDIRECT_URI)+'&response_type=token&scope=identify'; };
-  document.getElementById('settingsLogoutBtn').onclick = function() { localStorage.removeItem('lscsd_user'); location.reload(); };
+  document.getElementById('authBtn').onclick = function() { 
+    window.location.href = 'https://discord.com/api/oauth2/authorize?client_id='+DISCORD_CLIENT_ID+'&redirect_uri='+encodeURIComponent(REDIRECT_URI)+'&response_type=token&scope=identify'; 
+  };
+  
+  document.getElementById('settingsLogoutBtn').onclick = function() { 
+    localStorage.removeItem('lscsd_user'); 
+    location.reload(); 
+  };
 
+  // ==================== НАСТРОЙКИ ====================
   var settingsPanel = document.getElementById('settingsPanel');
-  document.getElementById('navUser').onclick = function(e) { e.stopPropagation(); settingsPanel.classList.toggle('open'); };
-  document.getElementById('closeSettings').onclick = function() { settingsPanel.classList.remove('open'); };
-  document.onclick = function(e) { if (!settingsPanel.contains(e.target) && !document.getElementById('navUser').contains(e.target)) settingsPanel.classList.remove('open'); };
-
-  if (document.getElementById('themeSwitch')) {
-    document.getElementById('themeSwitch').onclick = function() {
-      if (document.body.classList.contains('light')) { document.body.classList.remove('light'); localStorage.setItem('lscsd_theme','dark'); this.classList.remove('active'); }
-      else { document.body.classList.add('light'); localStorage.setItem('lscsd_theme','light'); this.classList.add('active'); }
+  var navUser = document.getElementById('navUser');
+  if (navUser) {
+    navUser.onclick = function(e) { 
+      e.stopPropagation(); 
+      if (settingsPanel) settingsPanel.classList.toggle('open'); 
     };
   }
-  if (document.getElementById('autoFillSwitch')) {
-    document.getElementById('autoFillSwitch').onclick = function() {
+  var closeSettings = document.getElementById('closeSettings');
+  if (closeSettings) {
+    closeSettings.onclick = function() { 
+      if (settingsPanel) settingsPanel.classList.remove('open'); 
+    };
+  }
+  document.onclick = function(e) { 
+    if (settingsPanel && navUser && !settingsPanel.contains(e.target) && !navUser.contains(e.target)) 
+      settingsPanel.classList.remove('open'); 
+  };
+
+  if (themeSwitch) {
+    themeSwitch.onclick = function() {
+      if (document.body.classList.contains('light')) { 
+        document.body.classList.remove('light'); 
+        localStorage.setItem('lscsd_theme','dark'); 
+        this.classList.remove('active'); 
+      } else { 
+        document.body.classList.add('light'); 
+        localStorage.setItem('lscsd_theme','light'); 
+        this.classList.add('active'); 
+      }
+    };
+  }
+  
+  if (autoFillSwitch) {
+    autoFillSwitch.onclick = function() {
       autoFillEnabled = !autoFillEnabled;
       localStorage.setItem('lscsd_autofill', autoFillEnabled);
       this.classList.toggle('active', autoFillEnabled);
@@ -244,20 +324,7 @@ if (panelContainer && panelBtn && currentUserRole) {
     };
   }
 
-  document.getElementById('historySearch')?.addEventListener('input', function() { renderHistory(); });
-
-  var tabBtns = document.querySelectorAll('.tab-btn');
-  tabBtns.forEach(function(btn) {
-    btn.onclick = function() {
-      tabBtns.forEach(function(b) { b.classList.remove('active'); });
-      this.classList.add('active');
-      document.querySelectorAll('.tab-content').forEach(function(tab) { tab.classList.remove('active'); });
-      document.getElementById(this.dataset.tab + '-tab').classList.add('active');
-      if (this.dataset.tab === 'stats') renderStats();
-      if (this.dataset.tab === 'history') renderHistory();
-    };
-  });
-
+  // ==================== РЕНДЕР КАРТОЧЕК ====================
   function renderCards() {
     var c = document.getElementById('cardsGrid');
     if(!c) return;
@@ -271,6 +338,75 @@ if (panelContainer && panelBtn && currentUserRole) {
     });
   }
 
+  // ==================== РЕНДЕР ИСТОРИИ ====================
+  function renderHistory() {
+    var container = document.getElementById('historyList');
+    if (!container) return;
+    
+    loadApplicationsFromServer().then(function(apps) {
+      var searchTerm = document.getElementById('historySearch')?.value.toLowerCase() || '';
+      var filtered = apps.filter(function(app) {
+        var typeName = typeNamesMap[app.type] || app.type;
+        return typeName.toLowerCase().indexOf(searchTerm) !== -1 || 
+               JSON.stringify(app.data).toLowerCase().indexOf(searchTerm) !== -1;
+      });
+      
+      container.innerHTML = '';
+      filtered.forEach(function(app) {
+        var typeName = typeNamesMap[app.type] || app.type;
+        var statusText = app.status === 'pending' ? '⏳ На рассмотрении' : (app.status === 'approved' ? '✅ Одобрена' : '❌ Отклонена');
+        var details = '';
+        if (app.data.department) details += 'Отдел: ' + app.data.department + ' | ';
+        if (app.data.nickname) details += 'От: ' + app.data.nickname;
+        else if (app.data.firstName && app.data.lastName) details += 'От: ' + app.data.firstName + ' ' + app.data.lastName;
+        else if (app.data.weapon) details += 'Оружие: ' + app.data.weapon;
+        else if (app.data.reason) details += 'Причина: ' + (app.data.reason.length > 50 ? app.data.reason.substring(0,50)+'...' : app.data.reason);
+        
+        var div = document.createElement('div');
+        div.className = 'history-item';
+        div.innerHTML = '<div class="time" style="color:#9ca3af; font-size:11px;">' + (app.created_at || '-') + ' ' + statusText + '</div>' +
+                       '<div class="type" style="color:#d4af37; font-weight:600;">' + typeName + '</div>' +
+                       '<div class="details" style="color:#e8e8e8; font-size:12px; margin-top:4px;">' + details + '</div>';
+        container.appendChild(div);
+      });
+      if (filtered.length === 0) container.innerHTML = '<div style="text-align:center;padding:20px;color:#6b6f78;">Нет заявок</div>';
+    });
+  }
+
+  // ==================== РЕНДЕР СТАТИСТИКИ ====================
+  function renderStats() {
+    loadApplicationsFromServer().then(function(apps) {
+      var stats = {total: apps.length, byType: {}};
+      apps.forEach(function(app) {
+        var displayType = typeNamesMap[app.type] || app.type;
+        stats.byType[displayType] = (stats.byType[displayType] || 0) + 1;
+      });
+      
+      var container = document.getElementById('statsGrid');
+      if (container) {
+        container.innerHTML = '<div class="stat-card"><div class="stat-number" style="color:#d4af37; font-size:2rem; font-weight:800;">' + stats.total + '</div><div class="stat-label" style="color:#9ca3af;">Всего заявок</div></div>';
+        var sortedTypes = Object.keys(stats.byType).sort();
+        for (var i = 0; i < sortedTypes.length; i++) {
+          var type = sortedTypes[i];
+          container.innerHTML += '<div class="stat-card"><div class="stat-number" style="color:#d4af37; font-size:1.5rem; font-weight:700;">' + stats.byType[type] + '</div><div class="stat-label" style="color:#9ca3af;">' + type + '</div></div>';
+        }
+      }
+      
+      var ctx = document.getElementById('statsChart')?.getContext('2d');
+      if (ctx && window.statsChart) window.statsChart.destroy();
+      if (ctx && Object.keys(stats.byType).length > 0) {
+        window.statsChart = new Chart(ctx, {
+          type: 'doughnut',
+          data: { labels: Object.keys(stats.byType), datasets: [{ data: Object.values(stats.byType), backgroundColor: ['#d4af37', '#5865F2', '#6bcf7f', '#ff6b6b', '#ffa500', '#4a90d9', '#9b59b6'] }] },
+          options: { responsive: true, plugins: { legend: { labels: { color: '#e8e8e8' } } } }
+        });
+      } else if (ctx) {
+        window.statsChart = new Chart(ctx, { type: 'doughnut', data: { labels: ['Нет данных'], datasets: [{ data: [1], backgroundColor: ['#d4af37'] }] }, options: { responsive: true } });
+      }
+    });
+  }
+
+  // ==================== ФОРМЫ ====================
   function openForm(type) {
     var m = document.getElementById('modal');
     var b = document.getElementById('modalBody');
@@ -295,11 +431,24 @@ if (panelContainer && panelBtn && currentUserRole) {
 
   document.getElementById('modalClose').onclick = function() { document.getElementById('modal').style.display = 'none'; };
   window.onclick = function(e) { if(e.target===document.getElementById('modal')) document.getElementById('modal').style.display = 'none'; };
-  function showError(container, msg) { var err = container.querySelector('#formError'); if(err) { err.textContent = msg; err.style.display='block'; setTimeout(function(){ err.style.display='none'; },4000); } else showNotification(msg,'error'); }
+  
+  function showError(container, msg) { 
+    var err = container.querySelector('#formError'); 
+    if(err) { 
+      err.textContent = msg; 
+      err.style.display='block'; 
+      setTimeout(function(){ err.style.display='none'; },4000); 
+    } else showNotification(msg,'error'); 
+  }
 
   function createFilePreview(container, files, inputId) {
     var previewDiv = container.querySelector('#filePreview');
-    if (!previewDiv) { previewDiv = document.createElement('div'); previewDiv.id = 'filePreview'; previewDiv.className = 'file-preview'; container.appendChild(previewDiv); }
+    if (!previewDiv) { 
+      previewDiv = document.createElement('div'); 
+      previewDiv.id = 'filePreview'; 
+      previewDiv.className = 'file-preview'; 
+      container.appendChild(previewDiv); 
+    }
     previewDiv.innerHTML = '';
     for (var i = 0; i < files.length; i++) {
       var file = files[i];
@@ -328,7 +477,7 @@ if (panelContainer && panelBtn && currentUserRole) {
     }
   }
 
-  // ========== ФОРМА ЗАЯВКА В ОТДЕЛ (только никнейм) ==========
+  // ========== ФОРМА ЗАЯВКА В ОТДЕЛ ==========
   function renderDepartmentForm(container) {
     var saved = loadAutoFillData('department');
     container.innerHTML = '<form id="formEl"><div class="form-group"><label>Никнейм</label><input id="nickname" value="' + (saved.nickname || '') + '" required></div><div class="form-group"><label>Статик</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Ранг</label><input id="rank" value="' + (saved.rank || '') + '" required></div><div class="form-group"><label>Текущий отдел</label><input id="currentDept" value="' + (saved.currentDept || '') + '" placeholder="Ваш текущий отдел" required></div><div class="form-group"><label>Отдел, куда подаете заявку</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department" value="' + (saved.department || '') + '"></div><div class="form-group"><label>Причина</label><textarea id="reason" rows="3" required>' + (saved.reason || '') + '</textarea></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
@@ -354,7 +503,7 @@ if (panelContainer && panelBtn && currentUserRole) {
       var data = { nickname:document.getElementById('nickname').value, staticc:document.getElementById('staticc').value, rank:document.getElementById('rank').value, currentDept:document.getElementById('currentDept').value, department:document.getElementById('department').value, reason:document.getElementById('reason').value };
       if(!data.department){ showError(container,'Выберите отдел'); btn.disabled = false; btn.textContent = 'Отправить'; return; }
       saveAutoFillData({ nickname:data.nickname, staticc:data.staticc, rank:data.rank, currentDept:data.currentDept, department:data.department, reason:data.reason }, 'department');
-      callAPI('submit_department', data, false).then(function(r){ if(r.success) document.getElementById('modal').style.display='none'; setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); }).catch(function() { setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); });
+      callAPI('submit_department', data, false).then(function(r){ if(r.success) document.getElementById('modal').style.display='none'; btn.disabled = false; btn.textContent = 'Отправить'; }).catch(function() { btn.disabled = false; btn.textContent = 'Отправить'; });
     };
   }
 
@@ -373,7 +522,7 @@ if (panelContainer && panelBtn && currentUserRole) {
       btn.textContent = 'Отправка...';
       var data = { nickname:document.getElementById('nickname').value, staticc:document.getElementById('staticc').value, reprimandType:document.getElementById('reprimandType').value, issuedBy:document.getElementById('issuedBy').value, issuedDate:document.getElementById('issuedDate').value, reasonGiven:document.getElementById('reasonGiven').value, description:document.getElementById('description').value, attachments: attachments };
       saveAutoFillData(data, 'appeal');
-      callAPI('submit_appeal', data, true).then(function(r){ if(r.success) document.getElementById('modal').style.display='none'; setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); }).catch(function() { setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); });
+      callAPI('submit_appeal', data, true).then(function(r){ if(r.success) document.getElementById('modal').style.display='none'; btn.disabled = false; btn.textContent = 'Отправить'; }).catch(function() { btn.disabled = false; btn.textContent = 'Отправить'; });
     };
   }
 
@@ -394,14 +543,14 @@ if (panelContainer && panelBtn && currentUserRole) {
       btn.textContent = 'Отправка...';
       var data = { nickname:document.getElementById('nickname').value, staticc:document.getElementById('staticc').value, rank:document.getElementById('rank').value, reason:document.getElementById('reason').value, punishmentType:document.getElementById('punishmentType').value, attachments: attachments };
       saveAutoFillData(data, 'workoff');
-      callAPI('submit_workoff', data, true).then(function(r){ if(r.success) document.getElementById('modal').style.display='none'; setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); }).catch(function() { setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); });
+      callAPI('submit_workoff', data, true).then(function(r){ if(r.success) document.getElementById('modal').style.display='none'; btn.disabled = false; btn.textContent = 'Отправить'; }).catch(function() { btn.disabled = false; btn.textContent = 'Отправить'; });
     };
   }
 
-  // ========== ФОРМА ПОВЫШЕНИЕ (только никнейм) ==========
+  // ========== ФОРМА ПОВЫШЕНИЕ ==========
   function renderPromotionForm(container) {
     var saved = loadAutoFillData('promotion');
-    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Никнейм</label><input id="nickname" value="' + (saved.nickname || '') + '" required></div><div class="form-group"><label>Статик</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Текущий ранг</label><input id="currentRank" value="' + (saved.currentRank || '') + '" required></div><div class="form-group"><label>Целевой ранг</label><input id="targetRank" value="' + (saved.targetRank || '') + '" required></div><div class="form-group"><label>Баллы</label><input type="number" id="points" value="' + (saved.points || '') + '" required></div><div class="form-group"><label>Док-ва баллов</label><textarea id="proof" rows="2" required>' + (saved.proof || '') + '</textarea></div><div class="form-group"><label>Отдел, куда подаете заявку</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department"></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
+    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Никнейм</label><input id="nickname" value="' + (saved.nickname || '') + '" required></div><div class="form-group"><label>Статик</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Текущий ранг</label><input id="currentRank" value="' + (saved.currentRank || '') + '" required></div><div class="form-group"><label>Целевой ранг</label><input id="targetRank" value="' + (saved.targetRank || '') + '" required></div><div class="form-group"><label>Баллы</label><input type="number" id="points" value="' + (saved.points || '') + '" required></div><div class="form-group"><label>Док-ва баллов</label><textarea id="proof" rows="2" required>' + (saved.proof || '') + '</textarea></div><div class="form-group"><label>Отдел, куда подаете заявку</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department" value="' + (saved.department || '') + '"></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
     var btnsDiv = container.querySelector('#deptBtns');
     DEPARTMENTS.forEach(function(d) {
       var btn = document.createElement('div');
@@ -425,14 +574,14 @@ if (panelContainer && panelBtn && currentUserRole) {
       var data = { nickname:document.getElementById('nickname').value, staticc:document.getElementById('staticc').value, currentRank:document.getElementById('currentRank').value, targetRank:document.getElementById('targetRank').value, points:document.getElementById('points').value, proof:document.getElementById('proof').value, department:document.getElementById('department').value };
       if(!data.department){ showError(container,'Выберите отдел'); btn.disabled = false; btn.textContent = 'Отправить'; return; }
       saveAutoFillData(data, 'promotion');
-      callAPI('submit_promotion', data, false).then(function(r){ if(r.success) document.getElementById('modal').style.display='none'; setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); }).catch(function() { setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); });
+      callAPI('submit_promotion', data, false).then(function(r){ if(r.success) document.getElementById('modal').style.display='none'; btn.disabled = false; btn.textContent = 'Отправить'; }).catch(function() { btn.disabled = false; btn.textContent = 'Отправить'; });
     };
   }
 
   // ========== ФОРМА ОТПУСК/ОТДЫХ ==========
   function renderLeaveForm(container, type) {
     var saved = loadAutoFillData(type);
-    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Отдел</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department"></div><div class="form-group"><label>Причина</label><textarea id="reason" rows="2" required>' + (saved.reason || '') + '</textarea></div><div class="form-group"><label>С даты</label><input type="datetime-local" id="fromDate" value="' + (saved.fromDate || '') + '" required></div><div class="form-group"><label>По дату</label><input type="datetime-local" id="toDate" value="' + (saved.toDate || '') + '" required></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
+    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Отдел</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department" value="' + (saved.department || '') + '"></div><div class="form-group"><label>Причина</label><textarea id="reason" rows="2" required>' + (saved.reason || '') + '</textarea></div><div class="form-group"><label>С даты</label><input type="datetime-local" id="fromDate" value="' + (saved.fromDate || '') + '" required></div><div class="form-group"><label>По дату</label><input type="datetime-local" id="toDate" value="' + (saved.toDate || '') + '" required></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
     var btnsDiv = container.querySelector('#deptBtns');
     DEPARTMENTS.forEach(function(d) {
       var btn = document.createElement('div');
@@ -457,14 +606,14 @@ if (panelContainer && panelBtn && currentUserRole) {
       if(!data.department){ showError(container,'Выберите отдел'); btn.disabled = false; btn.textContent = 'Отправить'; return; }
       saveAutoFillData(data, type);
       var action = type === 'отпуск' ? 'submit_leave' : 'submit_rest';
-      callAPI(action, data, false).then(function(r){ if(r.success) document.getElementById('modal').style.display='none'; setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); }).catch(function() { setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); });
+      callAPI(action, data, false).then(function(r){ if(r.success) document.getElementById('modal').style.display='none'; btn.disabled = false; btn.textContent = 'Отправить'; }).catch(function() { btn.disabled = false; btn.textContent = 'Отправить'; });
     };
   }
 
   // ========== ФОРМА СПЕЦВООРУЖЕНИЕ (ЗАЯВКА) ==========
   function renderSpecRequestForm(container) {
     var saved = loadAutoFillData('spec-request');
-    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Никнейм</label><input id="nickname" value="' + (saved.nickname || '') + '" required></div><div class="form-group"><label>Статик</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Ранг</label><input id="rank" value="' + (saved.rank || '') + '" required></div><div class="form-group"><label>Отдел</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department"></div><div class="form-group"><label>Оружие</label><input id="weapon" value="' + (saved.weapon || '') + '" required></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
+    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Никнейм</label><input id="nickname" value="' + (saved.nickname || '') + '" required></div><div class="form-group"><label>Статик</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Ранг</label><input id="rank" value="' + (saved.rank || '') + '" required></div><div class="form-group"><label>Отдел</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department" value="' + (saved.department || '') + '"></div><div class="form-group"><label>Оружие</label><input id="weapon" value="' + (saved.weapon || '') + '" required></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
     var btnsDiv = container.querySelector('#deptBtns');
     DEPARTMENTS.forEach(function(d) {
       var btn = document.createElement('div');
@@ -488,14 +637,14 @@ if (panelContainer && panelBtn && currentUserRole) {
       var data = { nickname:document.getElementById('nickname').value, staticc:document.getElementById('staticc').value, rank:document.getElementById('rank').value, department:document.getElementById('department').value, weapon:document.getElementById('weapon').value };
       if(!data.department){ showError(container,'Выберите отдел'); btn.disabled = false; btn.textContent = 'Отправить'; return; }
       saveAutoFillData(data, 'spec-request');
-      callAPI('submit_spec_request', data, false).then(function(r){ if(r.success) document.getElementById('modal').style.display='none'; setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); }).catch(function() { setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); });
+      callAPI('submit_spec_request', data, false).then(function(r){ if(r.success) document.getElementById('modal').style.display='none'; btn.disabled = false; btn.textContent = 'Отправить'; }).catch(function() { btn.disabled = false; btn.textContent = 'Отправить'; });
     };
   }
 
   // ========== ФОРМА СПЕЦВООРУЖЕНИЕ (ПОЛУЧЕНИЕ) ==========
   function renderSpecReceiveForm(container) {
     var saved = loadAutoFillData('spec-receive');
-    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Никнейм</label><input id="nickname" value="' + (saved.nickname || '') + '" required></div><div class="form-group"><label>Статик</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Ранг</label><input id="rank" value="' + (saved.rank || '') + '" required></div><div class="form-group"><label>Отдел</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department"></div><div class="form-group"><label>Оружие</label><input id="weapon" value="' + (saved.weapon || '') + '" required></div><div class="form-group"><label>Номер</label><input id="weaponNumber" value="' + (saved.weaponNumber || '') + '" required></div><div class="form-group"><label>Кто выдал</label><input id="issuedBy" value="' + (saved.issuedBy || '') + '" required></div><div class="form-group"><label>Скрин из инвентаря</label><input type="file" id="attachments" multiple accept="image/*"></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
+    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Никнейм</label><input id="nickname" value="' + (saved.nickname || '') + '" required></div><div class="form-group"><label>Статик</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Ранг</label><input id="rank" value="' + (saved.rank || '') + '" required></div><div class="form-group"><label>Отдел</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department" value="' + (saved.department || '') + '"></div><div class="form-group"><label>Оружие</label><input id="weapon" value="' + (saved.weapon || '') + '" required></div><div class="form-group"><label>Номер</label><input id="weaponNumber" value="' + (saved.weaponNumber || '') + '" required></div><div class="form-group"><label>Кто выдал</label><input id="issuedBy" value="' + (saved.issuedBy || '') + '" required></div><div class="form-group"><label>Скрин из инвентаря</label><input type="file" id="attachments" multiple accept="image/*"></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
     var btnsDiv = container.querySelector('#deptBtns');
     DEPARTMENTS.forEach(function(d) {
       var btn = document.createElement('div');
@@ -522,14 +671,14 @@ if (panelContainer && panelBtn && currentUserRole) {
       var data = { nickname:document.getElementById('nickname').value, staticc:document.getElementById('staticc').value, rank:document.getElementById('rank').value, department:document.getElementById('department').value, weapon:document.getElementById('weapon').value, weaponNumber:document.getElementById('weaponNumber').value, issuedBy:document.getElementById('issuedBy').value, attachments: attachments };
       if(!data.department){ showError(container,'Выберите отдел'); btn.disabled = false; btn.textContent = 'Отправить'; return; }
       saveAutoFillData(data, 'spec-receive');
-      callAPI('submit_spec_receive', data, true).then(function(r){ if(r.success) document.getElementById('modal').style.display='none'; setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); }).catch(function() { setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); });
+      callAPI('submit_spec_receive', data, true).then(function(r){ if(r.success) document.getElementById('modal').style.display='none'; btn.disabled = false; btn.textContent = 'Отправить'; }).catch(function() { btn.disabled = false; btn.textContent = 'Отправить'; });
     };
   }
 
   // ========== ФОРМА УВОЛЬНЕНИЕ ==========
   function renderResignationForm(container) {
     var saved = loadAutoFillData('resignation');
-    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Никнейм</label><input id="nickname" value="' + (saved.nickname || '') + '" required></div><div class="form-group"><label>Static ID</label><input id="staticId" value="' + (saved.staticId || '') + '" required></div><div class="form-group"><label>Отдел</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department"></div><div class="form-group"><label>Планшет</label><input id="tablet" value="' + (saved.tablet || '') + '" required></div><div class="form-group"><label>Инвентарь</label><input id="inventory" value="' + (saved.inventory || '') + '" required></div><div class="form-group"><label>Вложения (скриншоты)</label><input type="file" id="attachments" multiple accept="image/*"></div><div class="form-group"><label>Причина</label><textarea id="reason" rows="3" required>' + (saved.reason || '') + '</textarea></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
+    container.innerHTML = '<form id="formEl"><div class="form-group"><label>Никнейм</label><input id="nickname" value="' + (saved.nickname || '') + '" required></div><div class="form-group"><label>Static ID</label><input id="staticId" value="' + (saved.staticId || '') + '" required></div><div class="form-group"><label>Отдел</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department" value="' + (saved.department || '') + '"></div><div class="form-group"><label>Планшет</label><input id="tablet" value="' + (saved.tablet || '') + '" required></div><div class="form-group"><label>Инвентарь</label><input id="inventory" value="' + (saved.inventory || '') + '" required></div><div class="form-group"><label>Вложения (скриншоты)</label><input type="file" id="attachments" multiple accept="image/*"></div><div class="form-group"><label>Причина</label><textarea id="reason" rows="3" required>' + (saved.reason || '') + '</textarea></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit" id="submitBtn">Отправить</button></form>';
     var btnsDiv = container.querySelector('#deptBtns');
     DEPARTMENTS.forEach(function(d) {
       var btn = document.createElement('div');
@@ -556,64 +705,39 @@ if (panelContainer && panelBtn && currentUserRole) {
       var data = { nickname:document.getElementById('nickname').value, staticId:document.getElementById('staticId').value, department:document.getElementById('department').value, tablet:document.getElementById('tablet').value, inventory:document.getElementById('inventory').value, reason:document.getElementById('reason').value, attachments: attachments };
       if(!data.department){ showError(container,'Выберите отдел'); btn.disabled = false; btn.textContent = 'Отправить'; return; }
       saveAutoFillData(data, 'resignation');
-      callAPI('submit_resignation', data, true).then(function(r){ if(r.success) document.getElementById('modal').style.display='none'; setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); }).catch(function() { setTimeout(function() { btn.disabled = false; btn.textContent = 'Отправить'; }, 3000); });
+      callAPI('submit_resignation', data, true).then(function(r){ if(r.success) document.getElementById('modal').style.display='none'; btn.disabled = false; btn.textContent = 'Отправить'; }).catch(function() { btn.disabled = false; btn.textContent = 'Отправить'; });
     };
   }
 
-  function renderHistory() {
-    var container = document.getElementById('historyList');
-    if (!container) return;
-    var searchTerm = document.getElementById('historySearch')?.value.toLowerCase() || '';
-    var filtered = userHistory.filter(function(h) {
-      var typeName = typeNamesMap[h.type] || h.type;
-      return typeName.toLowerCase().indexOf(searchTerm) !== -1 || JSON.stringify(h.data).toLowerCase().indexOf(searchTerm) !== -1;
-    });
-    container.innerHTML = '';
-    filtered.forEach(function(h) {
-      var typeName = typeNamesMap[h.type] || h.type;
-      var details = '';
-      if (h.data.department) details += 'Отдел: ' + h.data.department + ' | ';
-      if (h.data.nickname) details += 'От: ' + h.data.nickname;
-      else if (h.data.firstName && h.data.lastName) details += 'От: ' + h.data.firstName + ' ' + h.data.lastName;
-      else if (h.data.weapon) details += 'Оружие: ' + h.data.weapon;
-      else if (h.data.reason) details += 'Причина: ' + (h.data.reason.length > 50 ? h.data.reason.substring(0,50)+'...' : h.data.reason);
-      var div = document.createElement('div');
-      div.className = 'history-item';
-      div.innerHTML = '<div class="time" style="color:#9ca3af; font-size:11px;">' + h.time + '</div><div class="type" style="color:#d4af37; font-weight:600;">' + typeName + '</div><div class="details" style="color:#e8e8e8; font-size:12px; margin-top:4px;">' + details + '</div>';
-      container.appendChild(div);
-    });
-    if (filtered.length === 0) container.innerHTML = '<div style="text-align:center;padding:20px;color:#6b6f78;">Нет заявок</div>';
-  }
+  // ==================== ОБРАБОТЧИКИ ТАБОВ ====================
+  var tabBtns = document.querySelectorAll('.tab-btn');
+  tabBtns.forEach(function(btn) {
+    btn.onclick = function() {
+      tabBtns.forEach(function(b) { b.classList.remove('active'); });
+      this.classList.add('active');
+      document.querySelectorAll('.tab-content').forEach(function(tab) { tab.classList.remove('active'); });
+      document.getElementById(this.dataset.tab + '-tab').classList.add('active');
+      if (this.dataset.tab === 'stats') renderStats();
+      if (this.dataset.tab === 'history') renderHistory();
+    };
+  });
 
-  function renderStats() {
-    var stats = {total: userHistory.length, byType: {}};
-    userHistory.forEach(function(h) {
-      var displayType = typeNamesMap[h.type] || h.type;
-      stats.byType[displayType] = (stats.byType[displayType] || 0) + 1;
-    });
-    var container = document.getElementById('statsGrid');
-    if (container) {
-      container.innerHTML = '<div class="stat-card"><div class="stat-number" style="color:#d4af37; font-size:2rem; font-weight:800;">' + stats.total + '</div><div class="stat-label" style="color:#9ca3af;">Всего заявок</div></div>';
-      var sortedTypes = Object.keys(stats.byType).sort();
-      for (var i = 0; i < sortedTypes.length; i++) {
-        var type = sortedTypes[i];
-        container.innerHTML += '<div class="stat-card"><div class="stat-number" style="color:#d4af37; font-size:1.5rem; font-weight:700;">' + stats.byType[type] + '</div><div class="stat-label" style="color:#9ca3af;">' + type + '</div></div>';
-      }
-    }
-    var ctx = document.getElementById('statsChart')?.getContext('2d');
-    if (ctx && window.statsChart) window.statsChart.destroy();
-    if (ctx && Object.keys(stats.byType).length > 0) {
-      window.statsChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: { labels: Object.keys(stats.byType), datasets: [{ data: Object.values(stats.byType), backgroundColor: ['#d4af37', '#5865F2', '#6bcf7f', '#ff6b6b', '#ffa500', '#4a90d9', '#9b59b6'] }] },
-        options: { responsive: true, plugins: { legend: { labels: { color: '#e8e8e8' } } } }
-      });
-    } else if (ctx) {
-      window.statsChart = new Chart(ctx, { type: 'doughnut', data: { labels: ['Нет данных'], datasets: [{ data: [1], backgroundColor: ['#d4af37'] }] }, options: { responsive: true } });
-    }
-  }
+  document.getElementById('historySearch')?.addEventListener('input', function() { renderHistory(); });
 
-  // Preloader
+  // ==================== БАГ-РЕПОРТ ====================
+  var bugModal = document.getElementById('bugModal');
+  document.getElementById('reportBugBtn').onclick = function() { if(currentUser) bugModal.style.display = 'flex'; else showNotification('Авторизуйтесь', 'warning'); };
+  document.getElementById('closeBugBtn').onclick = function() { bugModal.style.display = 'none'; };
+  document.getElementById('sendBugBtn').onclick = function() {
+    var bugType = document.getElementById('bugType').value;
+    var bugDesc = document.getElementById('bugDescription').value;
+    if(!bugDesc) { showNotification('Опишите проблему', 'warning'); return; }
+    sendBugReport(bugType, bugDesc);
+    bugModal.style.display = 'none';
+    document.getElementById('bugDescription').value = '';
+  };
+
+  // ==================== ПРЕЛОАДЕР ====================
   var progress = 0;
   var progressBar = document.getElementById('preloaderProgress');
   var interval = setInterval(function() {
@@ -638,6 +762,7 @@ if (panelContainer && panelBtn && currentUserRole) {
       }, 1000);
     }
   }, 70);
+  
   setTimeout(function() {
     var preloader = document.getElementById('preloader');
     if (preloader && preloader.style.display !== 'none') {
@@ -646,17 +771,6 @@ if (panelContainer && panelBtn && currentUserRole) {
     }
   }, 5000);
 
-  var bugModal = document.getElementById('bugModal');
-  document.getElementById('reportBugBtn').onclick = function() { if(currentUser) bugModal.style.display = 'flex'; else showNotification('Авторизуйтесь', 'warning'); };
-  document.getElementById('closeBugBtn').onclick = function() { bugModal.style.display = 'none'; };
-  document.getElementById('sendBugBtn').onclick = function() {
-    var bugType = document.getElementById('bugType').value;
-    var bugDesc = document.getElementById('bugDescription').value;
-    if(!bugDesc) { showNotification('Опишите проблему', 'warning'); return; }
-    sendBugReport(bugType, bugDesc);
-    bugModal.style.display = 'none';
-    document.getElementById('bugDescription').value = '';
-  };
-
+  // ЗАПУСК
   checkAuth();
 })();
