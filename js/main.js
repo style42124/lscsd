@@ -1,5 +1,5 @@
 (function() {
-  // ==================== ЗАЩИТА ====================
+  // Защита от F12
   document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
   document.addEventListener('keydown', function(e) {
     if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'C' || e.key === 'J')) || (e.ctrlKey && e.key === 'U')) {
@@ -7,16 +7,13 @@
     }
   });
 
-  // ==================== КОНФИГ ====================
   var PROXY_URL = 'https://cs324022.tw1.ru/index.php';
   var DISCORD_CLIENT_ID = '1494686473520287774';
   var REDIRECT_URI = 'https://style42124.github.io/lscsd/';
   
   var currentUser = null;
-  var currentUserRole = null;
   var chartInstance = null;
   
-  // Заявки
   var allApplications = JSON.parse(localStorage.getItem('lscsd_applications') || '[]');
 
   function saveApplications() {
@@ -67,81 +64,21 @@
     setTimeout(function() { div.remove(); }, 3000);
   }
 
-  // ==================== ОТПРАВКА В DISCORD (С ТОКЕНОМ) ====================
   function sendToDiscord(action, formData) {
     if (!currentUser) return;
-    
-    var token = currentUser.token || '';
-    if (!token) {
-      console.warn('Нет токена');
-      return;
-    }
-    
     var dataToSend = { action: action, data: formData || {} };
     dataToSend.data.userId = currentUser.id;
     dataToSend.data.username = currentUser.username;
-    
     fetch(PROXY_URL, {
       method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + token
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(dataToSend)
-    }).then(function(res) { return res.json(); })
-      .then(function(data) {
-        if (!data.success) {
-          console.warn('Discord ошибка:', data.error);
-        }
-      })
-      .catch(function(err) {
-        console.warn('Ошибка отправки:', err);
-      });
+    }).catch(function() {});
   }
 
-  // ==================== ПОЛУЧЕНИЕ РОЛИ ====================
-  function loadUserRole() {
-    if (!currentUser) return;
-    
-    var token = currentUser.token || '';
-    if (!token) return;
-    
-    fetch(PROXY_URL, {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + token
-      },
-      body: JSON.stringify({ action: 'get_user_role', data: { userId: currentUser.id } })
-    }).then(function(r) { return r.json(); })
-      .then(function(res) {
-        if (res.success && res.role) {
-          currentUserRole = res.role;
-        } else {
-          currentUserRole = { level: 1, name: 'Младший состав', department: null };
-        }
-        localStorage.setItem('lscsd_user_role', JSON.stringify(currentUserRole));
-        
-        // Показываем кнопку панели для уровня >=2
-        var panelContainer = document.getElementById('panelBtnContainer');
-        var panelBtn = document.getElementById('panelBtn');
-        if (panelContainer && panelBtn && currentUserRole && (currentUserRole.level >= 2 || currentUserRole.level === 9)) {
-          panelContainer.style.display = 'flex';
-          panelBtn.onclick = function() { window.location.href = '/lscsd/panel.html'; };
-        }
-      })
-      .catch(function() {
-        currentUserRole = { level: 1, name: 'Младший состав', department: null };
-      });
-  }
-
-  // ==================== РЕНДЕР КАРТОЧЕК ====================
   function renderCards() {
     var container = document.getElementById('cardsGrid');
-    if (!container) {
-      console.error('cardsGrid не найден');
-      return;
-    }
+    if (!container) return;
     container.innerHTML = '';
     FORMS_LIST.forEach(function(form) {
       var card = document.createElement('div');
@@ -152,7 +89,6 @@
     });
   }
 
-  // ==================== РЕНДЕР ИСТОРИИ ====================
   function renderFormsList() {
     var container = document.getElementById('historyList');
     if (!container) return;
@@ -186,7 +122,6 @@
     container.innerHTML = html;
   }
 
-  // ==================== РЕНДЕР СТАТИСТИКИ ====================
   function renderStats() {
     var stats = { total: allApplications.length, byType: {} };
     
@@ -205,15 +140,14 @@
       container.innerHTML = html;
     }
     
-    // График (безопасно)
     var canvas = document.getElementById('statsChart');
     if (canvas && typeof Chart !== 'undefined') {
       var ctx = canvas.getContext('2d');
       if (ctx) {
         if (chartInstance) {
           try { chartInstance.destroy(); } catch(e) {}
+          chartInstance = null;
         }
-        
         if (Object.keys(stats.byType).length > 0) {
           chartInstance = new Chart(ctx, {
             type: 'doughnut',
@@ -231,7 +165,6 @@
     }
   }
 
-  // ==================== АВТОРИЗАЦИЯ ====================
   function handleAuthCallback() {
     var hash = window.location.hash.substring(1);
     if (hash && hash.indexOf('access_token') !== -1) {
@@ -272,10 +205,17 @@
       if (navNameEl) navNameEl.innerText = currentUser.username;
       if (navAvatarEl && currentUser.avatar) navAvatarEl.src = currentUser.avatar;
       
-      loadUserRole();
       renderCards();
       renderFormsList();
       renderStats();
+      
+      // Панель управления доступна всем (для теста)
+      var panelContainer = document.getElementById('panelBtnContainer');
+      var panelBtn = document.getElementById('panelBtn');
+      if (panelContainer && panelBtn) {
+        panelContainer.style.display = 'flex';
+        panelBtn.onclick = function() { window.location.href = '/lscsd/panel.html'; };
+      }
     } else {
       var authContainer = document.getElementById('authContainer');
       var mainContainer = document.getElementById('mainContainer');
@@ -289,7 +229,6 @@
     }
   }
 
-  // Кнопка входа
   var authBtn = document.getElementById('authBtn');
   if (authBtn) {
     authBtn.onclick = function() { 
@@ -297,18 +236,15 @@
     };
   }
   
-  // Выход
   var logoutBtn = document.getElementById('settingsLogoutBtn');
   if (logoutBtn) {
     logoutBtn.onclick = function() { 
       localStorage.removeItem('lscsd_user');
-      localStorage.removeItem('lscsd_user_role');
       localStorage.removeItem('lscsd_applications');
       location.reload(); 
     };
   }
 
-  // Настройки
   var settingsPanel = document.getElementById('settingsPanel');
   var navUserEl = document.getElementById('navUser');
   if (navUserEl) {
@@ -328,7 +264,6 @@
       settingsPanel.classList.remove('open'); 
   };
 
-  // Тема
   var currentTheme = localStorage.getItem('lscsd_theme') || 'dark';
   if (currentTheme === 'light') document.body.classList.add('light');
   var themeSwitch = document.getElementById('themeSwitch');
@@ -347,7 +282,6 @@
     };
   }
 
-  // Автозаполнение
   var autoFillEnabled = localStorage.getItem('lscsd_autofill') === 'true';
   var autoFillSwitch = document.getElementById('autoFillSwitch');
   if (autoFillSwitch) {
@@ -360,7 +294,6 @@
     };
   }
 
-  // ==================== ФУНКЦИИ ДЛЯ ФАЙЛОВ ====================
   function createFilePreview(container, files, inputId) {
     var previewDiv = container.querySelector('#filePreview');
     if (!previewDiv) { 
@@ -406,15 +339,16 @@
     } else showNotification(msg,'error'); 
   }
 
-  // ==================== ОТКРЫТИЕ ФОРМ ====================
   function openForm(type) {
     var modal = document.getElementById('modal');
     var modalBody = document.getElementById('modalBody');
     var modalTitle = document.getElementById('modalTitle');
     var form = FORMS_LIST.find(function(x){ return x.id===type; });
-    if (modalTitle) modalTitle.innerText = form ? form.label : 'Форма заявки';
-    if (modalBody) modalBody.innerHTML = '<div style="text-align:center;padding:30px;">Загрузка...</div>';
-    if (modal) modal.style.display = 'flex';
+    if (!modal || !modalBody || !modalTitle) return;
+    
+    modalTitle.innerText = form ? form.label : 'Форма заявки';
+    modalBody.innerHTML = '<div style="text-align:center;padding:30px;">Загрузка...</div>';
+    modal.style.display = 'flex';
     
     switch(type) {
       case 'department': renderDepartmentForm(modalBody); break;
@@ -426,39 +360,42 @@
       case 'spec-request': renderSpecRequestForm(modalBody); break;
       case 'spec-receive': renderSpecReceiveForm(modalBody); break;
       case 'resignation': renderResignationForm(modalBody); break;
-      default: if (modalBody) modalBody.innerHTML = '<p>Форма не найдена</p>';
+      default: modalBody.innerHTML = '<p>Форма не найдена</p>';
     }
   }
 
   var modalClose = document.getElementById('modalClose');
   if (modalClose) {
-    modalClose.onclick = function() { document.getElementById('modal').style.display = 'none'; };
+    modalClose.onclick = function() { 
+      var modal = document.getElementById('modal');
+      if (modal) modal.style.display = 'none'; 
+    };
   }
   window.onclick = function(e) { 
     var modal = document.getElementById('modal');
     if (e.target === modal && modal) modal.style.display = 'none'; 
   };
 
-  // ==================== ФОРМЫ ====================
-  
   function renderDepartmentForm(container) {
     if (!container) return;
     var saved = autoFillEnabled ? JSON.parse(localStorage.getItem('lscsd_saved_department') || '{}') : {};
     container.innerHTML = '<form id="formEl"><div class="form-group"><label>Никнейм *</label><input id="nickname" value="' + (saved.nickname || '') + '" required></div><div class="form-group"><label>Статик *</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Ранг *</label><input id="rank" value="' + (saved.rank || '') + '" required></div><div class="form-group"><label>Текущий отдел *</label><input id="currentDept" value="' + (saved.currentDept || '') + '" required></div><div class="form-group"><label>Отдел подачи *</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department" value="' + (saved.department || '') + '"></div><div class="form-group"><label>Причина *</label><textarea id="reason" rows="3" required>' + (saved.reason || '') + '</textarea></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit">Отправить</button></form>';
     var btnsDiv = container.querySelector('#deptBtns');
-    DEPARTMENTS.forEach(function(d) {
-      var btn = document.createElement('div');
-      btn.className = 'role-btn';
-      btn.textContent = d;
-      if (saved.department === d) btn.classList.add('selected');
-      btn.onclick = function() {
-        btnsDiv.querySelectorAll('.role-btn').forEach(function(b){ b.classList.remove('selected'); });
-        btn.classList.add('selected');
-        var deptInput = document.getElementById('department');
-        if (deptInput) deptInput.value = d;
-      };
-      btnsDiv.appendChild(btn);
-    });
+    if (btnsDiv) {
+      DEPARTMENTS.forEach(function(d) {
+        var btn = document.createElement('div');
+        btn.className = 'role-btn';
+        btn.textContent = d;
+        if (saved.department === d) btn.classList.add('selected');
+        btn.onclick = function() {
+          btnsDiv.querySelectorAll('.role-btn').forEach(function(b){ b.classList.remove('selected'); });
+          btn.classList.add('selected');
+          var deptInput = document.getElementById('department');
+          if (deptInput) deptInput.value = d;
+        };
+        btnsDiv.appendChild(btn);
+      });
+    }
     var form = container.querySelector('#formEl');
     if (form) {
       form.onsubmit = function(e) {
@@ -548,19 +485,21 @@
     var saved = autoFillEnabled ? JSON.parse(localStorage.getItem('lscsd_saved_promotion') || '{}') : {};
     container.innerHTML = '<form id="formEl"><div class="form-group"><label>Никнейм *</label><input id="nickname" value="' + (saved.nickname || '') + '" required></div><div class="form-group"><label>Статик *</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Текущий ранг *</label><input id="currentRank" value="' + (saved.currentRank || '') + '" required></div><div class="form-group"><label>Целевой ранг *</label><input id="targetRank" value="' + (saved.targetRank || '') + '" required></div><div class="form-group"><label>Баллы *</label><input type="number" id="points" value="' + (saved.points || '') + '" required></div><div class="form-group"><label>Док-ва баллов *</label><textarea id="proof" rows="2" required>' + (saved.proof || '') + '</textarea></div><div class="form-group"><label>Отдел подачи *</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department" value="' + (saved.department || '') + '"></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit">Отправить</button></form>';
     var btnsDiv = container.querySelector('#deptBtns');
-    DEPARTMENTS.forEach(function(d) {
-      var btn = document.createElement('div');
-      btn.className = 'role-btn';
-      btn.textContent = d;
-      if (saved.department === d) btn.classList.add('selected');
-      btn.onclick = function() {
-        btnsDiv.querySelectorAll('.role-btn').forEach(function(b){ b.classList.remove('selected'); });
-        btn.classList.add('selected');
-        var deptInput = document.getElementById('department');
-        if (deptInput) deptInput.value = d;
-      };
-      btnsDiv.appendChild(btn);
-    });
+    if (btnsDiv) {
+      DEPARTMENTS.forEach(function(d) {
+        var btn = document.createElement('div');
+        btn.className = 'role-btn';
+        btn.textContent = d;
+        if (saved.department === d) btn.classList.add('selected');
+        btn.onclick = function() {
+          btnsDiv.querySelectorAll('.role-btn').forEach(function(b){ b.classList.remove('selected'); });
+          btn.classList.add('selected');
+          var deptInput = document.getElementById('department');
+          if (deptInput) deptInput.value = d;
+        };
+        btnsDiv.appendChild(btn);
+      });
+    }
     var form = container.querySelector('#formEl');
     if (form) {
       form.onsubmit = function(e) {
@@ -589,19 +528,21 @@
     var saved = autoFillEnabled ? JSON.parse(localStorage.getItem('lscsd_saved_' + type) || '{}') : {};
     container.innerHTML = '<form id="formEl"><div class="form-group"><label>Отдел *</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department" value="' + (saved.department || '') + '"></div><div class="form-group"><label>Причина *</label><textarea id="reason" rows="2" required>' + (saved.reason || '') + '</textarea></div><div class="form-group"><label>С даты *</label><input type="datetime-local" id="fromDate" value="' + (saved.fromDate || '') + '" required></div><div class="form-group"><label>По дату *</label><input type="datetime-local" id="toDate" value="' + (saved.toDate || '') + '" required></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit">Отправить</button></form>';
     var btnsDiv = container.querySelector('#deptBtns');
-    DEPARTMENTS.forEach(function(d) {
-      var btn = document.createElement('div');
-      btn.className = 'role-btn';
-      btn.textContent = d;
-      if (saved.department === d) btn.classList.add('selected');
-      btn.onclick = function() {
-        btnsDiv.querySelectorAll('.role-btn').forEach(function(b){ b.classList.remove('selected'); });
-        btn.classList.add('selected');
-        var deptInput = document.getElementById('department');
-        if (deptInput) deptInput.value = d;
-      };
-      btnsDiv.appendChild(btn);
-    });
+    if (btnsDiv) {
+      DEPARTMENTS.forEach(function(d) {
+        var btn = document.createElement('div');
+        btn.className = 'role-btn';
+        btn.textContent = d;
+        if (saved.department === d) btn.classList.add('selected');
+        btn.onclick = function() {
+          btnsDiv.querySelectorAll('.role-btn').forEach(function(b){ b.classList.remove('selected'); });
+          btn.classList.add('selected');
+          var deptInput = document.getElementById('department');
+          if (deptInput) deptInput.value = d;
+        };
+        btnsDiv.appendChild(btn);
+      });
+    }
     var form = container.querySelector('#formEl');
     if (form) {
       form.onsubmit = function(e) {
@@ -628,19 +569,21 @@
     var saved = autoFillEnabled ? JSON.parse(localStorage.getItem('lscsd_saved_spec_request') || '{}') : {};
     container.innerHTML = '<form id="formEl"><div class="form-group"><label>Никнейм *</label><input id="nickname" value="' + (saved.nickname || '') + '" required></div><div class="form-group"><label>Статик *</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Ранг *</label><input id="rank" value="' + (saved.rank || '') + '" required></div><div class="form-group"><label>Отдел *</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department" value="' + (saved.department || '') + '"></div><div class="form-group"><label>Оружие *</label><input id="weapon" value="' + (saved.weapon || '') + '" required></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit">Отправить</button></form>';
     var btnsDiv = container.querySelector('#deptBtns');
-    DEPARTMENTS.forEach(function(d) {
-      var btn = document.createElement('div');
-      btn.className = 'role-btn';
-      btn.textContent = d;
-      if (saved.department === d) btn.classList.add('selected');
-      btn.onclick = function() {
-        btnsDiv.querySelectorAll('.role-btn').forEach(function(b){ b.classList.remove('selected'); });
-        btn.classList.add('selected');
-        var deptInput = document.getElementById('department');
-        if (deptInput) deptInput.value = d;
-      };
-      btnsDiv.appendChild(btn);
-    });
+    if (btnsDiv) {
+      DEPARTMENTS.forEach(function(d) {
+        var btn = document.createElement('div');
+        btn.className = 'role-btn';
+        btn.textContent = d;
+        if (saved.department === d) btn.classList.add('selected');
+        btn.onclick = function() {
+          btnsDiv.querySelectorAll('.role-btn').forEach(function(b){ b.classList.remove('selected'); });
+          btn.classList.add('selected');
+          var deptInput = document.getElementById('department');
+          if (deptInput) deptInput.value = d;
+        };
+        btnsDiv.appendChild(btn);
+      });
+    }
     var form = container.querySelector('#formEl');
     if (form) {
       form.onsubmit = function(e) {
@@ -667,19 +610,21 @@
     var saved = autoFillEnabled ? JSON.parse(localStorage.getItem('lscsd_saved_spec_receive') || '{}') : {};
     container.innerHTML = '<form id="formEl"><div class="form-group"><label>Никнейм *</label><input id="nickname" value="' + (saved.nickname || '') + '" required></div><div class="form-group"><label>Статик *</label><input id="staticc" value="' + (saved.staticc || '') + '" required></div><div class="form-group"><label>Ранг *</label><input id="rank" value="' + (saved.rank || '') + '" required></div><div class="form-group"><label>Отдел *</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department" value="' + (saved.department || '') + '"></div><div class="form-group"><label>Оружие *</label><input id="weapon" value="' + (saved.weapon || '') + '" required></div><div class="form-group"><label>Номер спецухи *</label><input id="weaponNumber" value="' + (saved.weaponNumber || '') + '" required></div><div class="form-group"><label>Кто выдал *</label><input id="issuedBy" value="' + (saved.issuedBy || '') + '" required></div><div class="form-group"><label>Скрин из инвентаря *</label><input type="file" id="attachments" multiple accept="image/*"></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit">Отправить</button></form>';
     var btnsDiv = container.querySelector('#deptBtns');
-    DEPARTMENTS.forEach(function(d) {
-      var btn = document.createElement('div');
-      btn.className = 'role-btn';
-      btn.textContent = d;
-      if (saved.department === d) btn.classList.add('selected');
-      btn.onclick = function() {
-        btnsDiv.querySelectorAll('.role-btn').forEach(function(b){ b.classList.remove('selected'); });
-        btn.classList.add('selected');
-        var deptInput = document.getElementById('department');
-        if (deptInput) deptInput.value = d;
-      };
-      btnsDiv.appendChild(btn);
-    });
+    if (btnsDiv) {
+      DEPARTMENTS.forEach(function(d) {
+        var btn = document.createElement('div');
+        btn.className = 'role-btn';
+        btn.textContent = d;
+        if (saved.department === d) btn.classList.add('selected');
+        btn.onclick = function() {
+          btnsDiv.querySelectorAll('.role-btn').forEach(function(b){ b.classList.remove('selected'); });
+          btn.classList.add('selected');
+          var deptInput = document.getElementById('department');
+          if (deptInput) deptInput.value = d;
+        };
+        btnsDiv.appendChild(btn);
+      });
+    }
     var attachments = [];
     var fileInput = container.querySelector('#attachments');
     if (fileInput) {
@@ -713,19 +658,21 @@
     var saved = autoFillEnabled ? JSON.parse(localStorage.getItem('lscsd_saved_resignation') || '{}') : {};
     container.innerHTML = '<form id="formEl"><div class="form-group"><label>Никнейм *</label><input id="nickname" value="' + (saved.nickname || '') + '" required></div><div class="form-group"><label>Static ID *</label><input id="staticId" value="' + (saved.staticId || '') + '" required></div><div class="form-group"><label>Отдел *</label><div id="deptBtns" class="role-buttons"></div><input type="hidden" id="department" value="' + (saved.department || '') + '"></div><div class="form-group"><label>Планшет *</label><input id="tablet" value="' + (saved.tablet || '') + '" required></div><div class="form-group"><label>Инвентарь *</label><input id="inventory" value="' + (saved.inventory || '') + '" required></div><div class="form-group"><label>Вложения</label><input type="file" id="attachments" multiple accept="image/*"></div><div class="form-group"><label>Причина *</label><textarea id="reason" rows="3" required>' + (saved.reason || '') + '</textarea></div><div class="error-message" id="formError"></div><button type="submit" class="btn-submit">Отправить</button></form>';
     var btnsDiv = container.querySelector('#deptBtns');
-    DEPARTMENTS.forEach(function(d) {
-      var btn = document.createElement('div');
-      btn.className = 'role-btn';
-      btn.textContent = d;
-      if (saved.department === d) btn.classList.add('selected');
-      btn.onclick = function() {
-        btnsDiv.querySelectorAll('.role-btn').forEach(function(b){ b.classList.remove('selected'); });
-        btn.classList.add('selected');
-        var deptInput = document.getElementById('department');
-        if (deptInput) deptInput.value = d;
-      };
-      btnsDiv.appendChild(btn);
-    });
+    if (btnsDiv) {
+      DEPARTMENTS.forEach(function(d) {
+        var btn = document.createElement('div');
+        btn.className = 'role-btn';
+        btn.textContent = d;
+        if (saved.department === d) btn.classList.add('selected');
+        btn.onclick = function() {
+          btnsDiv.querySelectorAll('.role-btn').forEach(function(b){ b.classList.remove('selected'); });
+          btn.classList.add('selected');
+          var deptInput = document.getElementById('department');
+          if (deptInput) deptInput.value = d;
+        };
+        btnsDiv.appendChild(btn);
+      });
+    }
     var attachments = [];
     var fileInput = container.querySelector('#attachments');
     if (fileInput) {
@@ -753,7 +700,6 @@
     }
   }
 
-  // ==================== ТАБЫ ====================
   var tabBtns = document.querySelectorAll('.tab-btn');
   tabBtns.forEach(function(btn) {
     btn.onclick = function() {
@@ -773,7 +719,6 @@
     historySearch.addEventListener('input', function() { renderFormsList(); });
   }
 
-  // ==================== БАГ-РЕПОРТ ====================
   var bugModal = document.getElementById('bugModal');
   var reportBugBtn = document.getElementById('reportBugBtn');
   if (reportBugBtn) {
@@ -790,13 +735,9 @@
       var bugDesc = document.getElementById('bugDescription')?.value || '';
       if(!bugDesc) { showNotification('Опишите проблему', 'warning'); return; }
       if(currentUser) {
-        var token = currentUser.token || '';
         fetch(PROXY_URL, {
           method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + token
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'report_bug', data: { userId: currentUser.id, username: currentUser.username, bugType: bugType, bugDescription: bugDesc } })
         }).catch(function() {});
       }
@@ -807,7 +748,6 @@
     };
   }
 
-  // ==================== ПРЕЛОАДЕР ====================
   var progress = 0;
   var progressBar = document.getElementById('preloaderProgress');
   var interval = setInterval(function() {
@@ -839,6 +779,5 @@
     }
   }, 5000);
 
-  // ==================== ЗАПУСК ====================
   checkAuth();
 })();
