@@ -190,17 +190,19 @@
   function renderStats() {
   var stats = { total: allApplications.length, byType: {} };
   
-  allApplications.forEach(function(app) {
+  for (var i = 0; i < allApplications.length; i++) {
+    var app = allApplications[i];
     var displayType = typeNames[app.type] || app.type;
     stats.byType[displayType] = (stats.byType[displayType] || 0) + 1;
-  });
+  }
   
   var container = document.getElementById('statsGrid');
   if (container) {
-    container.innerHTML = '<div class="stat-card"><div class="stat-number">' + stats.total + '</div><div class="stat-label">Всего заявок</div></div>';
+    var html = '<div class="stat-card"><div class="stat-number">' + stats.total + '</div><div class="stat-label">Всего заявок</div></div>';
     for (var type in stats.byType) {
-      container.innerHTML += '<div class="stat-card"><div class="stat-number">' + stats.byType[type] + '</div><div class="stat-label">' + type + '</div></div>';
+      html += '<div class="stat-card"><div class="stat-number">' + stats.byType[type] + '</div><div class="stat-label">' + type + '</div></div>';
     }
+    container.innerHTML = html;
   }
   
   var canvas = document.getElementById('statsChart');
@@ -209,12 +211,12 @@
   var ctx = canvas.getContext('2d');
   if (!ctx) return;
   
+  // Безопасное удаление старого графика
   if (window.statsChart) {
     try {
       window.statsChart.destroy();
-    } catch(e) {
-      console.log('Chart destroy error ignored');
-    }
+    } catch(e) {}
+    window.statsChart = null;
   }
   
   if (Object.keys(stats.byType).length > 0) {
@@ -235,11 +237,8 @@
         }
       }
     });
-  } else {
-    if (window.statsChart) window.statsChart = null;
   }
 }
-
   // Авторизация
   function handleAuthCallback() {
     var hash = window.location.hash.substring(1);
