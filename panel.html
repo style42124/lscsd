@@ -177,16 +177,11 @@
       padding: 10px 25px;
       cursor: pointer;
       color: #e8e8e8;
-      transition: 0.2s;
     }
 
     .tab-btn.active {
       background: linear-gradient(135deg, #d4af37, #b8962a);
       color: #0f121a;
-    }
-
-    .tab-btn:hover {
-      transform: translateY(-2px);
     }
 
     .tab-content {
@@ -280,11 +275,6 @@
       color: #d4af37;
       font-size: 1.2rem;
       cursor: pointer;
-      transition: 0.2s;
-    }
-
-    .user-actions button:hover {
-      transform: scale(1.1);
     }
 
     .app-list {
@@ -325,7 +315,6 @@
       padding: 8px 16px;
       cursor: pointer;
       color: #e8e8e8;
-      transition: 0.2s;
     }
 
     .filter-btn.active {
@@ -549,7 +538,7 @@
       }
     });
 
-    const PROXY_URL = 'https://cp169104.tw1.ru/index.php';
+    const PROXY_URL = 'https://cs324022.tw1.ru/index.php';
     
     let currentUser = null;
     let currentUserRole = null;
@@ -585,68 +574,81 @@
       }
     }
 
-    function loadUserRoleFromServer() {
-      if (!currentUser) return Promise.resolve(null);
+    // ЗАГРУЗКА РОЛИ ПРЯМО С СЕРВЕРА (НЕ ИЗ КЕША)
+    async function loadUserRoleFromServer() {
+      if (!currentUser) return null;
       
-      return fetch(PROXY_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'get_user_role', data: { userId: currentUser.id } })
-      }).then(r => r.json()).then(res => {
+      try {
+        const response = await fetch(PROXY_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'get_user_role', data: { userId: currentUser.id } })
+        });
+        const res = await response.json();
+        
         if (res.success && res.role) {
           currentUserRole = res.role;
+          // Обновляем бейдж
           const badge = document.getElementById('userRoleBadge');
           if (badge) badge.innerText = currentUserRole.name || 'Младший состав';
           return currentUserRole;
         }
         return null;
-      }).catch(err => {
-        console.error('Ошибка загрузки роли:', err);
+      } catch(e) {
+        console.error('Ошибка загрузки роли:', e);
         return null;
-      });
+      }
     }
 
-    function loadAllUsers() {
-      return fetch(PROXY_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'get_all_users_roles' })
-      }).then(r => r.json()).then(res => {
+    // ЗАГРУЗКА ВСЕХ ПОЛЬЗОВАТЕЛЕЙ (С ПРИНУДИТЕЛЬНЫМ ОБНОВЛЕНИЕМ)
+    async function loadAllUsers() {
+      try {
+        const response = await fetch(PROXY_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'get_all_users_roles' })
+        });
+        const res = await response.json();
+        
         if (res.success) {
           allUsers = res.users || {};
-          renderUsers();
+          await renderUsers(); // Ждём рендера
         } else {
           console.error('Ошибка загрузки пользователей:', res.error);
           showNotification('Ошибка загрузки пользователей: ' + (res.error || 'Неизвестная ошибка'), 'error');
         }
-      }).catch(err => {
+      } catch(err) {
         console.error('Ошибка сети:', err);
         showNotification('Ошибка сети при загрузке пользователей', 'error');
-      });
+      }
     }
 
-    function loadApplications() {
-      if (!currentUser) return Promise.resolve();
+    // ЗАГРУЗКА ЗАЯВОК (С ПРИНУДИТЕЛЬНЫМ ОБНОВЛЕНИЕМ)
+    async function loadApplications() {
+      if (!currentUser) return;
       
-      return fetch(PROXY_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'get_applications',
-          data: {
-            userId: currentUser.id,
-            userRole: currentUserRole ? currentUserRole.level : 1,
-            userDept: currentUserRole ? (currentUserRole.department || '') : ''
-          }
-        })
-      }).then(r => r.json()).then(res => {
+      try {
+        const response = await fetch(PROXY_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'get_applications',
+            data: {
+              userId: currentUser.id,
+              userRole: currentUserRole ? currentUserRole.level : 1,
+              userDept: currentUserRole ? (currentUserRole.department || '') : ''
+            }
+          })
+        });
+        const res = await response.json();
+        
         if (res.success) {
           allApplications = res.applications || [];
           renderApplications();
         }
-      }).catch(err => {
+      } catch(err) {
         console.error('Ошибка загрузки заявок:', err);
-      });
+      }
     }
 
     function performAction(action, targetUserId, extra = {}) {
@@ -658,6 +660,7 @@
       }).then(r => r.json()).then(res => {
         if (res.success) {
           showNotification('✅ Операция выполнена!', 'success');
+          // ПРИНУДИТЕЛЬНО ОБНОВЛЯЕМ ДАННЫЕ
           loadAllUsers();
           loadApplications();
         } else {
@@ -698,8 +701,12 @@
           }
         })
       }).then(r => r.json()).then(res => {
-        if (res.success) showNotification('✅ Решение отправлено!', 'success');
-        else showNotification('❌ Ошибка', 'error');
+        if (res.success) {
+          showNotification('✅ Решение отправлено!', 'success');
+          loadApplications(); // Обновляем список заявок
+        } else {
+          showNotification('❌ Ошибка', 'error');
+        }
         return res;
       }).catch(err => {
         showNotification('Ошибка сети', 'error');
@@ -932,7 +939,7 @@
       }
     }
 
-    function checkAuth() {
+    async function checkAuth() {
       const user = localStorage.getItem('lscsd_user');
       if (user) {
         currentUser = JSON.parse(user);
@@ -941,10 +948,9 @@
         document.getElementById('navName').innerText = currentUser.username;
         if (currentUser.avatar) document.getElementById('navAvatar').src = currentUser.avatar;
         
-        loadUserRoleFromServer().then(() => {
-          loadAllUsers();
-          loadApplications();
-        });
+        await loadUserRoleFromServer(); // Ждём загрузки роли
+        await loadAllUsers();           // Ждём загрузки пользователей
+        await loadApplications();       // Ждём загрузки заявок
       } else {
         document.getElementById('authContainer').style.display = 'flex';
         document.getElementById('mainContainer').style.display = 'none';
