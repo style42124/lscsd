@@ -7,7 +7,7 @@
     }
   });
 
-  var PROXY_URL = 'https://cs324022.tw1.ru/index.php';
+  var PROXY_URL = 'https://cp169104.tw1.ru/index.php';
   var DISCORD_CLIENT_ID = '1494686473520287774';
   var REDIRECT_URI = 'https://style42124.github.io/lscsd/';
   
